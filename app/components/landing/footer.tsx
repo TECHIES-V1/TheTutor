@@ -1,7 +1,6 @@
 export function Footer() {
   return (
     <footer className="bg-background border-t border-border/60 py-16 position-relative overflow-hidden">
-      {/* Subtle top glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[60%] h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
 
       <div className="container relative z-10">

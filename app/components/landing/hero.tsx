@@ -7,7 +7,6 @@ import { motion } from "framer-motion";
 export function Hero() {
   return (
     <section className="relative min-h-[130vh] flex flex-col items-center justify-center overflow-hidden">
-      {/* Background with gradient overlay */}
       <div
         className="absolute inset-0 z-0"
         style={{
@@ -18,11 +17,9 @@ export function Hero() {
           backgroundAttachment: "fixed",
         }}
       >
-        {/* Dark overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-background via-background/90 to-background/50"></div>
       </div>
 
-      {/* Content */}
       <div className="container relative z-10 text-center max-w-5xl mx-auto px-4 mt-20 mb-[10rem]">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -86,7 +83,6 @@ export function Hero() {
           </Button>
         </motion.div>
 
-        {/* Trust indicators */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -109,7 +105,6 @@ export function Hero() {
         </motion.div>
       </div>
 
-      {/* Decorative gradient line at the bottom */}
       <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-border to-transparent"></div>
     </section>
   );

@@ -5,13 +5,6 @@ import { HowItWorks } from "./components/landing/how-it-works";
 import { CTA } from "./components/landing/cta";
 import { Footer } from "./components/landing/footer";
 
-/**
- * TheTutor Landing Page
- * Design: Premium Black, Gold, and Golden Brown
- * Typography: Playfair Display (headings) + Lato (body)
- * Theme: Luxury AI-powered education platform
- */
-
 export default function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 selection:text-primary">

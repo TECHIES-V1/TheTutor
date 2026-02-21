@@ -7,7 +7,6 @@ import { motion } from "framer-motion";
 export function CTA() {
   return (
     <section className="py-24 md:py-36 relative bg-gradient-to-br from-background via-card/50 to-background border-y border-border/60 overflow-hidden">
-      {/* Dynamic background glow */}
       <motion.div
         animate={{ opacity: [0.1, 0.3, 0.1] }}
         transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
@@ -22,7 +21,6 @@ export function CTA() {
           transition={{ duration: 0.7, ease: "easeOut" }}
           className="bg-background/40 backdrop-blur-xl border border-primary/20 rounded-3xl p-10 md:p-16 shadow-[0_0_50px_rgba(212,175,55,0.1)] relative overflow-hidden"
         >
-          {/* Internal card glow */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
 
           <h2 className="font-playfair text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight drop-shadow-sm">
@@ -58,7 +56,6 @@ export function CTA() {
             </Button>
           </div>
 
-          {/* Social proof */}
           <div className="mt-16 pt-12 border-t border-border/50 bg-background/30 -mx-10 md:-mx-16 -mb-10 md:-mb-16 px-10 py-12 md:py-16">
             <p className="text-sm uppercase tracking-widest font-semibold text-muted-foreground mb-8">
               Trusted by learners worldwide

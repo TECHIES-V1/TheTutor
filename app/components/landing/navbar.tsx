@@ -38,7 +38,6 @@ export function NavBar() {
             </span>
           </div>
 
-          {/* Desktop Menu (> 1300px) */}
           <div className="hidden min-[1300px]:flex items-center gap-8">
             <a
               href="#features"
@@ -61,7 +60,6 @@ export function NavBar() {
             </Button>
           </div>
 
-          {/* Mobile Menu Button (<= 1300px) */}
           <div className="min-[1300px]:hidden">
             <Button
               variant="ghost"
@@ -75,7 +73,6 @@ export function NavBar() {
         </div>
       </nav>
 
-      {/* Sidebar Overlay */}
       <AnimatePresence>
         {isSidebarOpen && (
           <>

@@ -92,23 +92,20 @@ export function HowItWorks() {
                 transition={{ duration: 0.6, delay: index * 0.15 }}
                 className="relative group h-full"
               >
-                {/* Visual connectors (larger screens) */}
                 {index % 3 !== 2 && index < phases.length - 1 && (
                   <div className="hidden lg:block absolute top-[4.5rem] left-[calc(100%-2rem)] w-[calc(100%+4rem)] h-[2px] bg-gradient-to-r from-primary/30 via-secondary/20 to-transparent pointer-events-none z-0"></div>
                 )}
 
-                {/* Visual connectors (medium screens) */}
                 {index % 2 !== 1 && index < phases.length - 1 && (
                   <div className="hidden md:block lg:hidden absolute top-[4.5rem] left-[calc(100%-2rem)] w-[calc(100%+4rem)] h-[2px] bg-gradient-to-r from-primary/30 via-secondary/20 to-transparent pointer-events-none z-0"></div>
                 )}
 
                 <div className="p-8 pb-10 bg-card/80 backdrop-blur-xl border border-border/80 rounded-2xl hover:border-primary/50 transition-all duration-500 h-full relative z-10 flex flex-col hover:shadow-[0_15px_30px_rgba(212,175,55,0.1)] hover:-translate-y-1">
                   <div className="flex justify-between items-start mb-8">
-                    {/* Icon container with glow */}
                     <div className="w-14 h-14 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-500 shadow-[0_0_20px_rgba(212,175,55,0.4)] group-hover:shadow-[0_0_30px_rgba(212,175,55,0.7)]">
                       <Icon className="w-7 h-7 text-primary-foreground drop-shadow-sm" />
                     </div>
-                    {/* Phase number */}
+
                     <div className="text-5xl font-playfair font-bold text-primary/10 transition-colors duration-500 group-hover:text-primary/30 tracking-tighter">
                       {phase.number}
                     </div>
