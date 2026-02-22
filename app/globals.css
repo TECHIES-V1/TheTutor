@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @config "../tailwind.config.ts";
+
 :root {
   --primary: #d4af37;
   --primary-foreground: #0a0a0a;
@@ -87,6 +88,20 @@ input[type="radio"]:not(:disabled) {
   min-width: 0;
 }
 
+/* Hide scrollbars globally to enforce clean UI */
+::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+
+
 @media (min-width: 640px) {
   .container {
     padding-left: 1.5rem;
@@ -101,6 +116,7 @@ input[type="radio"]:not(:disabled) {
     max-width: 1280px;
   }
 }
+
 @keyframes shimmer {
   100% {
     transform: translateX(100%);

@@ -20,11 +20,10 @@ export function NavBar() {
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
             ? "bg-background/95 backdrop-blur-md border-b border-border shadow-[0_4px_30px_rgba(212,175,55,0.05)]"
             : "bg-transparent"
-        }`}
+          }`}
       >
         <div className="container flex items-center justify-between py-4">
           <div className="flex items-center gap-2">
