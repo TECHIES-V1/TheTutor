@@ -1,0 +1,177 @@
+@import "tailwindcss";
+@config "../../tailwind.config.ts";
+
+:root {
+  --primary: #d4af37;
+  --primary-foreground: #101010;
+  --secondary: #8b6f47;
+  --secondary-foreground: #ead9a5;
+  --background: #0a0a0a;
+  --foreground: #f0e2b8;
+  --card: #111111;
+  --card-foreground: #f0e2b8;
+  --popover: #111111;
+  --popover-foreground: #f0e2b8;
+  --muted: #1d1d1d;
+  --muted-foreground: #b0b0b0;
+  --accent: #d4af37;
+  --accent-foreground: #101010;
+  --destructive: #ef4444;
+  --destructive-foreground: #f0e2b8;
+  --border: #2a2a2a;
+  --input: #2a2a2a;
+  --ring: #d4af37;
+  --radius: 0.65rem;
+}
+
+* {
+  @apply border-border outline-ring/50;
+}
+
+body {
+  @apply bg-background text-foreground antialiased;
+  background:
+    radial-gradient(circle at 15% 8%, rgba(212, 175, 55, 0.12), transparent 28%),
+    radial-gradient(circle at 84% 16%, rgba(212, 175, 55, 0.08), transparent 24%),
+    linear-gradient(165deg, #0c0c0c 0%, var(--background) 55%, #070707 100%);
+  font-family: var(--font-lato), sans-serif;
+}
+
+html {
+  color-scheme: dark;
+  scroll-behavior: smooth;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  @apply font-bold;
+  font-family: var(--font-playfair), serif;
+}
+
+h1 {
+  @apply text-5xl md:text-6xl;
+}
+
+h2 {
+  @apply text-4xl md:text-5xl;
+}
+
+h3 {
+  @apply text-3xl md:text-4xl;
+}
+
+h4 {
+  @apply text-2xl md:text-3xl;
+}
+
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+[type="button"]:not(:disabled),
+[type="submit"]:not(:disabled),
+[type="reset"]:not(:disabled),
+a[href],
+select:not(:disabled),
+input[type="checkbox"]:not(:disabled),
+input[type="radio"]:not(:disabled) {
+  @apply cursor-pointer;
+}
+
+.container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.flex {
+  min-height: 0;
+  min-width: 0;
+}
+
+/* Hide scrollbars globally to enforce clean UI */
+::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@media (min-width: 640px) {
+  .container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+    max-width: 1280px;
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.neo-surface {
+  background: linear-gradient(145deg, #171717, #0e0e0e);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  box-shadow:
+    12px 12px 24px rgba(0, 0, 0, 0.5),
+    -12px -12px 24px rgba(248, 226, 157, 0.03),
+    inset 0 1px 0 rgba(248, 226, 157, 0.05);
+}
+
+.neo-inset {
+  background: linear-gradient(145deg, #0e0e0e, #171717);
+  border: 1px solid rgba(212, 175, 55, 0.16);
+  box-shadow:
+    inset 8px 8px 16px rgba(0, 0, 0, 0.5),
+    inset -8px -8px 16px rgba(248, 226, 157, 0.03);
+}
+
+.skeuo-gold {
+  background: linear-gradient(180deg, #f6df95 0%, #d4af37 52%, #8b6f47 100%);
+  border: 1px solid #f0d688;
+  color: #121212;
+  box-shadow:
+    0 12px 24px rgba(0, 0, 0, 0.5),
+    inset 0 2px 2px rgba(248, 226, 157, 0.7),
+    inset 0 -2px 2px rgba(80, 60, 23, 0.55);
+  transition: filter 180ms ease, transform 180ms ease;
+}
+
+.skeuo-gold:hover {
+  filter: brightness(1.06);
+}
+
+.skeuo-gold:active {
+  transform: translateY(1px);
+  box-shadow:
+    0 8px 16px rgba(0, 0, 0, 0.45),
+    inset 0 3px 4px rgba(84, 62, 24, 0.45),
+    inset 0 -1px 1px rgba(248, 226, 157, 0.45);
+}
+
+.skeuo-outline {
+  border: 1px solid rgba(212, 175, 55, 0.32);
+  background: linear-gradient(
+    160deg,
+    rgba(248, 226, 157, 0.07),
+    rgba(248, 226, 157, 0.02)
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(248, 226, 157, 0.14),
+    0 10px 24px rgba(0, 0, 0, 0.4);
+}
