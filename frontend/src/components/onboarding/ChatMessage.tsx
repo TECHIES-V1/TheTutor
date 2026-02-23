@@ -67,11 +67,11 @@ export function ChatMessage() {
       <div ref={scrollRef} className="flex-1 overflow-y-auto no-scrollbar px-4 mt-4 md:mt-6">
         <div className="flex flex-col pb-6 max-w-2xl mx-auto w-full">
           {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center text-center py-10 md:py-20 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-              <h1 className="text-3xl md:text-4xl text-foreground font-medium mb-4 tracking-tight">
+            <div className="flex flex-col items-center justify-center text-center py-5 md:py-20 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+              <h1 className="text-2xl md:text-4xl text-foreground font-medium mb-4 tracking-tight">
                 {getGreeting()}
               </h1>
-              <p className="text-muted-foreground text-lg md:text-xl max-w-md">
+              <p className="text-muted-foreground text-sm md:text-xl max-w-md">
                 Hi! I&apos;m your AI tutor. What would you like to learn today?
               </p>
             </div>
