@@ -122,21 +122,7 @@ NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
 JWT_SECRET=<same secret as backend JWT_SECRET>
 ```
 
-### 2. Add the Google OAuth redirect URI
 
-In your Google Cloud Console, add this as an authorised redirect URI:
-```
-http://localhost:5000/auth/google/callback
-```
-
-### 3. Generate a JWT secret
-
-Run this in your terminal to generate a secure random secret:
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
-```
-
-Use the output as `JWT_SECRET` in both env files.
 
 ### 4. Start the backend
 
@@ -163,7 +149,7 @@ Runs on `http://localhost:3000`
 | Layer | Technology |
 |---|---|
 | Frontend | Next.js 16, React 19, TypeScript |
-| Styling | Tailwind CSS v4, shadcn/ui |
+| Styling | Tailwind CSS v4, 
 | Animations | Framer Motion |
 | Backend | Express, TypeScript |
 | Auth | Passport.js (Google OAuth 2.0) |
