@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Lato } from "next/font/google";
 import "./globals.css";
+import { AuthSessionProvider } from "@/components/providers/SessionProvider";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -46,7 +47,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${playfair.variable} ${lato.variable}`}>
-        {children}
+        <AuthSessionProvider>{children}</AuthSessionProvider>
       </body>
     </html>
   );

@@ -3,6 +3,7 @@
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 export function CTA() {
   return (
@@ -38,14 +39,17 @@ export function CTA() {
 
           <div className="flex flex-col sm:flex-row gap-5 justify-center">
             <Button
+              asChild
               size="lg"
               className="bg-primary text-primary-foreground hover:bg-[#E5C158] hover:shadow-[0_0_30px_rgba(212,175,55,0.6)] transition-all duration-300 px-10 py-7 text-lg group relative border border-primary/50"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-[150%] group-hover:animate-[shimmer_1.5s_infinite]"></div>
-              <span className="relative z-10 flex items-center font-semibold">
-                Begin Your Journey
-                <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-2 transition-transform" />
-              </span>
+              <Link href="/auth/signin">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-[150%] group-hover:animate-[shimmer_1.5s_infinite]"></div>
+                <span className="relative z-10 flex items-center font-semibold">
+                  Begin Your Journey
+                  <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-2 transition-transform" />
+                </span>
+              </Link>
             </Button>
             <Button
               variant="outline"

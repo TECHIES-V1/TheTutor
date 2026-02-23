@@ -3,6 +3,7 @@
 import { ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 export function Hero() {
   return (
@@ -14,7 +15,6 @@ export function Hero() {
             "url('https://private-us-east-1.manuscdn.com/sessionFile/04xiDSXumUnVVnmcgXVD8w/sandbox/OEMhx6Yg8VjcPst4RAtBX6-img-2_1771631424000_na1fn_aGVyby10ZWNoLXBhdHRlcm4.png?x-oss-process=image/resize,w_1920,h_1920/format,webp/quality,q_80')",
           backgroundSize: "cover",
           backgroundPosition: "center",
-          backgroundAttachment: "fixed",
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-background via-background/90 to-background/50"></div>
@@ -65,14 +65,17 @@ export function Hero() {
           className="flex flex-col sm:flex-row gap-6 justify-center mb-24"
         >
           <Button
+            asChild
             size="lg"
             className="bg-primary text-primary-foreground hover:bg-[#E5C158] transition-all duration-300 px-12 py-8 text-xl group relative overflow-hidden"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-[150%] group-hover:animate-[shimmer_1.5s_infinite]"></div>
-            <span className="relative z-10 flex items-center font-semibold">
-              Start Learning Now
-              <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-2 transition-transform duration-300" />
-            </span>
+            <Link href="/auth/signin">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-[150%] group-hover:animate-[shimmer_1.5s_infinite]"></div>
+              <span className="relative z-10 flex items-center font-semibold">
+                Start Learning Now
+                <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-2 transition-transform duration-300" />
+              </span>
+            </Link>
           </Button>
           <Button
             variant="outline"

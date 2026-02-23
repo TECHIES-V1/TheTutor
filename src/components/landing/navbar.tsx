@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 
 export function NavBar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -37,7 +38,7 @@ export function NavBar() {
             </span>
           </div>
 
-          <div className="hidden min-[1300px]:flex items-center gap-8">
+          <div className="hidden lg:flex items-center gap-8">
             <a
               href="#features"
               className="text-sm hover:text-primary transition-colors hover:drop-shadow-[0_0_8px_rgba(212,175,55,0.5)]"
@@ -51,15 +52,16 @@ export function NavBar() {
               How It Works
             </a>
             <Button
+              asChild
               variant="default"
               size="sm"
               className="bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-[0_0_15px_rgba(212,175,55,0.4)] hover:shadow-[0_0_25px_rgba(212,175,55,0.7)]"
             >
-              Get Started
+              <Link href="/auth/signin">Get Started</Link>
             </Button>
           </div>
 
-          <div className="min-[1300px]:hidden">
+          <div className="lg:hidden">
             <Button
               variant="ghost"
               size="icon"
@@ -80,7 +82,7 @@ export function NavBar() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsSidebarOpen(false)}
-              className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 min-[1300px]:hidden"
+              className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 lg:hidden"
             />
 
             <motion.div
@@ -88,7 +90,7 @@ export function NavBar() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-              className="fixed top-0 right-0 bottom-0 w-full max-w-sm bg-card border-l border-border z-50 flex flex-col p-6 min-[1300px]:hidden shadow-[-10px_0_30px_rgba(0,0,0,0.5)]"
+              className="fixed top-0 right-0 bottom-0 w-full max-w-sm bg-card border-l border-border z-50 flex flex-col p-6 lg:hidden shadow-[-10px_0_30px_rgba(0,0,0,0.5)]"
             >
               <div className="flex items-center justify-between mb-12">
                 <div className="flex items-center gap-2">
@@ -127,10 +129,11 @@ export function NavBar() {
                   How It Works
                 </a>
                 <Button
+                  asChild
                   size="lg"
                   className="mt-6 bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-[0_0_15px_rgba(212,175,55,0.4)]"
                 >
-                  Get Started
+                  <Link href="/auth/signin" onClick={() => setIsSidebarOpen(false)}>Get Started</Link>
                 </Button>
               </div>
             </motion.div>
