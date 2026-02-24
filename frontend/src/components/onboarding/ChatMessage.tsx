@@ -6,7 +6,6 @@ import { ChatInput } from "./ChatInput";
 import { tutorResponses } from "@/utils/dummyTutorResponses";
 import { MessageField } from "./MessageField";
 import { Message } from "@/types";
-import { useAuth } from "@/components/providers/AuthProvider";
 import { api } from "@/lib/api";
 
 function getGreeting() {
@@ -21,7 +20,6 @@ export function ChatMessage() {
   const [isTyping, setIsTyping] = useState(false);
   const tutorResponseIndex = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { user, logout } = useAuth();
   const router = useRouter();
 
   // Auto-scroll to bottom on new messages
@@ -63,8 +61,8 @@ export function ChatMessage() {
   };
 
   return (
-    <div className="relative z-10 flex h-full w-full max-w-3xl flex-col mx-auto">
-      <div ref={scrollRef} className="flex-1 overflow-y-auto no-scrollbar px-4 mt-4 md:mt-6">
+    <div className="relative z-10 mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col">
+      <div ref={scrollRef} className="mt-4 flex-1 min-h-0 overflow-y-auto px-4 no-scrollbar md:mt-6">
         <div className="flex flex-col pb-6 max-w-2xl mx-auto w-full">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center pt-10 md:pt-20 animate-in fade-in slide-in-from-bottom-4 duration-1000">
