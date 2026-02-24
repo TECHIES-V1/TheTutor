@@ -33,16 +33,16 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="md:ml-10 p-8">
+    <div className="px-6 py-6 sm:py-8">
       {/* Gradient accent */}
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_15%_8%,rgba(212,175,55,0.08),transparent_28%),radial-gradient(circle_at_84%_16%,rgba(212,175,55,0.05),transparent_24%)]" />
 
-      <div className="relative z-10 max-w-5xl">
+      <div className="relative z-10 w-full max-w-5xl">
         {/* Welcome heading */}
         <div className="mb-8">
-          <h1 className="font-playfair text-3xl font-bold text-foreground">
-            {getTimeGreeting(user?.name)} 👋
-          </h1>
+          <h3 className="font-playfair text-xl md:text-2xl font-bold text-foreground">
+            {getTimeGreeting(user?.name)}
+          </h3>
           <p className="mt-1 text-muted-foreground">
             Here&apos;s what&apos;s happening with your learning today.
           </p>
@@ -66,7 +66,7 @@ export default function DashboardPage() {
 
         {/* Courses section */}
         <div>
-          <h2 className="mb-4 font-playfair text-xl font-bold text-foreground">My Courses</h2>
+          <h3 className="mb-4 font-playfair text-xl font-bold text-foreground">My Courses</h3>
           <CourseEmptyState />
         </div>
       </div>

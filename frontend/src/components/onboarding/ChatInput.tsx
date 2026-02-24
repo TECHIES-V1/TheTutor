@@ -44,7 +44,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
     };
 
     return (
-        <div className="mt-auto w-full p-4 mb-16 md:mb-4">
+        <div className="sticky bottom-0 z-20 mt-auto w-full bg-gradient-to-t from-background via-background/95 to-transparent px-3 pt-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] sm:px-4 sm:pt-4">
             <form
                 onSubmit={handleSubmit}
                 className="neo-surface flex w-full items-end gap-2 rounded-2xl p-1.5 transition-all focus-within:border-primary/35"
@@ -54,6 +54,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
                     value={input}
                     onChange={handleChange}
                     onKeyDown={handleKeyDown}
+                    onTouchStart={() => inputRef.current?.focus()}
                     placeholder="Message The Tutor..."
                     className="flex-1 min-h-[40px] max-h-32 px-4 py-2 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground shadow-none md:text-base text-sm resize-none overflow-y-auto leading-relaxed"
                     rows={1}
