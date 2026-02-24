@@ -40,11 +40,11 @@ export default function ExplorePage() {
     }
 
     return (
-        <div className="relative min-h-full px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        <div className="relative min-h-full px-6 py-6 sm:py-8">
             {/* Radial gradient accents */}
             <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_15%_8%,rgba(212,175,55,0.08),transparent_28%),radial-gradient(circle_at_84%_16%,rgba(212,175,55,0.05),transparent_24%)]" />
 
-            <div className="relative z-10 mx-auto w-full max-w-6xl">
+            <div className="relative z-10 w-full max-w-5xl">
                 {/* Page Header */}
                 <div className="mb-8 sm:mb-10">
                     <h3 className="font-playfair text-2xl font-bold text-foreground sm:text-3xl">

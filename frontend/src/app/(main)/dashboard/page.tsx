@@ -33,11 +33,11 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="md:ml-10 p-8">
+    <div className="px-6 py-6 sm:py-8">
       {/* Gradient accent */}
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_15%_8%,rgba(212,175,55,0.08),transparent_28%),radial-gradient(circle_at_84%_16%,rgba(212,175,55,0.05),transparent_24%)]" />
 
-      <div className="relative z-10 max-w-5xl">
+      <div className="relative z-10 w-full max-w-5xl">
         {/* Welcome heading */}
         <div className="mb-8">
           <h3 className="font-playfair text-xl md:text-2xl font-bold text-foreground">
