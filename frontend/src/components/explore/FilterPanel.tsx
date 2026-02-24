@@ -30,7 +30,7 @@ export function FilterPanel({
     onSortChange,
 }: FilterPanelProps) {
     return (
-        <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:w-auto lg:grid-cols-3 lg:gap-3">
+        <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:w-auto lg:flex-nowrap lg:items-center lg:gap-3">
             {/* Category */}
             <Select value={category} onValueChange={onCategoryChange}>
                 <SelectTrigger className={`${triggerClass} lg:w-[170px]`}>
