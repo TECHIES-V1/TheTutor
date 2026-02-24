@@ -27,9 +27,9 @@ export function CourseCard({ course }: CourseCardProps) {
             </div>
 
             {/* Title */}
-            <h2 className="font-playfair text-base font-bold leading-snug text-foreground group-hover:text-primary transition-colors line-clamp-2">
+            <h3 className="font-playfair text-base font-bold leading-snug text-foreground group-hover:text-primary transition-colors line-clamp-2">
                 {course.title}
-            </h2>
+            </h3>
 
             {/* Description */}
             <p className="mt-2 flex-1 text-xs leading-relaxed text-muted-foreground line-clamp-3">
