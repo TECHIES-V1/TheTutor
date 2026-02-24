@@ -47,9 +47,9 @@ export default function ExplorePage() {
             <div className="relative z-10 mx-auto w-full max-w-6xl">
                 {/* Page Header */}
                 <div className="mb-8 sm:mb-10">
-                    <h1 className="font-playfair text-2xl font-bold text-foreground sm:text-3xl">
+                    <h3 className="font-playfair text-2xl font-bold text-foreground sm:text-3xl">
                         Explore Courses
-                    </h1>
+                    </h3>
                     <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground sm:text-base">
                         Discover expert-curated courses to accelerate your learning journey.
                     </p>

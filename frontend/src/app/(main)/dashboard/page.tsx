@@ -40,9 +40,9 @@ export default function DashboardPage() {
       <div className="relative z-10 max-w-5xl">
         {/* Welcome heading */}
         <div className="mb-8">
-          <h1 className="font-playfair text-3xl font-bold text-foreground">
-            {getTimeGreeting(user?.name)} 👋
-          </h1>
+          <h3 className="font-playfair text-xl md:text-2xl font-bold text-foreground">
+            {getTimeGreeting(user?.name)}
+          </h3>
           <p className="mt-1 text-muted-foreground">
             Here&apos;s what&apos;s happening with your learning today.
           </p>
@@ -66,7 +66,7 @@ export default function DashboardPage() {
 
         {/* Courses section */}
         <div>
-          <h2 className="mb-4 font-playfair text-xl font-bold text-foreground">My Courses</h2>
+          <h3 className="mb-4 font-playfair text-xl font-bold text-foreground">My Courses</h3>
           <CourseEmptyState />
         </div>
       </div>
