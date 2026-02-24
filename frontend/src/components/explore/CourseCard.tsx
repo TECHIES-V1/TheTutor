@@ -52,7 +52,7 @@ export function CourseCard({ course }: CourseCardProps) {
             <div className="my-4 border-t border-primary/10" />
 
             {/* Meta row */}
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground sm:gap-4">
                 <span className="flex items-center gap-1.5">
                     <Clock className="h-3.5 w-3.5 text-primary/60" />
                     {course.duration}
@@ -61,7 +61,7 @@ export function CourseCard({ course }: CourseCardProps) {
                     <BookOpen className="h-3.5 w-3.5 text-primary/60" />
                     {formatStudents(course.students)} students
                 </span>
-                <span className="ml-auto flex items-center gap-1">
+                <span className="flex items-center gap-1 sm:ml-auto">
                     <Star className="h-3.5 w-3.5 fill-primary text-primary" />
                     <span className="font-semibold text-foreground">{course.rating}</span>
                 </span>
