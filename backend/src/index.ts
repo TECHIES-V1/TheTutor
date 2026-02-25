@@ -8,6 +8,9 @@ import { connectDatabase } from "./config/database";
 import { configurePassport } from "./config/passport";
 import authRoutes from "./routes/auth";
 import userRoutes from "./routes/user";
+import coursesRoutes from "./routes/courses";
+import dashboardRoutes from "./routes/dashboard";
+import { seedDemoCourses } from "./seeds/demoCourses";
 
 const app = express();
 const PORT = process.env.PORT ?? 5000;
@@ -30,6 +33,8 @@ app.use(passport.initialize());
 // ── Routes ─────────────────────────────────────────────────────────────────
 app.use("/auth", authRoutes);
 app.use("/user", userRoutes);
+app.use("/courses", coursesRoutes);
+app.use("/dashboard", dashboardRoutes);
 
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
@@ -38,6 +43,15 @@ app.listen(PORT, () => {
   console.log(`🚀 Backend running on http://localhost:${PORT}`);
 });
 
-connectDatabase().catch((err) => {
-  console.error("❌ MongoDB connection failed:", err.message);
-});
+connectDatabase()
+  .then(async () => {
+    try {
+      await seedDemoCourses();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("⚠️ Demo course seed failed:", message);
+    }
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB connection failed:", err.message);
+  });
