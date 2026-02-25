@@ -6,9 +6,6 @@ import { ChatInput } from "./ChatInput";
 import { tutorResponses } from "@/utils/dummyTutorResponses";
 import { MessageField } from "./MessageField";
 import { Message } from "@/types";
-import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
-import { useAuth } from "@/components/providers/AuthProvider";
 import { api } from "@/lib/api";
 
 function getGreeting() {
@@ -23,7 +20,6 @@ export function ChatMessage() {
   const [isTyping, setIsTyping] = useState(false);
   const tutorResponseIndex = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { user, logout } = useAuth();
   const router = useRouter();
 
   // Auto-scroll to bottom on new messages
@@ -65,41 +61,15 @@ export function ChatMessage() {
   };
 
   return (
-    <div className="relative z-10 flex h-full w-full max-w-3xl flex-col mx-auto">
-      <div className="px-4 pt-4 md:pt-6">
-        <div className="neo-surface flex items-center justify-between rounded-2xl px-4 py-3">
-          <div className="flex items-center gap-3">
-            <div className="skeuo-gold flex h-9 w-9 items-center justify-center rounded-lg text-sm font-bold">
-              T
-            </div>
-            <div>
-              <p className="font-playfair text-base font-semibold text-primary">TheTutor</p>
-              <p className="text-xs text-muted-foreground">
-                {user?.name ? `Signed in as ${user.name}` : "Signed in"}
-              </p>
-            </div>
-          </div>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={logout}
-            className="neo-inset h-9 border-primary/25 text-foreground hover:bg-muted hover:text-primary"
-          >
-            <LogOut className="mr-2 h-4 w-4 text-primary" />
-            Logout
-          </Button>
-        </div>
-      </div>
-
-      <div ref={scrollRef} className="flex-1 overflow-y-auto no-scrollbar px-4 mt-4 md:mt-6">
+    <div className="relative z-10 mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col">
+      <div ref={scrollRef} className="mt-4 flex-1 min-h-0 overflow-y-auto px-4 no-scrollbar md:mt-6">
         <div className="flex flex-col pb-6 max-w-2xl mx-auto w-full">
           {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center text-center py-10 md:py-20 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-              <h1 className="text-3xl md:text-4xl text-foreground font-medium mb-4 tracking-tight">
+            <div className="flex flex-col items-center justify-center text-center pt-10 md:pt-20 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+              <h1 className="text-2xl md:text-4xl text-foreground font-medium mb-4 tracking-tight">
                 {getGreeting()}
               </h1>
-              <p className="text-muted-foreground text-lg md:text-xl max-w-md">
+              <p className="text-muted-foreground text-sm md:text-xl max-w-md">
                 Hi! I&apos;m your AI tutor. What would you like to learn today?
               </p>
             </div>
