@@ -157,6 +157,34 @@ Generate the course in this exact Markdown structure:
 - [Key point 2]
 - [Key point 3]
 
+**Videos**:
+[Search: "Specific YouTube search query related to this lesson"]
+[Search: "Another specific YouTube search query"]
+
+**Quiz**:
+\`\`\`json
+[
+  {
+    "id": "q1",
+    "type": "multiple_choice",
+    "question": "What is the main concept discussed in this lesson?",
+    "options": ["Correct Answer", "Incorrect Option 1", "Incorrect Option 2", "Incorrect Option 3"],
+    "correctAnswerIndex": 0,
+    "explanation": "Explanation of why this is the correct answer."
+  },
+  {
+    "id": "q2",
+    "type": "open_ended",
+    "question": "Explain how this concept applies to real-world scenarios.",
+    "correctAnswerText": "Expected answer or keyword",
+    "explanation": "Explanation of the expected answer."
+  }
+]
+\`\`\`
+
+**Exercises**:
+[Practical task or exercise for the learner]
+
 ### Lesson 1.2: [Lesson Title]
 [Continue pattern...]
 
@@ -171,6 +199,9 @@ Generate the course in this exact Markdown structure:
 - Ensure lessons are achievable in the stated time
 - Use clear, encouraging language appropriate for the learner level
 - Include "Key Takeaways" for each lesson
+- **Must include Videos section** with 1-2 specific YouTube search queries formatted exactly as \`[Search: "query"]\`
+- **Must include Quiz section** with a valid JSON array of questions, containing a mix of multiple_choice and open_ended types
+- **Must include Exercises section** with practical tasks
 - Total course should be achievable in 4-8 weeks given the weekly time commitment`;
 }
 

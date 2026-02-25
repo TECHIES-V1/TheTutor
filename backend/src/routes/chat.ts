@@ -60,15 +60,15 @@ router.post("/message", requireAuth, async (req: Request, res: Response) => {
     // Find or create conversation
     let conversation = conversationId
       ? await Conversation.findOne({
-          _id: conversationId,
-          userId: new Types.ObjectId(userId),
-          status: "active",
-        })
+        _id: conversationId,
+        userId: new Types.ObjectId(userId),
+        status: "active",
+      })
       : await Conversation.findOne({
-          userId: new Types.ObjectId(userId),
-          status: "active",
-          phase: "onboarding",
-        });
+        userId: new Types.ObjectId(userId),
+        status: "active",
+        phase: "onboarding",
+      });
 
     if (!conversation) {
       // Create new conversation
@@ -328,25 +328,43 @@ router.post("/confirm-subject", requireAuth, async (req: Request, res: Response)
         message: "Subject confirmed. Ready for course generation.",
       });
     } else {
-      // Reject - abandon current conversation and start fresh
-      conversation.status = "abandoned";
-      await conversation.save();
+      // Reject - tell the AI the user wants changes and ask what else is needed.
+      // Do NOT abandon the conversation or erase the onboarding data.
 
-      // Create new conversation
-      const newConversation = new Conversation({
-        userId: new Types.ObjectId(userId),
-        messages: [],
-        phase: "onboarding" as ConversationPhase,
-        onboardingData: {},
-        status: "active",
-      });
-      await newConversation.save();
+      const userMessage: IMessage = {
+        id: randomUUID(),
+        role: "user",
+        content: "I do not want this subject. I want to adjust my learning goals. What else do you need to know to find the right course subject for me?",
+        timestamp: new Date(),
+      };
+      conversation.messages.push(userMessage);
+
+      // We maintain the phase as "confirmation" for the Chat logic (or reset to topic/goal if we wanted, 
+      // but feeding it into the AI as confirmation allows it to gracefully ask what is wrong).
+      // For best flexibility, we can let our `chat` AI function respond directly to the rejection.
+
+      const aiMessages = toAIMessages(conversation.messages);
+      const aiResponse = await chat(aiMessages, "confirmation", conversation.onboardingData);
+
+      const assistantMessage: IMessage = {
+        id: randomUUID(),
+        role: "assistant",
+        content: aiResponse,
+        timestamp: new Date(),
+        metadata: {
+          phase: "confirmation",
+          extractedData: conversation.onboardingData,
+        },
+      };
+      conversation.messages.push(assistantMessage);
+
+      await conversation.save();
 
       res.json({
         success: true,
-        conversationId: newConversation._id.toString(),
-        phase: "onboarding",
-        message: "Let's try again. What would you like to learn?",
+        conversationId: conversation._id.toString(),
+        phase: "onboarding", // keep the frontend in the onboarding chat view
+        message: assistantMessage.content,
       });
     }
   } catch (error) {

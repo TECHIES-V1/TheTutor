@@ -24,6 +24,9 @@ This document provides detailed instructions for testing all backend endpoints.
 
    # AI Config
    AI_MODEL=us.amazon.nova-pro-v1:0
+
+   # YouTube API
+   YOUTUBE_API_KEY=your-youtube-api-key
    ```
 
 3. **Start the backend**:
@@ -379,6 +382,33 @@ curl http://localhost:5000/course/65c3d4e5f6g7h8i9j0k1l2m3 \
             "description": "...",
             "estimatedMinutes": 15,
             "content": "# Installing Python\n\n...",
+            "videoSearchQueries": ["Python installation tutorial"],
+            "videoLinks": ["https://www.youtube.com/watch?v=dQw4w9WgXcQ"],
+            "quizzes": [
+              {
+                "id": "quiz-uuid",
+                "title": "Lesson Quiz",
+                "isCompleted": false,
+                "questions": [
+                  {
+                    "id": "q1-uuid",
+                    "type": "multiple_choice",
+                    "question": "Which command checks the Python version?",
+                    "options": ["python --version", "python info", "python -v", "check python"],
+                    "correctAnswerIndex": 0,
+                    "explanation": "python --version is the standard command."
+                  }
+                ]
+              }
+            ],
+            "interactiveElements": [
+              {
+                "id": "exercise-uuid",
+                "type": "exercise",
+                "content": "Install Python 3.x on your machine and run python --version.",
+                "isCompleted": false
+              }
+            ],
             "completed": false
           }
         ]
@@ -416,6 +446,29 @@ curl -X PUT http://localhost:5000/course/65c3d4e5f6g7h8i9j0k1l2m3/progress \
   },
   "moduleCompleted": false,
   "courseCompleted": false
+}
+```
+
+---
+
+### POST /course/:id/modules/:moduleId/lessons/:lessonId/quizzes/:quizId/questions/:questionId/answer - Answer a Quiz Question
+
+```bash
+curl -X POST http://localhost:5000/course/65c3d4e5f6g7h8i9j0k1l2m3/modules/module-id-here/lessons/lesson-uuid-here/quizzes/quiz-uuid/questions/q1-uuid/answer \
+  -H "Content-Type: application/json" \
+  -H "Cookie: token=YOUR_JWT_TOKEN" \
+  -d '{
+    "answer": 0
+  }'
+```
+
+**Expected Response:**
+```json
+{
+  "success": true,
+  "isCorrect": true,
+  "explanation": "python --version is the standard command.",
+  "quizCompleted": true
 }
 ```
 
@@ -588,6 +641,22 @@ Test book discovery:
 
 ```bash
 curl "https://futher-mcp-production.up.railway.app/discovery/search?query=python&limit=5"
+```
+
+---
+
+## Validated Test Suites
+
+If you need to verify these implementations programmatically or run them in CI, all edge cases are tested in the following test suites located in `backend/`:
+
+- **`src/routes/course.test.ts`**: Tests the Express backend endpoints, database updating logic, and verifies user access. It particularly validates the Quiz `/answer` checking logic and enforces that lessons cannot be completed until quizzes are explicitly completed.
+- **`src/services/course/generator.test.ts`**: Validates the text parsing logic for splitting AI outputs into interactive elements, quizzes, and searches.
+- **`src/services/ai/nova.e2e.test.ts`**: Full E2E tests validating the direct streaming capabilities of AWS Bedrock correctly emitting course structures.
+- **`src/services/youtube/youtube.service.test.ts`**: Unit test suite using `vi.mock()` for ensuring that `YOUTUBE_API_KEY` fetches gracefully query strings and video IDs.
+
+To execute them, run:
+```bash
+cd backend && npx vitest run
 ```
 
 ---
