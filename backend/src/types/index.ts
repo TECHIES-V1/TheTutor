@@ -55,6 +55,32 @@ export interface LessonResource {
   type: "article" | "video" | "book" | "exercise";
 }
 
+export interface QuizQuestion {
+  id: string;
+  type: "multiple_choice" | "open_ended";
+  question: string;
+  options?: string[]; // For multiple_choice
+  correctAnswerIndex?: number; // For multiple_choice
+  correctAnswerText?: string; // For open_ended
+  explanation: string;
+  isAnsweredCorrectly: boolean;
+}
+
+export interface Quiz {
+  id: string;
+  title: string;
+  questions: QuizQuestion[];
+  isCompleted: boolean;
+}
+
+export interface InteractiveElement {
+  id: string;
+  type: string;
+  content: string;
+  metadata?: Record<string, any>;
+  isCompleted: boolean;
+}
+
 export interface Lesson {
   id: string;
   title: string;
@@ -62,7 +88,10 @@ export interface Lesson {
   content: string;
   estimatedMinutes: number;
   videoLinks?: string[];
+  videoSearchQueries?: string[];
   resources?: LessonResource[];
+  quizzes?: Quiz[];
+  interactiveElements?: InteractiveElement[];
   completed: boolean;
   order: number;
 }

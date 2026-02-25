@@ -1,5 +1,12 @@
 import mongoose, { Document, Schema, Types } from "mongoose";
-import type { ExperienceLevel, CourseStatus, LessonResource } from "../types";
+import type {
+  ExperienceLevel,
+  CourseStatus,
+  LessonResource,
+  QuizQuestion,
+  Quiz,
+  InteractiveElement,
+} from "../types";
 
 export interface ILesson {
   id: string;
@@ -8,7 +15,10 @@ export interface ILesson {
   content: string;
   estimatedMinutes: number;
   videoLinks?: string[];
+  videoSearchQueries?: string[];
   resources?: LessonResource[];
+  quizzes?: Quiz[];
+  interactiveElements?: InteractiveElement[];
   completed: boolean;
   order: number;
 }
@@ -57,6 +67,41 @@ const LessonResourceSchema = new Schema<LessonResource>(
   { _id: false }
 );
 
+const QuizQuestionSchema = new Schema<QuizQuestion>(
+  {
+    id: { type: String, required: true },
+    type: { type: String, enum: ["multiple_choice", "open_ended"], required: true },
+    question: { type: String, required: true },
+    options: { type: [String], default: [] },
+    correctAnswerIndex: { type: Number },
+    correctAnswerText: { type: String },
+    explanation: { type: String, required: true },
+    isAnsweredCorrectly: { type: Boolean, default: false },
+  },
+  { _id: false }
+);
+
+const QuizSchema = new Schema<Quiz>(
+  {
+    id: { type: String, required: true },
+    title: { type: String, required: true },
+    questions: { type: [QuizQuestionSchema], default: [] },
+    isCompleted: { type: Boolean, default: false },
+  },
+  { _id: false }
+);
+
+const InteractiveElementSchema = new Schema<InteractiveElement>(
+  {
+    id: { type: String, required: true },
+    type: { type: String, required: true },
+    content: { type: String, required: true },
+    metadata: { type: Map, of: Schema.Types.Mixed },
+    isCompleted: { type: Boolean, default: false },
+  },
+  { _id: false }
+);
+
 const LessonSchema = new Schema<ILesson>(
   {
     id: { type: String, required: true },
@@ -65,7 +110,10 @@ const LessonSchema = new Schema<ILesson>(
     content: { type: String, required: true },
     estimatedMinutes: { type: Number, default: 15 },
     videoLinks: { type: [String], default: [] },
+    videoSearchQueries: { type: [String], default: [] },
     resources: { type: [LessonResourceSchema], default: [] },
+    quizzes: { type: [QuizSchema], default: [] },
+    interactiveElements: { type: [InteractiveElementSchema], default: [] },
     completed: { type: Boolean, default: false },
     order: { type: Number, required: true },
   },

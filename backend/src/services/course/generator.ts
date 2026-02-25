@@ -2,8 +2,9 @@ import { Types } from "mongoose";
 import { Conversation } from "../../models/Conversation";
 import { Course, type IModule, type ILesson } from "../../models/Course";
 import { streamCourseWithMCPTools } from "../ai/nova";
-import type { SSEEvent, OnboardingData } from "../../types";
+import type { SSEEvent, OnboardingData, Quiz, InteractiveElement } from "../../types";
 import { randomUUID } from "crypto";
+import { fetchVideoLinksForQueries } from "../youtube/youtube.service";
 
 // ── Course Generator ──────────────────────────────────────────────────────
 
@@ -113,6 +114,24 @@ export async function* generate(
 
     const parsedCourse = parseCourseContent(courseContent);
 
+    // Fetch actual YouTube videos for all lessons
+    yield {
+      type: "status",
+      data: {
+        phase: "course_generation",
+        message: "Fetching YouTube video resources...",
+        progress: 98,
+      },
+    };
+
+    for (const module of parsedCourse.modules) {
+      for (const lesson of module.lessons) {
+        if (lesson.videoSearchQueries && lesson.videoSearchQueries.length > 0) {
+          lesson.videoLinks = await fetchVideoLinksForQueries(lesson.videoSearchQueries);
+        }
+      }
+    }
+
     // Update course with parsed content
     course.title = parsedCourse.title || course.title;
     course.description = parsedCourse.description;
@@ -169,7 +188,7 @@ interface ParsedCourse {
   estimatedHours: number;
 }
 
-function parseCourseContent(content: string): ParsedCourse {
+export function parseCourseContent(content: string): ParsedCourse {
   const result: ParsedCourse = {
     title: "",
     description: "",
@@ -231,11 +250,70 @@ function parseCourseContent(content: string): ParsedCourse {
       const descLineMatch = lessonContent.match(/\*\*Description\*\*:\s*(.+)/);
       const lessonDescription = descLineMatch ? descLineMatch[1].trim() : "";
 
-      // Extract main content (everything after Content: until Key Takeaways)
+      // Extract main content (everything after Content: until Key Takeaways, Videos, Quiz, Exercises, or end)
       const contentMatch = lessonContent.match(
-        /\*\*Content\*\*:\s*([\s\S]*?)(?=\*\*Key Takeaways\*\*:|$)/
+        /\*\*Content\*\*:\s*([\s\S]*?)(?=\*\*Key Takeaways\*\*:|\*\*Videos\*\*:|\*\*Quiz\*\*:|\*\*Exercises\*\*:|$)/
       );
       const mainContent = contentMatch ? contentMatch[1].trim() : lessonContent;
+
+      // Extract video search queries
+      const videoSearchQueries: string[] = [];
+      const videosSectionMatch = lessonContent.match(/\*\*Videos\*\*:\s*([\s\S]*?)(?=\*\*Quiz\*\*:|\*\*Exercises\*\*:|$)/);
+      if (videosSectionMatch) {
+        const videosSection = videosSectionMatch[1];
+        const searchRegex = /\[Search:\s*"(.*?)"\]/g;
+        let searchMatch;
+        while ((searchMatch = searchRegex.exec(videosSection)) !== null) {
+          videoSearchQueries.push(searchMatch[1].trim());
+        }
+      }
+
+      // Extract quizzes
+      const quizzes: Quiz[] = [];
+      const quizSectionMatch = lessonContent.match(/\*\*Quiz\*\*:\s*```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (quizSectionMatch) {
+        try {
+          const parsedQuestions = JSON.parse(quizSectionMatch[1]);
+          if (Array.isArray(parsedQuestions)) {
+            const questions = parsedQuestions.map((q: any) => ({
+              id: q.id || randomUUID(),
+              type: (q.type === "open_ended" ? "open_ended" : "multiple_choice") as "multiple_choice" | "open_ended",
+              question: q.question || "",
+              options: q.options || [],
+              correctAnswerIndex: q.correctAnswerIndex,
+              correctAnswerText: q.correctAnswerText,
+              explanation: q.explanation || "",
+              isAnsweredCorrectly: false,
+            }));
+
+            if (questions.length > 0) {
+              quizzes.push({
+                id: randomUUID(),
+                title: "Lesson Quiz",
+                questions,
+                isCompleted: false,
+              });
+            }
+          }
+        } catch (error) {
+          console.error("Failed to parse quiz JSON for lesson:", lessonTitle, error);
+        }
+      }
+
+      // Extract exercises/interactive elements
+      const interactiveElements: InteractiveElement[] = [];
+      const exercisesSectionMatch = lessonContent.match(/\*\*Exercises\*\*:\s*([\s\S]*?)(?=(?:###|##|$))/);
+      if (exercisesSectionMatch) {
+        const exercisesContent = exercisesSectionMatch[1].trim();
+        if (exercisesContent) {
+          interactiveElements.push({
+            id: randomUUID(),
+            type: "exercise",
+            content: exercisesContent,
+            isCompleted: false,
+          });
+        }
+      }
 
       const lesson: ILesson = {
         id: randomUUID(),
@@ -244,6 +322,9 @@ function parseCourseContent(content: string): ParsedCourse {
         content: mainContent,
         estimatedMinutes,
         videoLinks: [],
+        videoSearchQueries,
+        quizzes,
+        interactiveElements,
         resources: [],
         completed: false,
         order: lessonOrder++,
