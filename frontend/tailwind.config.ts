@@ -31,8 +31,9 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        playfair: ["var(--font-playfair)", "serif"],
-        lato: ["var(--font-lato)", "sans-serif"],
+        comfortaa: ["var(--font-comfortaa)", "sans-serif"],
+        playfair: ["var(--font-comfortaa)", "sans-serif"],
+        lato: ["var(--font-comfortaa)", "sans-serif"],
       },
     },
   },

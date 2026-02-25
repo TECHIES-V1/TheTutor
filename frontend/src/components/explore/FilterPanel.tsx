@@ -36,7 +36,7 @@ export function FilterPanel({
                 <SelectTrigger className={`${triggerClass} lg:w-[170px]`}>
                     <SelectValue placeholder="Category" />
                 </SelectTrigger>
-                <SelectContent className="border-primary/20 bg-[#111] text-foreground">
+                <SelectContent className="border-primary/30 bg-white text-foreground shadow-[0_14px_28px_rgba(31,78,163,0.18)]">
                     {CATEGORIES.map((c) => (
                         <SelectItem
                             key={c}
@@ -54,7 +54,7 @@ export function FilterPanel({
                 <SelectTrigger className={`${triggerClass} lg:w-[145px]`}>
                     <SelectValue placeholder="Level" />
                 </SelectTrigger>
-                <SelectContent className="border-primary/20 bg-[#111] text-foreground">
+                <SelectContent className="border-primary/30 bg-white text-foreground shadow-[0_14px_28px_rgba(31,78,163,0.18)]">
                     {LEVELS.map((l) => (
                         <SelectItem
                             key={l}
@@ -72,7 +72,7 @@ export function FilterPanel({
                 <SelectTrigger className={`${triggerClass} lg:w-[170px]`}>
                     <SelectValue placeholder="Sort By" />
                 </SelectTrigger>
-                <SelectContent className="border-primary/20 bg-[#111] text-foreground">
+                <SelectContent className="border-primary/30 bg-white text-foreground shadow-[0_14px_28px_rgba(31,78,163,0.18)]">
                     {SORT_OPTIONS.map((o) => (
                         <SelectItem
                             key={o.value}

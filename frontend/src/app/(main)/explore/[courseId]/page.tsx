@@ -101,7 +101,7 @@ export default function ExploreCourseDetailPage() {
             <span className="rounded-full border border-border px-2 py-0.5 text-muted-foreground">
               {data.course.lessonCount} lessons
             </span>
-            <span className="rounded-full border border-green-400/30 bg-green-400/10 px-2 py-0.5 text-green-300">
+            <span className="rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-green-700">
               Free (Hackathon)
             </span>
           </div>
@@ -170,4 +170,3 @@ export default function ExploreCourseDetailPage() {
     </div>
   );
 }
-

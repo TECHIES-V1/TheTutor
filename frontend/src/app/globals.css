@@ -2,26 +2,38 @@
 @config "../../tailwind.config.ts";
 
 :root {
-  --primary: #d4af37;
-  --primary-foreground: #101010;
-  --secondary: #8b6f47;
-  --secondary-foreground: #ead9a5;
-  --background: #0a0a0a;
-  --foreground: #f0e2b8;
-  --card: #111111;
-  --card-foreground: #f0e2b8;
-  --popover: #111111;
-  --popover-foreground: #f0e2b8;
-  --muted: #1d1d1d;
-  --muted-foreground: #b0b0b0;
-  --accent: #d4af37;
-  --accent-foreground: #101010;
-  --destructive: #ef4444;
-  --destructive-foreground: #f0e2b8;
-  --border: #2a2a2a;
-  --input: #2a2a2a;
-  --ring: #d4af37;
-  --radius: 0.65rem;
+  --primary: #1f4ea3;
+  --primary-foreground: #ffffff;
+  --secondary: #f4c542;
+  --secondary-foreground: #f8fbff;
+  --background: #f7fbff;
+  --foreground: #102650;
+  --card: #ffffff;
+  --card-foreground: #102650;
+  --popover: #ffffff;
+  --popover-foreground: #102650;
+  --muted: #edf3ff;
+  --muted-foreground: #5f7294;
+  --accent: #f4c542;
+  --accent-foreground: #173b7c;
+  --destructive: #c54848;
+  --destructive-foreground: #ffffff;
+  --border: #dcc57f;
+  --input: #d8e5ff;
+  --ring: #1f4ea3;
+  --radius: 0.75rem;
+  --background-soft: #eaf2ff;
+  --surface: #f5f9ff;
+  --surface-raised: #ffffff;
+  --surface-pressed: #dce9ff;
+  --accent-strong: #173b7c;
+  --shadow-light: -10px -10px 18px rgba(255, 255, 255, 0.95);
+  --shadow-dark: 10px 10px 18px rgba(118, 145, 191, 0.34);
+  --shadow-raised: var(--shadow-light), var(--shadow-dark);
+  --shadow-inset:
+    inset 7px 7px 12px rgba(143, 168, 208, 0.35),
+    inset -7px -7px 12px rgba(255, 255, 255, 0.95);
+  --shadow-focus: 0 0 0 3px rgba(31, 78, 163, 0.24);
 }
 
 * {
@@ -31,14 +43,15 @@
 body {
   @apply bg-background text-foreground antialiased;
   background:
-    radial-gradient(circle at 15% 8%, rgba(212, 175, 55, 0.12), transparent 28%),
-    radial-gradient(circle at 84% 16%, rgba(212, 175, 55, 0.08), transparent 24%),
-    linear-gradient(165deg, #0c0c0c 0%, var(--background) 55%, #070707 100%);
-  font-family: var(--font-lato), sans-serif;
+    radial-gradient(circle at 10% 7%, rgba(200, 160, 59, 0.22), transparent 32%),
+    radial-gradient(circle at 92% 9%, rgba(31, 78, 163, 0.2), transparent 30%),
+    radial-gradient(circle at 78% 88%, rgba(200, 160, 59, 0.12), transparent 34%),
+    linear-gradient(168deg, #ffffff 0%, #f5f9ff 48%, #eef4ff 100%);
+  font-family: var(--font-comfortaa), sans-serif;
 }
 
 html {
-  color-scheme: dark;
+  color-scheme: light;
   scroll-behavior: smooth;
 }
 
@@ -49,7 +62,7 @@ h4,
 h5,
 h6 {
   @apply font-bold;
-  font-family: var(--font-playfair), serif;
+  font-family: var(--font-comfortaa), sans-serif;
 }
 
 h1 {
@@ -93,7 +106,6 @@ input[type="radio"]:not(:disabled) {
   min-width: 0;
 }
 
-/* Hide scrollbars globally to enforce clean UI */
 ::-webkit-scrollbar {
   display: none;
 }
@@ -118,60 +130,106 @@ input[type="radio"]:not(:disabled) {
   }
 }
 
-@keyframes shimmer {
-  100% {
-    transform: translateX(100%);
-  }
-}
-
 .neo-surface {
-  background: linear-gradient(145deg, #171717, #0e0e0e);
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  box-shadow:
-    12px 12px 24px rgba(0, 0, 0, 0.5),
-    -12px -12px 24px rgba(248, 226, 157, 0.03),
-    inset 0 1px 0 rgba(248, 226, 157, 0.05);
+  background: var(--surface);
+  border: 1px solid rgba(244, 197, 66, 0.34);
+  box-shadow: var(--shadow-raised);
 }
 
 .neo-inset {
-  background: linear-gradient(145deg, #0e0e0e, #171717);
-  border: 1px solid rgba(212, 175, 55, 0.16);
-  box-shadow:
-    inset 8px 8px 16px rgba(0, 0, 0, 0.5),
-    inset -8px -8px 16px rgba(248, 226, 157, 0.03);
+  background: var(--surface);
+  border: 1px solid rgba(244, 197, 66, 0.32);
+  box-shadow: var(--shadow-inset);
 }
 
 .skeuo-gold {
-  background: linear-gradient(180deg, #f6df95 0%, #d4af37 52%, #8b6f47 100%);
-  border: 1px solid #f0d688;
-  color: #121212;
+  background: linear-gradient(145deg, #1f4ea3, #173b7c);
+  border: 1px solid rgba(244, 197, 66, 0.75);
+  color: #ffffff;
   box-shadow:
-    0 12px 24px rgba(0, 0, 0, 0.5),
-    inset 0 2px 2px rgba(248, 226, 157, 0.7),
-    inset 0 -2px 2px rgba(80, 60, 23, 0.55);
-  transition: filter 180ms ease, transform 180ms ease;
+    -5px -5px 10px rgba(255, 255, 255, 0.52),
+    7px 7px 14px rgba(31, 78, 163, 0.4);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.2s ease;
 }
 
 .skeuo-gold:hover {
-  filter: brightness(1.06);
+  filter: brightness(1.05);
+  transform: translateY(-1px);
 }
 
 .skeuo-gold:active {
-  transform: translateY(1px);
+  transform: translateY(0);
   box-shadow:
-    0 8px 16px rgba(0, 0, 0, 0.45),
-    inset 0 3px 4px rgba(84, 62, 24, 0.45),
-    inset 0 -1px 1px rgba(248, 226, 157, 0.45);
+    inset 4px 4px 8px rgba(22, 56, 116, 0.9),
+    inset -4px -4px 8px rgba(71, 118, 198, 0.66);
 }
 
 .skeuo-outline {
-  border: 1px solid rgba(212, 175, 55, 0.32);
-  background: linear-gradient(
-    160deg,
-    rgba(248, 226, 157, 0.07),
-    rgba(248, 226, 157, 0.02)
-  );
-  box-shadow:
-    inset 0 1px 0 rgba(248, 226, 157, 0.14),
-    0 10px 24px rgba(0, 0, 0, 0.4);
+  background: var(--surface);
+  border: 1px solid rgba(244, 197, 66, 0.38);
+  color: var(--accent-strong);
+  box-shadow: var(--shadow-raised);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.skeuo-outline:hover {
+  transform: translateY(-1px);
+}
+
+.skeuo-outline:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-inset);
+}
+
+.motion-link {
+  transition: color 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+}
+
+.motion-press {
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.24s ease,
+    filter 0.22s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.motion-card {
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.22s ease,
+    background-color 0.22s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .motion-link:hover {
+    transform: translateY(-1px);
+  }
+
+  .motion-card:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      -7px -7px 14px rgba(255, 255, 255, 0.9),
+      10px 10px 18px rgba(80, 110, 162, 0.25);
+  }
+}
+
+.motion-press:active {
+  transform: translateY(1px) scale(0.995);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

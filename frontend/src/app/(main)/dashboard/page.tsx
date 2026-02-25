@@ -52,11 +52,11 @@ function CourseListCard({
               {Math.round(course.progressPercent)}% complete
             </span>
             {course.visibility === "published" ? (
-              <span className="rounded-full border border-green-400/30 bg-green-400/10 px-2 py-0.5 text-green-300">
+              <span className="rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-green-700">
                 Published
               </span>
             ) : (
-              <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-amber-300">
+              <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-amber-700">
                 Draft
               </span>
             )}
@@ -206,7 +206,7 @@ export default function DashboardPage() {
         )}
 
         {loadingOverview ? (
-          <div className="neo-surface rounded-2xl p-6 text-sm text-muted-foreground">Loading dashboardâ€¦</div>
+          <div className="neo-surface rounded-2xl p-6 text-sm text-muted-foreground">Loading dashboard...</div>
         ) : (
           <div className="space-y-8">
             <section>

@@ -164,8 +164,8 @@ export default function LessonQuizPage() {
               <h2 className="font-playfair text-2xl font-bold text-foreground">Assessment Feedback</h2>
               <span
                 className={`rounded-full border px-3 py-1 text-sm ${result.passed
-                    ? "border-green-400/30 bg-green-400/10 text-green-300"
-                    : "border-amber-400/30 bg-amber-400/10 text-amber-300"
+                    ? "border-green-500/30 bg-green-500/10 text-green-700"
+                    : "border-amber-500/30 bg-amber-500/10 text-amber-700"
                   }`}
               >
                 Score {Math.round(result.score * 100)}%
@@ -218,4 +218,3 @@ export default function LessonQuizPage() {
     </div>
   );
 }
-
