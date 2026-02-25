@@ -8,6 +8,8 @@ import { connectDatabase } from "./config/database";
 import { configurePassport } from "./config/passport";
 import authRoutes from "./routes/auth";
 import userRoutes from "./routes/user";
+import chatRoutes from "./routes/chat";
+import courseRoutes from "./routes/course";
 
 const app = express();
 const PORT = process.env.PORT ?? 5000;
@@ -30,6 +32,8 @@ app.use(passport.initialize());
 // ── Routes ─────────────────────────────────────────────────────────────────
 app.use("/auth", authRoutes);
 app.use("/user", userRoutes);
+app.use("/chat", chatRoutes);
+app.use("/course", courseRoutes);
 
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
