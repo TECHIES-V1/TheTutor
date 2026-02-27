@@ -42,6 +42,15 @@ app.listen(PORT, () => {
   console.log(`🚀 Backend running on http://localhost:${PORT}`);
 });
 
-connectDatabase().catch((err) => {
-  console.error("❌ MongoDB connection failed:", err.message);
-});
+connectDatabase()
+  .then(async () => {
+    try {
+      await seedDemoCourses();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("⚠️ Demo course seed failed:", message);
+    }
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB connection failed:", err.message);
+  });

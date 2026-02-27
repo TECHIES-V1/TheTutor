@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
-const PROTECTED = ["/create-course", "/dashboard"];
+const PROTECTED = ["/create-course", "/dashboard", "/explore", "/learn", "/settings"];
 const AUTH_ONLY = ["/auth/signin"];
 
 export async function proxy(req: NextRequest) {
@@ -15,7 +15,7 @@ export async function proxy(req: NextRequest) {
       const { payload } = await jwtVerify(token, secret);
       user = payload as { onboardingCompleted?: boolean };
     } catch {
-      // Invalid or expired token — treat as unauthenticated
+      // Invalid or expired token, treat as unauthenticated
     }
   }
 
@@ -23,23 +23,15 @@ export async function proxy(req: NextRequest) {
   const onboardingCompleted = user?.onboardingCompleted === true;
   const pathname = req.nextUrl.pathname;
 
-  // Unauthenticated users away from protected routes
-  if (PROTECTED.some((p) => pathname.startsWith(p)) && !isAuthenticated) {
+  if (PROTECTED.some((path) => pathname.startsWith(path)) && !isAuthenticated) {
     return NextResponse.redirect(new URL("/auth/signin", req.nextUrl));
   }
 
-  // Authenticated but no courses yet → can't access dashboard
   if (pathname.startsWith("/dashboard") && isAuthenticated && !onboardingCompleted) {
     return NextResponse.redirect(new URL("/create-course", req.nextUrl));
   }
 
-  // Authenticated and has created a course → skip the create-course page (already onboarded)
-  if (pathname.startsWith("/create-course") && isAuthenticated && onboardingCompleted) {
-    return NextResponse.redirect(new URL("/dashboard", req.nextUrl));
-  }
-
-  // Authenticated users don't need sign-in
-  if (AUTH_ONLY.some((p) => pathname.startsWith(p)) && isAuthenticated) {
+  if (AUTH_ONLY.some((path) => pathname.startsWith(path)) && isAuthenticated) {
     return NextResponse.redirect(
       new URL(onboardingCompleted ? "/dashboard" : "/create-course", req.nextUrl)
     );

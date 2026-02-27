@@ -18,9 +18,31 @@ function getGreeting() {
 export function ChatMessage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const tutorResponseIndex = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  const inferLevel = (input?: string): "beginner" | "intermediate" | "advanced" => {
+    const text = (input ?? "").toLowerCase();
+    if (text.includes("advanced")) return "advanced";
+    if (text.includes("intermediate")) return "intermediate";
+    return "beginner";
+  };
+
+  const inferHours = (input?: string): number => {
+    const text = input ?? "";
+    const match = text.match(/\d+/);
+    if (!match) return 4;
+    return Math.max(1, Math.min(40, Number(match[0])));
+  };
+
+  const buildOnboardingPayload = (answers: string[]) => ({
+    topic: answers[0]?.trim() || "General Learning",
+    level: inferLevel(answers[1]),
+    hoursPerWeek: inferHours(answers[2]),
+    goal: answers[3]?.trim() || "Build practical skills",
+  });
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -30,6 +52,7 @@ export function ChatMessage() {
   }, [messages, isTyping]);
 
   const handleSend = (content: string) => {
+    setSubmitError(null);
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
@@ -40,6 +63,10 @@ export function ChatMessage() {
 
     const responseIndex = tutorResponseIndex.current;
     const isLastResponse = responseIndex === tutorResponses.length - 1;
+    const allUserAnswers = [
+      ...messages.filter((item) => item.role === "user").map((item) => item.content),
+      content,
+    ];
 
     setTimeout(async () => {
       const tutorMessage: Message = {
@@ -54,7 +81,16 @@ export function ChatMessage() {
 
       // After the final tutor response, mark course creation complete and go to dashboard
       if (isLastResponse) {
-        await api.put("/user/complete-onboarding", {});
+        setIsTyping(true);
+        const payload = buildOnboardingPayload(allUserAnswers);
+        const response = await api.post("/courses/bootstrap", { onboarding: payload });
+
+        if (!response.ok) {
+          setIsTyping(false);
+          setSubmitError("We couldn't create your course yet. Please try again.");
+          return;
+        }
+
         router.push("/dashboard");
       }
     }, 1000);
@@ -90,6 +126,11 @@ export function ChatMessage() {
                 <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:-0.15s]"></span>
                 <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce"></span>
               </div>
+            </div>
+          )}
+          {submitError && (
+            <div className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {submitError}
             </div>
           )}
         </div>
