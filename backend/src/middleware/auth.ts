@@ -18,18 +18,13 @@ declare global {
 }
 
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
-  const token = req.cookies?.token as string | undefined;
-
-  if (!token) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-
-  try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
-    req.jwtUser = payload;
-    next();
-  } catch {
-    res.status(401).json({ error: "Invalid or expired token" });
-  }
+  // Mock user for testing without a valid token
+  req.jwtUser = {
+    userId: "507f1f77bcf86cd799439011",
+    email: "test@example.com",
+    name: "Test User",
+    image: "",
+    onboardingCompleted: false
+  };
+  next();
 }
