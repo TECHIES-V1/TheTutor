@@ -3,7 +3,7 @@
 **Just Ask.** Turn one conversation into a complete, personalized learning path.
 
 <p align="center">
-  <img src="./docs/The%20Tutor-logo/vector/default-monochrome.svg" alt="TheTutor banner" width="900" />
+  <img src="default-monochrome.svg" alt="TheTutor banner" width="900" />
 </p>
 
 <p align="center">
