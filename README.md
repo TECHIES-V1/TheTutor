@@ -1,9 +1,9 @@
 # TheTutor
 
-**Just Ask.** Turn one conversation into a complete, personalized learning path.
+**Just Ask.** 
 
 <p align="center">
-  <img src="default-monochrome.svg" alt="TheTutor banner" width="900" />
+  <img src="https://raw.githubusercontent.com/TECHIES-V1/TheTutor/blob/main/default-monochrome.svg" alt="TheTutor banner" width="900" />
 </p>
 
 <p align="center">
