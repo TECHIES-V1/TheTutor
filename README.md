@@ -1,11 +1,11 @@
-# TheTutor
-
-**Just Ask.** 
-
 <p align="center">
-  <img src="https://raw.githubusercontent.com/TECHIES-V1/TheTutor/blob/main/default-monochrome.svg" alt="TheTutor banner" width="900" />
+  <img src="https://raw.githubusercontent.com/TECHIES-V1/TheTutor/blob/main/default-monochrome.svg" alt="TheTutor banner" width="300" />
 </p>
 
+# TheTutor
+**Just Ask.**
+
+---
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/build-local%20check%20required-orange" alt="Build Status" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License" /></a>
@@ -18,21 +18,20 @@
 - [Core Features](#core-features)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
-- [Nova + MCP Integration (Judge Focus)](#nova--mcp-integration-judge-focus)
+- [Nova + MCP Integration](#nova--mcp-integration-judge-focus)
 - [Project Structure](#project-structure)
 - [API Surface](#api-surface)
 - [Local Setup](#local-setup)
 - [Environment Variables](#environment-variables)
 - [Development Notes](#development-notes)
-- [Contributors](#contributors)
 - [Developers](#developers)
 - [License](#license)
-
+<!-- - [Contributors](#contributors) -->
 ## Overview
 
 TheTutor is an AI-powered learning platform where users sign in with Google, chat with an onboarding tutor, confirm a subject, and generate a structured course with modules, lessons, quizzes, exercises, and video resources.
 
-Tagline: **Just Ask**.
+Our Tagline: **Just Ask**.
 
 ## Core Features
 
@@ -253,21 +252,25 @@ If you are not using the hosted MCP endpoint, run your MCP service locally and s
 - Frontend CI command: `npm ci && npm run lint && npm run build`
 - Backend CI command: `npm ci && npm run build`
 
-## Contributors
+## Developers
+
+| Name | Responsibility | GitHub |
+|---|---|---|
+| Tobiloba Sulaimon | FULL STACK AND CHIEF TECHNOLOGY OFFICER (CTO) | [tobilobacodes00](https://github.com/tobilobacodes00) |
+| Fadhan Daniel| BACKEND ENGINNER | [fadexadex](https://github.com/fadexadex) |
+| Robert Dominic | FRONTEND DEVELOPER| [Webnova](https://github.com/robert-dominic) |
+| Joanna Bassey | FRONTEND DEVELOPER | [DevBytes-J](https://github.com/DevBytes-J) |
+| Lex Luthor | MCP ENGINEER | [Contractor-x](https://github.com/Contractor-x) |
+
+
+<!--- ## Contributors
 
 | Name | Role | GitHub |
 |---|---|---|
 | Contributor 1 | Contributor | [Profile]() |
 | Contributor 2 | Contributor | [Profile]() |
 | Contributor 3 | Contributor | [Profile]() |
-
-## Developers
-
-| Name | Responsibility | GitHub |
-|---|---|---|
-| Developer 1 | Full Stack | [Profile]() |
-| Developer 2 | Backend + AI | [Profile]() |
-| Developer 3 | Frontend UX | [Profile]() |
+-->
 
 ## License
 
