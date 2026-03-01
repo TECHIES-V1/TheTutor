@@ -1,6 +1,5 @@
 <p align="center">
-  <img src="docs/The Tutor-logo/vector/default-monochrome.svg" alt="TheTutor banner" 
-  width="900" />
+  <img src="docs/The Tutor-logo/vector/default-monochrome.svg" alt="TheTutor banner" width="900" />
 </p>
   
   ---
@@ -18,8 +17,8 @@
 - [Core Features](#core-features)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
-- [Nova + MCP Integration](#nova--mcp-integration-judge-focus)
-- [Further-MCP (The Future of Learning in an AI driven world)](#further-mcp-railway)
+- [Nova + MCP Integration](#nova--mcp-integration-prime-focus)
+- [Further-MCP (The Future of Learning in an AI driven world)](#further-mcp)
 - [Project Structure](#project-structure)
 - [API Surface](#api-surface)
 - [Local Setup](#local-setup)
@@ -124,7 +123,7 @@ sequenceDiagram
 - HTTP MCP fallback client: `backend/src/services/mcp/client.ts`
 - Course generation orchestrator: `backend/src/services/course/generator.ts`
 
-## Further-MCP (The Future of learning in an AI driven World)
+## Further-MCP 
 
 > Special context: TheTutor uses a **custom MCP** built specifically for this project so Amazon Nova can discover, fetch, and parse real books before generating course content.
 
