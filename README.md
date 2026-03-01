@@ -26,7 +26,7 @@
 - [Development Notes](#development-notes)
 - [Developers](#developers)
 - [License](#license)
-<!-- - [Contributors](#contributors) -->
+- [Our Wiki Pages](#wiki) 
 ## Overview
 
 TheTutor is an AI-powered learning platform where users sign in with Google, chat with an onboarding tutor, confirm a subject, and generate a structured course with modules, lessons, quizzes, exercises, and video resources.
@@ -323,14 +323,8 @@ If you are not using the hosted MCP endpoint, run your MCP service locally and s
 | Lex Luthor | MCP ENGINEER | [Contractor-x](https://github.com/Contractor-x) |
 
 
-<!--- ## Contributors
-
-| Name | Role | GitHub |
-|---|---|---|
-| Contributor 1 | Contributor | [Profile]() |
-| Contributor 2 | Contributor | [Profile]() |
-| Contributor 3 | Contributor | [Profile]() |
--->
+## Wiki
+ - Check out our [WIKI](https://github.com/TECHIES-V1/TheTutor/wiki)
 
 ## License
 
