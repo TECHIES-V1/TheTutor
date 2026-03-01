@@ -1,24 +1,25 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/TECHIES-V1/TheTutor/blob/main/default-monochrome.svg" alt="TheTutor banner" width="300" />
+  <img src="docs/The Tutor-logo/vector/default-monochrome.svg" alt="TheTutor banner" 
+  width="900" />
 </p>
+  
+  ---
+ 
+# **TheTutor**
 
-# TheTutor
-**Just Ask.**
-
----
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/build-local%20check%20required-orange" alt="Build Status" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License" /></a>
   <a href="#tech-stack"><img src="https://img.shields.io/badge/stack-Next.js%20%7C%20Express%20%7C%20Amazon%20Nova%20%7C%20MongoDB-blue" alt="Tech Stack" /></a>
 </p>
 
-## Table of Contents
 
 - [Overview](#overview)
 - [Core Features](#core-features)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
 - [Nova + MCP Integration](#nova--mcp-integration-judge-focus)
+- [Further-MCP (The Future of Learning in an AI driven world)](#further-mcp-railway)
 - [Project Structure](#project-structure)
 - [API Surface](#api-surface)
 - [Local Setup](#local-setup)
@@ -74,9 +75,9 @@ flowchart LR
     BE --> YT[YouTube Data API]
 ```
 
-## Nova + MCP Integration (Judge Focus)
+## Nova + MCP Integration (PRIME FOCUS)
 
-This project connects Amazon Nova and MCP directly in the generation path:
+This project connects Amazon Nova AI and MCP directly in the generation path:
 
 1. `POST /course/generate` starts an SSE stream from backend to frontend.
 2. Backend calls `streamCourseWithMCPTools(...)`.
@@ -122,6 +123,66 @@ sequenceDiagram
 - MCP client + tool registration: `backend/src/services/mcp/mcpClient.ts`
 - HTTP MCP fallback client: `backend/src/services/mcp/client.ts`
 - Course generation orchestrator: `backend/src/services/course/generator.ts`
+
+## Further-MCP (The Future of learning in an AI driven World)
+
+> Special context: TheTutor uses a **custom MCP** built specifically for this project so Amazon Nova can discover, fetch, and parse real books before generating course content.
+
+<p align="center">
+  <a href="https://github.com/TECHIES-V1/futher-mcp"><img src="https://img.shields.io/badge/GitHub-futher--mcp-181717?style=for-the-badge&logo=github&logoColor=res" alt="Further-MCP GitHub" /></a>
+  <a href="https://futher-mcp-production.up.railway.app"><img src="https://img.shields.io/badge/Railway-Live%20MCP-0B0D0E?style=for-the-badge&logo=railway&logoColor=green" alt="Railway MCP" /></a>
+  <a href="https://futher-mcp-production.up.railway.app/health"><img src="https://img.shields.io/badge/Health-Endpoint-2EA44F?style=for-the-badge&logo=fastapi&logoColor=blue" alt="MCP Health Endpoint" /></a>
+</p>
+
+**Repository:** [https://github.com/TECHIES-V1/futher-mcp](https://github.com/TECHIES-V1/futher-mcp)  
+**Live on Railway:** [https://futher-mcp-production.up.railway.app](futher-mcp-production.up.railway.app)  
+**Health Check:** [https://futher-mcp-production.up.railway.app/health](https://futher-mcp-production.up.railway.app/sse)
+
+Further-MCP combines OpenLibrary discovery with EPUB/PDF parsing and exposes both FastAPI routes and FastMCP tools. In TheTutor, this powers Nova tool calls such as `discover_books` and `fetch_and_parse_book` during course generation.
+
+| Capability | What Further-MCP provides | How TheTutor uses it |
+|---|---|---|
+| Discovery | OpenLibrary + Gutendex + Standard Ebooks aggregation | Finds high-signal books for a learner topic |
+| Parsing | EPUB/PDF metadata, TOC, chapter extraction | Feeds structured source context to Nova |
+| Interfaces | FastAPI + FastMCP pack | Works for HTTP pipelines and MCP tool mode |
+| Hosting | Railway deployment | Production-ready MCP endpoint for generation flow |
+
+### FastAPI Surface (Further-MCP)
+
+| Path | Method | Purpose |
+|---|---|---|
+| `/health` | `GET` | Service readiness check on Railway |
+| `/discovery/search` | `GET` | Aggregated discovery across Gutendex/OpenLibrary/Standard Ebooks |
+| `/discovery/gutendex` | `GET` | Project Gutenberg discovery source |
+| `/discovery/openlibrary` | `GET` | OpenLibrary discovery + Internet Archive links |
+| `/discovery/standard-ebooks` | `GET` | Standard Ebooks OPDS search |
+| `/pipeline/fetch-parse` | `POST` | Download and parse one book into AI-readable summary + chapters |
+| `/pipeline/topic` | `POST` | Topic pipeline: discover + download + parse batch |
+| `/pipeline/topic/sse` | `GET` | Streaming version for agent/event-driven flows |
+
+### FastMCP Tools Exposed
+
+- `discover_books(query, sources?, limit?)`
+- `fetch_and_parse_book(url, limit_pages?, limit_chapters?)`
+- `search_books(query, keywords?, limit?)`
+- `search_author(query)` and `search_author_with_book_name(query)`
+- `list_ebooks()`, `get_epub_metadata(...)`, `get_pdf_metadata(...)`
+- `get_epub_toc(...)`, `get_pdf_toc(...)`
+- `get_epub_chapter_markdown(...)`, `get_pdf_chapter_text(...)`
+
+### Railway Deployment Notes
+
+- Runtime supports both FastAPI and FastMCP interfaces from the same project.
+- Environment-driven configuration keeps discovery endpoints and parser behavior consistent across local/dev/prod.
+- Suggested Railway start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`.
+
+```mermaid
+flowchart LR
+    TUTOR[TheTutor Backend] -->|MCP SSE tools| FMCP[Further-MCP on Railway]
+    FMCP -->|discover_books| SOURCES[OpenLibrary/Gutendex/Standard Ebooks]
+    FMCP -->|fetch_and_parse_book| PARSER[EPUB/PDF Parser]
+    PARSER -->|chapter summaries| NOVA[Amazon Nova Generation]
+```
 
 ## Project Structure
 
