@@ -333,7 +333,6 @@ If you are not using the hosted MCP endpoint, run your MCP service locally and s
 -->
 
 ## License
-
-This project is licensed under the MIT License. See [LICENSE](./LICENSE).
+ - _This project is licensed under the MIT License. See [LICENSE](./LICENSE)._
 ---
 
