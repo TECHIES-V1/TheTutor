@@ -1,0 +1,14 @@
+
+Hope you enjoy your new logo, here are the people that
+made your beautiful logo happen :)
+font name: Redressed
+font link: https://fonts.google.com/specimen/Redressed
+font author: Astigmatic
+font author site: http://www.astigmatic.com/
+Slogan Font: WorkSans-Light.ttf
+
+icon designer: Icons By Alfredo
+icon designer link: /creator/AlfredoCreates/
+        
+{"bg":"#3D1240","icon":"#DDBA2E","font":"#DDBA2E","slogan":"#f1ce42"}
+      
