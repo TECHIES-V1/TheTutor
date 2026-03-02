@@ -1,5 +1,5 @@
 <p align="center">
- <img src="docs/The%20Tutor-logo/vector/default-monochrome.svg" alt="TheTutor banner" width="900" />
+ <img src="media/cover.png" alt="TheTutor banner" width="900" />
 </p>
   
   ---
