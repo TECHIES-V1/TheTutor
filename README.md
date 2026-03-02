@@ -307,7 +307,6 @@ If you are not using the hosted MCP endpoint, run your MCP service locally and s
 ## Development Notes
 
 - Build status badge is marked as `local check required` because CI is not configured in this repository.
-- Current local build checks fail in this workspace due dependency/workspace configuration issues and type errors in legacy files.
 - Recommended next step for a green build badge is adding a CI workflow.
 - Frontend CI command: `npm ci && npm run lint && npm run build`
 - Backend CI command: `npm ci && npm run build`
