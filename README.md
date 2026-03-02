@@ -1,5 +1,5 @@
 <p align="center">
- <img src="media/cover.png" alt="TheTutor banner" width="900" />
+ <img src="media/vector/default-monochrome.svg" alt="TheTutor banner" width="900" />
 </p>
   
   ---
@@ -17,8 +17,8 @@
 - [Core Features](#core-features)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
-- [Nova + MCP Integration](#nova--mcp-integration-judge-focus)
-- [Further-MCP (The Future of Learning in an AI driven world)](#further-mcp-railway)
+- [Nova + MCP Integration](#nova--mcp-integration-prime-focus)
+- [Further-MCP (The Future of Learning in an AI driven world)](#further-mcp)
 - [Project Structure](#project-structure)
 - [API Surface](#api-surface)
 - [Local Setup](#local-setup)
@@ -123,7 +123,7 @@ sequenceDiagram
 - HTTP MCP fallback client: `backend/src/services/mcp/client.ts`
 - Course generation orchestrator: `backend/src/services/course/generator.ts`
 
-## Further-MCP (The Future of learning in an AI driven World)
+## Further-MCP
 
 > Special context: TheTutor uses a **custom MCP** built specifically for this project so Amazon Nova can discover, fetch, and parse real books before generating course content.
 
@@ -307,7 +307,6 @@ If you are not using the hosted MCP endpoint, run your MCP service locally and s
 ## Development Notes
 
 - Build status badge is marked as `local check required` because CI is not configured in this repository.
-- Current local build checks fail in this workspace due dependency/workspace configuration issues and type errors in legacy files.
 - Recommended next step for a green build badge is adding a CI workflow.
 - Frontend CI command: `npm ci && npm run lint && npm run build`
 - Backend CI command: `npm ci && npm run build`
@@ -320,7 +319,7 @@ If you are not using the hosted MCP endpoint, run your MCP service locally and s
 | Fadhan Daniel| BACKEND ENGINNER | [fadexadex](https://github.com/fadexadex) |
 | Robert Dominic | FRONTEND DEVELOPER| [Webnova](https://github.com/robert-dominic) |
 | Joanna Bassey | FRONTEND DEVELOPER | [DevBytes-J](https://github.com/DevBytes-J) |
-| Lex Luthor | MCP ENGINEER | [Contractor-x](https://github.com/Contractor-x) |
+| Collins Joel | MCP ENGINEER | [Contractor-x](https://github.com/Contractor-x) |
 
 
 <!--- ## Contributors
@@ -333,20 +332,6 @@ If you are not using the hosted MCP endpoint, run your MCP service locally and s
 -->
 
 ## License
-
-This project is licensed under the MIT License. See [LICENSE](./LICENSE).
+ - _This project is licensed under the MIT License. See [LICENSE](./LICENSE)._
 ---
 
-![Amazon Nova](https://img.shields.io/badge/amazon%20alexa-52b5f7?style=for-the-badge&logo=amazon%20alexa&logoColor=white)
-![GitHub Actions](https://img.shields.io/badge/github%20actions-%232671E5.svg?style=for-the-badge&logo=githubactions&logoColor=white)
-![Amazon S3](https://img.shields.io/badge/Amazon%20S3-FF9900?style=for-the-badge&logo=amazons3&logoColor=white)
-![MongoDB](https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge&logo=mongodb&logoColor=white)
-![Visual Studio Code](https://img.shields.io/badge/Visual%20Studio%20Code-0078d7.svg?style=for-the-badge&logo=visual-studio-code&logoColor=white)
-![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
-![CSS](https://img.shields.io/badge/css-%23663399.svg?style=for-the-badge&logo=css&logoColor=white)
-![JavaScript](https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E)
-![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
-![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
-![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
-![Git](https://img.shields.io/badge/git-%23F05033.svg?style=for-the-badge&logo=git&logoColor=white)
-![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)
