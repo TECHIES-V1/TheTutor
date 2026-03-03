@@ -10,6 +10,14 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:500
  * We call /auth/me to determine where to send the user next.
  */
 export async function GET(req: NextRequest) {
+  const onboardingCompletedFlag = req.nextUrl.searchParams.get("onboardingCompleted");
+  if (onboardingCompletedFlag === "1" || onboardingCompletedFlag === "true") {
+    return NextResponse.redirect(new URL("/dashboard", req.nextUrl));
+  }
+  if (onboardingCompletedFlag === "0" || onboardingCompletedFlag === "false") {
+    return NextResponse.redirect(new URL("/create-course", req.nextUrl));
+  }
+
   try {
     const meRes = await fetch(`${BACKEND_URL}/auth/me`, {
       headers: { cookie: req.headers.get("cookie") ?? "" },
