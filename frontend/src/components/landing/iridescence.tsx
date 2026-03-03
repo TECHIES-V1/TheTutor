@@ -56,9 +56,9 @@ void main() {
   float intensity = clamp(wave * 0.72 + grain * 0.28, 0.0, 1.0);
   float glow = smoothstep(0.58, 0.92, intensity);
 
-  vec3 base = mix(vec3(0.02), vec3(0.97), intensity);
+  vec3 base = mix(vec3(0.92, 0.9, 0.85), vec3(1.0), intensity);
   vec3 gold = vec3(0.83, 0.69, 0.23);
-  vec3 col = mix(base, gold, glow * 0.42) * uColor;
+  vec3 col = mix(base, gold, glow * 0.55) * uColor;
 
   gl_FragColor = vec4(col, 1.0);
 }
@@ -83,13 +83,11 @@ export function Iridescence({
     const gl = renderer.gl;
     gl.clearColor(1, 1, 1, 1);
 
-    let program: Program;
     const geometry = new Triangle(gl);
 
     function resize() {
       const scale = 1;
       renderer.setSize(containerEl.offsetWidth * scale, containerEl.offsetHeight * scale);
-      if (!program) return;
       program.uniforms.uResolution.value = new Color(
         gl.canvas.width,
         gl.canvas.height,
@@ -97,7 +95,7 @@ export function Iridescence({
       );
     }
 
-    program = new Program(gl, {
+    const program = new Program(gl, {
       vertex: vertexShader,
       fragment: fragmentShader,
       uniforms: {

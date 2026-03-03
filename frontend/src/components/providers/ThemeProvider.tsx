@@ -18,23 +18,20 @@ const ThemeContext = createContext<ThemeContextValue>({
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeMode>("light");
+  const [theme, setThemeState] = useState<ThemeMode>(() => {
+    if (typeof window === "undefined") return "light";
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    return stored === "dark" || stored === "light" ? stored : "light";
+  });
   const pathname = usePathname();
 
   const isThemeEnabledRoute = useMemo(() => {
     const current = pathname ?? "/";
-    const themedPrefixes = ["/dashboard", "/explore", "/learn", "/profile", "/settings"];
+    const themedPrefixes = ["/dashboard", "/explore", "/learn", "/profile", "/settings", "/create-course"];
     return themedPrefixes.some(
       (prefix) => current === prefix || current.startsWith(`${prefix}/`)
     );
   }, [pathname]);
-
-  useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (stored === "dark" || stored === "light") {
-      setThemeState(stored);
-    }
-  }, []);
 
   useEffect(() => {
     document.documentElement.dataset.theme = isThemeEnabledRoute ? theme : "light";
@@ -42,7 +39,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const setTheme = (nextTheme: ThemeMode) => {
     setThemeState(nextTheme);
-    window.localStorage.setItem(STORAGE_KEY, nextTheme);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(STORAGE_KEY, nextTheme);
+    }
   };
 
   const value = useMemo(

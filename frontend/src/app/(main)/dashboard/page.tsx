@@ -6,6 +6,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { BookOpen, Clock, Flame, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDashboardOverview } from "@/hooks/useDashboardOverview";
+import { PageLoader } from "@/components/ui/PageLoader";
 
 function getTimeGreeting(name?: string) {
   const hour = new Date().getHours();
@@ -50,30 +51,28 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-1 items-center justify-center">
-        <div className="neo-surface flex h-14 w-14 items-center justify-center rounded-2xl">
-          <span className="skeuo-gold flex h-9 w-9 items-center justify-center rounded-lg text-sm font-bold">
-            T
-          </span>
-        </div>
+      <div className="px-4 py-6 sm:px-6 sm:py-8">
+        <PageLoader
+          title="Loading dashboard..."
+          subtitle="Preparing your learning overview."
+        />
       </div>
     );
   }
 
   return (
-    <div className="px-6 py-6 sm:py-8">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_15%_8%,rgba(212,175,55,0.08),transparent_28%),radial-gradient(circle_at_84%_16%,rgba(212,175,55,0.05),transparent_24%)]" />
+    <div className="px-4 py-6 sm:px-6 sm:py-8">
 
       <div className="relative z-10 mx-auto w-full max-w-7xl space-y-7">
-        <section className="neo-surface rounded-3xl p-6">
-          <h3 className="text-2xl font-bold text-foreground">
+        <section className="neo-surface rounded-3xl p-4 sm:p-6">
+          <h3 className="text-xl sm:text-2xl font-bold text-foreground">
             {getTimeGreeting(overview?.greetingName ?? user?.name)}
           </h3>
           <p className="mt-1 text-sm text-muted-foreground">
             This is your overview page. Use Created Courses and Enrollments for full lists.
           </p>
 
-          <div className="mt-5 grid gap-4 sm:grid-cols-3">
+          <div className="mt-5 grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
             {stats.map(({ label, value, icon: Icon, suffix }) => (
               <div key={label} className="rounded-2xl border border-border/80 bg-card/70 p-4">
                 <div className="flex items-center justify-between">
@@ -88,7 +87,7 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          <div className="mt-5 grid gap-3 md:grid-cols-2">
+          <div className="mt-5 grid gap-3 grid-cols-1 md:grid-cols-2">
             <Link href="/dashboard/courses" className="motion-card rounded-2xl border border-border/80 bg-card/70 p-4">
               <p className="text-xs uppercase tracking-[0.12em] text-primary/75">Created Courses</p>
               <p className="mt-2 text-2xl font-bold text-foreground">{overview?.ownedCourses.length ?? 0}</p>
@@ -104,15 +103,18 @@ export default function DashboardPage() {
         </section>
 
         {error && (
-          <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 sm:px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         )}
 
         {loadingOverview ? (
-          <div className="neo-surface rounded-2xl p-6 text-sm text-muted-foreground">Loading dashboard...</div>
+          <PageLoader
+            title="Refreshing dashboard..."
+            subtitle="Updating progress cards and course summaries."
+          />
         ) : (
-          <div className="neo-surface rounded-2xl p-6">
+          <div className="neo-surface rounded-2xl p-4 sm:p-6">
             <p className="text-sm text-muted-foreground">Open detailed pages:</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Button asChild size="sm" variant="ghost" className="rounded-full border border-border">
@@ -131,4 +133,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

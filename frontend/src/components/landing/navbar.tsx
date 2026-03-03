@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
-import { TutorAvatarMark } from "@/components/brand/TutorAvatarMark";
+
 
 const navLinks = [
   { label: "Features", href: "#features" },
@@ -25,15 +25,15 @@ export function NavBar() {
   return (
     <>
       <nav
-        className={`fixed left-0 right-0 top-0 z-50 transition-all duration-300 ${
-          isScrolled
+        className={`fixed left-0 right-0 top-0 z-50 transition-all duration-300 ${isScrolled
             ? "border-b border-[#d4af37]/35 bg-white/95 backdrop-blur-md"
             : "bg-transparent"
-        }`}
+          }`}
       >
         <div className="container flex items-center justify-between py-4">
           <Link href="/" className="flex items-center gap-2.5">
-            <TutorAvatarMark size={40} className="rounded-xl" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="TheTutor" className="h-10 w-10 rounded-xl object-contain" />
             <div>
               <p className="font-playfair text-xl font-bold text-[#111111]">TheTutor</p>
               <p className="text-[11px] uppercase tracking-[0.14em] text-[#595959]">AI Learning Coach</p>
@@ -91,7 +91,8 @@ export function NavBar() {
             >
               <div className="mb-10 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <TutorAvatarMark size={36} className="rounded-lg" />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/logo.png" alt="TheTutor" className="h-9 w-9 rounded-lg object-contain" />
                   <span className="font-playfair text-lg font-bold text-[#111111]">TheTutor</span>
                 </div>
                 <Button

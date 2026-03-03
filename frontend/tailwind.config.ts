@@ -35,6 +35,16 @@ const config: Config = {
         playfair: ["var(--font-comfortaa)", "sans-serif"],
         lato: ["var(--font-comfortaa)", "sans-serif"],
       },
+      boxShadow: {
+        sm: "none",
+        DEFAULT: "none",
+        md: "none",
+        lg: "none",
+        xl: "none",
+        "2xl": "none",
+        inner: "none",
+        none: "none",
+      },
     },
   },
   // eslint-disable-next-line @typescript-eslint/no-require-imports

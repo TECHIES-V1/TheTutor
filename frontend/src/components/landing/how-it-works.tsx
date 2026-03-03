@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { BookOpen, Brain, CheckCircle2, Award } from "lucide-react";
 
 const phases = [
@@ -80,11 +81,15 @@ export function HowItWorks() {
           transition={{ duration: 0.5, delay: 0.15 }}
           className="landing-surface mt-12 overflow-hidden rounded-3xl"
         >
-          <img
-            src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=1400&q=80"
-            alt="Students learning together with books and laptops"
-            className="h-56 w-full object-cover sm:h-72"
-          />
+          <div className="relative h-56 w-full sm:h-72">
+            <Image
+              src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1400&q=80"
+              alt="Adult learners collaborating in a study session"
+              fill
+              sizes="100vw"
+              className="object-cover"
+            />
+          </div>
         </motion.div>
       </div>
     </section>

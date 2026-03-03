@@ -205,7 +205,7 @@ router.get("/overview", requireAuth, async (req: Request, res: Response) => {
       greetingName: user.name,
       stats: {
         ownedCourses: ownedCards.length,
-        enrolledCourses: allEnrollments.length,
+        enrolledCourses: enrolledCards.length,
         completedCourses,
         hoursLearned,
         totalLessonsAcrossCourses: totalLessonSlots,

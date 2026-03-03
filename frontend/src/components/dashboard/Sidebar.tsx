@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
-import { TutorAvatarMark } from "@/components/brand/TutorAvatarMark";
+
 
 interface NavChildItem {
   label: string;
@@ -49,7 +49,6 @@ const navItems: NavItem[] = [
     children: [
       { label: "Explore Library", href: "/explore", matchPrefix: "/explore" },
       { label: "Create Course", href: "/create-course", matchPrefix: "/create-course" },
-      { label: "My Learning", href: "/dashboard/enrollments", matchPrefix: "/learn" },
     ],
   },
   {
@@ -128,9 +127,8 @@ export function Sidebar({
   return (
     <>
       <div
-        className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
-          isOpen ? "opacity-100" : "pointer-events-none opacity-0"
-        }`}
+        className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${isOpen ? "opacity-100" : "pointer-events-none opacity-0"
+          }`}
         onClick={onClose}
       />
 
@@ -141,9 +139,22 @@ export function Sidebar({
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex items-center justify-between gap-2 border-b border-primary/10 px-4 py-5">
+        <div className={cx(
+          "flex items-center gap-2 border-b border-primary/10 py-5 px-3",
+          isCollapsed
+            ? "lg:justify-center lg:group-hover/sidebar:justify-start lg:group-focus-within/sidebar:justify-start"
+            : "justify-start"
+        )}>
           <div className="flex items-center gap-3">
-            <TutorAvatarMark size={36} className="shrink-0 rounded-lg" />
+            <div className={cx(
+              "flex items-center justify-center overflow-hidden rounded-full border border-primary/10 bg-primary/5 shrink-0 transition-all duration-300",
+              isCollapsed
+                ? "h-12 w-12 lg:group-hover/sidebar:h-10 lg:group-hover/sidebar:w-10 lg:group-focus-within/sidebar:h-10 lg:group-focus-within/sidebar:w-10"
+                : "h-10 w-10"
+            )}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="TheTutor" className="h-full w-full object-contain p-1.5" />
+            </div>
             <div className={textRevealClass}>
               <p className="font-playfair text-lg font-bold leading-none text-primary">TheTutor</p>
               <p className="mt-0.5 text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
@@ -151,38 +162,34 @@ export function Sidebar({
               </p>
             </div>
           </div>
-
-          <button
-            type="button"
-            onClick={onToggleCollapse}
-            className="hidden rounded-md border border-border bg-card/60 p-1.5 text-muted-foreground transition hover:text-foreground lg:inline-flex"
-            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            aria-expanded={!isCollapsed}
-          >
-            {isCollapsed ? (
-              <PanelLeftOpen className="h-4 w-4" />
-            ) : (
-              <PanelLeftClose className="h-4 w-4" />
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 text-muted-foreground transition-colors hover:text-primary lg:hidden"
-            aria-label="Close sidebar"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              className="hidden rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:inline-flex"
+              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {isCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
+              aria-label="Close sidebar"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
-        <div className="px-4 pt-5">
+        <div className="px-5 pt-5">
           <Button
             asChild
             size="sm"
             onClick={onClose}
             className={cx(
-              "skeuo-gold w-full gap-2 rounded-full hover:!opacity-100",
+              "skeuo-gold w-full rounded-full hover:!opacity-100",
               buttonJustifyClass
             )}
           >
@@ -193,7 +200,12 @@ export function Sidebar({
           </Button>
         </div>
 
-        <nav className="flex flex-1 flex-col gap-4 overflow-y-auto px-3 pt-5">
+        <nav className={cx(
+          "flex flex-1 flex-col gap-4 overflow-y-auto pt-5 transition-all duration-300 px-3",
+          isCollapsed
+            ? "lg:px-1 lg:group-hover/sidebar:px-0 lg:group-focus-within/sidebar:px-0"
+            : ""
+        )}>
           {navItems.map((item) => {
             const active =
               pathname === item.href ||
@@ -207,13 +219,25 @@ export function Sidebar({
                   onClick={onClose}
                   title={isCollapsed ? item.label : undefined}
                   className={cx(
-                    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors",
+                    "relative flex items-center rounded-xl py-2.5 text-sm font-semibold transition-all duration-300 px-3",
+                    isCollapsed
+                      ? "lg:justify-center lg:px-0 lg:group-hover/sidebar:justify-start lg:group-hover/sidebar:px-3 lg:group-focus-within/sidebar:justify-start lg:group-focus-within/sidebar:px-3"
+                      : "",
                     active
-                      ? "border border-primary/25 bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      ? "bg-primary/8 text-primary"
+                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                   )}
                 >
-                  <item.icon className={cx("h-4 w-4", active && "text-primary")} />
+                  {active && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-primary" />
+                  )}
+                  <item.icon className={cx(
+                    "shrink-0 transition-all duration-300",
+                    active && "text-primary",
+                    isCollapsed
+                      ? "h-6 w-6 lg:group-hover/sidebar:h-4 lg:group-hover/sidebar:w-4 lg:group-focus-within/sidebar:h-4 lg:group-focus-within/sidebar:w-4"
+                      : "h-4 w-4"
+                  )} />
                   <span className={textRevealClass}>{item.label}</span>
                 </Link>
 
@@ -282,7 +306,12 @@ export function Sidebar({
               href="/profile"
               onClick={onClose}
               title={isCollapsed ? "Profile" : undefined}
-              className="mb-3 flex items-center gap-3 rounded-xl px-1 py-1 transition hover:bg-muted/60"
+              className={cx(
+                "mb-3 flex items-center rounded-xl py-1 transition hover:bg-muted/60",
+                isCollapsed
+                  ? "lg:justify-center lg:px-0 lg:group-hover/sidebar:justify-start lg:group-hover/sidebar:px-1 lg:group-focus-within/sidebar:justify-start lg:group-focus-within/sidebar:px-1"
+                  : ""
+              )}
             >
               {user.image ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
@@ -310,7 +339,7 @@ export function Sidebar({
                 onClose?.();
               }}
               className={cx(
-                "w-full justify-start gap-2 text-muted-foreground hover:bg-muted hover:text-foreground",
+                "w-full justify-start gap-2 text-muted-foreground hover:bg-muted hover:text-foreground px-3",
                 buttonJustifyClass
               )}
             >
@@ -318,7 +347,8 @@ export function Sidebar({
               <span className={textRevealClass}>Sign Out</span>
             </Button>
           </div>
-        )}
+        )
+        }
       </aside>
     </>
   );

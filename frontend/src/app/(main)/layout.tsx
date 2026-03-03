@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { Menu } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { TutorAvatarMark } from "@/components/brand/TutorAvatarMark";
+import { GenerationNotifier } from "@/components/onboarding/GenerationNotifier";
+
 
 const SIDEBAR_COLLAPSE_KEY = "thetutor-sidebar-collapsed";
 
@@ -14,22 +15,19 @@ export default function MainLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-    const { user, isLoading } = useAuth();
-    const pathname = usePathname();
-    const showSidebar = !isLoading && !!user;
-
-    useEffect(() => {
+    const [sidebarOpenPath, setSidebarOpenPath] = useState<string | null>(null);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+        if (typeof window === "undefined") return false;
         try {
-            const stored = window.localStorage.getItem(SIDEBAR_COLLAPSE_KEY);
-            if (stored === "true") {
-                setIsSidebarCollapsed(true);
-            }
+            return window.localStorage.getItem(SIDEBAR_COLLAPSE_KEY) === "true";
         } catch {
-            // ignore localStorage failures
+            return false;
         }
-    }, []);
+    });
+    const { user, isLoading } = useAuth();
+    const pathname = usePathname() ?? "/";
+    const showSidebar = !isLoading && !!user;
+    const isSidebarOpen = sidebarOpenPath === pathname;
 
     useEffect(() => {
         try {
@@ -40,17 +38,12 @@ export default function MainLayout({
     }, [isSidebarCollapsed]);
 
     useEffect(() => {
-        setIsSidebarOpen(false);
-    }, [pathname]);
-
-    useEffect(() => {
         const syncOnResize = () => {
             if (window.innerWidth >= 1024) {
-                setIsSidebarOpen(false);
+                setSidebarOpenPath(null);
             }
         };
 
-        syncOnResize();
         window.addEventListener("resize", syncOnResize);
         return () => window.removeEventListener("resize", syncOnResize);
     }, []);
@@ -61,14 +54,15 @@ export default function MainLayout({
             <header className={`fixed top-0 left-0 right-0 z-30 h-16 items-center border-b border-primary/10 bg-background/80 px-4 backdrop-blur-md lg:hidden ${showSidebar ? "flex" : "hidden"}`}>
                 <button
                     type="button"
-                    onClick={() => setIsSidebarOpen(true)}
+                    onClick={() => setSidebarOpenPath(pathname)}
                     className="p-2 text-muted-foreground hover:text-primary transition-colors"
                     aria-label="Open sidebar"
                 >
                     <Menu className="h-6 w-6" />
                 </button>
                 <div className="flex items-center gap-2 ml-2">
-                    <TutorAvatarMark size={32} className="shrink-0 rounded-lg" />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/logo.png" alt="TheTutor" className="h-8 w-8 shrink-0 rounded-lg object-contain" />
                     <span className="font-playfair font-bold text-primary">TheTutor</span>
                 </div>
             </header>
@@ -76,20 +70,19 @@ export default function MainLayout({
             {showSidebar && (
                 <Sidebar
                     isOpen={isSidebarOpen}
-                    onClose={() => setIsSidebarOpen(false)}
+                    onClose={() => setSidebarOpenPath(null)}
                     isCollapsed={isSidebarCollapsed}
                     onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
                 />
             )}
 
             {/* Main Content */}
-            <main className={`flex-1 min-w-0 transition-[margin,padding] duration-300 ${
-                showSidebar ? "pt-16 lg:pt-0" : "pt-0"
-            } ${
-                showSidebar ? (isSidebarCollapsed ? "lg:ml-20" : "lg:ml-72") : "lg:ml-0"
-            }`}>
+            <main className={`flex-1 min-w-0 transition-[margin,padding] duration-300 ${showSidebar ? "pt-16 lg:pt-0" : "pt-0"
+                } ${showSidebar ? (isSidebarCollapsed ? "lg:ml-20" : "lg:ml-72") : "lg:ml-0"
+                }`}>
                 {children}
             </main>
+            {showSidebar && <GenerationNotifier />}
         </div>
     );
 }

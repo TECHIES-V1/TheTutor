@@ -4,20 +4,21 @@ import { ArrowRight, CheckCircle2, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { Iridescence } from "./iridescence";
 
 const heroImages = [
   {
-    src: "https://images.unsplash.com/photo-1571260899304-425eee4c7efc?auto=format&fit=crop&w=900&q=80",
-    alt: "Student taking notes while learning online",
+    src: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=900&q=80",
+    alt: "Adult professional learning from a laptop and notes",
   },
   {
-    src: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=900&q=80",
-    alt: "Tutor helping students with a lesson",
+    src: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=900&q=80",
+    alt: "Adult learners in a collaborative workshop",
   },
   {
-    src: "https://images.unsplash.com/photo-1513258496099-48168024aec0?auto=format&fit=crop&w=900&q=80",
-    alt: "Learner reviewing study materials",
+    src: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=900&q=80",
+    alt: "Team of adults studying and discussing materials",
   },
 ];
 
@@ -33,7 +34,6 @@ export function Hero() {
           mouseReact
         />
       </div>
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(165deg,rgba(255,255,255,0.84)_0%,rgba(255,255,255,0.9)_55%,rgba(255,249,231,0.88)_100%)]" />
 
       <div className="container relative z-10 grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
         <motion.div
@@ -48,7 +48,7 @@ export function Hero() {
 
           <h1 className="mt-6 text-balance font-playfair text-5xl font-bold leading-tight text-[#111111] md:text-6xl lg:text-[4.25rem]">
             Learn Smarter With
-            <span className="block bg-gradient-to-r from-[#101010] via-[#2a2a2a] to-[#b48b1d] bg-clip-text text-transparent">
+            <span className="block text-[#111111]">
               TheTutor
             </span>
           </h1>
@@ -91,14 +91,38 @@ export function Hero() {
           className="relative"
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <article className="landing-surface motion-card overflow-hidden rounded-3xl sm:row-span-2 ring-1 ring-[#d4af37]/20">
-              <img src={heroImages[0].src} alt={heroImages[0].alt} className="h-full w-full object-cover" />
+            <article className="landing-surface motion-card overflow-hidden rounded-3xl ring-1 ring-[#d4af37]/20 sm:row-span-2">
+              <div className="relative h-72 sm:h-full sm:min-h-[26rem]">
+                <Image
+                  src={heroImages[0].src}
+                  alt={heroImages[0].alt}
+                  fill
+                  sizes="(min-width: 1024px) 40vw, (min-width: 640px) 50vw, 100vw"
+                  className="object-cover"
+                />
+              </div>
             </article>
             <article className="landing-surface motion-card overflow-hidden rounded-3xl ring-1 ring-[#d4af37]/20">
-              <img src={heroImages[1].src} alt={heroImages[1].alt} className="h-full w-full object-cover" />
+              <div className="relative h-52">
+                <Image
+                  src={heroImages[1].src}
+                  alt={heroImages[1].alt}
+                  fill
+                  sizes="(min-width: 1024px) 22vw, (min-width: 640px) 50vw, 100vw"
+                  className="object-cover"
+                />
+              </div>
             </article>
             <article className="landing-surface motion-card overflow-hidden rounded-3xl ring-1 ring-[#d4af37]/20">
-              <img src={heroImages[2].src} alt={heroImages[2].alt} className="h-full w-full object-cover" />
+              <div className="relative h-52">
+                <Image
+                  src={heroImages[2].src}
+                  alt={heroImages[2].alt}
+                  fill
+                  sizes="(min-width: 1024px) 22vw, (min-width: 640px) 50vw, 100vw"
+                  className="object-cover"
+                />
+              </div>
             </article>
           </div>
           <div className="landing-surface absolute -bottom-5 -left-4 rounded-2xl px-4 py-3">

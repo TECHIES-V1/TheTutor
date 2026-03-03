@@ -45,7 +45,7 @@ export default function RootLayout({
         {/* Apply stored theme before React hydrates to prevent flash */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var p=window.location.pathname||'/';var themed=['/dashboard','/explore','/learn','/profile','/settings'].some(function(prefix){return p===prefix||p.indexOf(prefix+'/')===0;});if(themed){var t=localStorage.getItem('thetutor-theme');document.documentElement.dataset.theme=(t==='dark'||t==='light')?t:'light';}else{document.documentElement.dataset.theme='light';}}catch(e){document.documentElement.dataset.theme='light';}`,
+            __html: `try{var p=window.location.pathname||'/';var themed=['/dashboard','/explore','/learn','/profile','/settings','/create-course'].some(function(prefix){return p===prefix||p.indexOf(prefix+'/')===0;});if(themed){var t=localStorage.getItem('thetutor-theme');document.documentElement.dataset.theme=(t==='dark'||t==='light')?t:'light';}else{document.documentElement.dataset.theme='light';}}catch(e){document.documentElement.dataset.theme='light';}`,
           }}
         />
         <meta

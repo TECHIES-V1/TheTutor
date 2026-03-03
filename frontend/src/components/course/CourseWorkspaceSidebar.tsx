@@ -80,7 +80,7 @@ export function CourseWorkspaceSidebar({
         <button
           type="button"
           onClick={onToggle}
-          className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-card/95 px-3 py-2 text-xs font-semibold text-primary shadow-lg shadow-black/15 backdrop-blur hover:bg-card"
+          className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-card/95 px-3 py-2 text-xs font-semibold text-primary backdrop-blur hover:bg-card"
           aria-label="Open course sidebar"
         >
           <PanelRightOpen className="h-4 w-4" />
@@ -89,16 +89,14 @@ export function CourseWorkspaceSidebar({
       )}
 
       <div
-        className={`fixed inset-0 z-40 bg-black/45 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
-          isOpen ? "opacity-100" : "pointer-events-none opacity-0"
-        }`}
+        className={`fixed inset-0 z-40 bg-black/45 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${isOpen ? "opacity-100" : "pointer-events-none opacity-0"
+          }`}
         onClick={onToggle}
       />
 
       <aside
-        className={`neo-surface fixed inset-y-0 right-0 z-50 w-[20rem] max-w-[92vw] overflow-y-auto border-l border-primary/20 p-4 transition-transform duration-300 lg:sticky lg:top-6 lg:z-10 lg:max-h-[calc(100svh-7rem)] lg:w-full lg:max-w-none lg:self-start lg:rounded-3xl lg:border lg:p-4 lg:transition-none ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        } ${isOpen ? "lg:block" : "lg:hidden"}`}
+        className={`neo-surface fixed inset-y-0 right-0 z-50 w-[20rem] max-w-[92vw] overflow-y-auto border-l border-primary/20 p-4 transition-transform duration-300 lg:sticky lg:top-6 lg:z-10 lg:max-h-[calc(100svh-7rem)] lg:w-full lg:max-w-none lg:self-start lg:rounded-3xl lg:border lg:p-4 lg:transition-none ${isOpen ? "translate-x-0" : "translate-x-full"
+          } ${isOpen ? "lg:block" : "lg:hidden"}`}
       >
         <div className="mb-3 flex items-center justify-between">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary/70">
@@ -159,11 +157,10 @@ export function CourseWorkspaceSidebar({
                   onToggle();
                 }
               }}
-              className={`motion-link flex items-center justify-between rounded-xl border px-3 py-2.5 text-sm ${
-                activeView === "lesson"
+              className={`motion-link flex items-center justify-between rounded-xl border px-3 py-2.5 text-sm ${activeView === "lesson"
                   ? "border-primary/40 bg-primary/12 text-primary"
                   : "border-border bg-card/70 text-foreground hover:border-primary/30"
-              }`}
+                }`}
             >
               <span className="inline-flex items-center gap-2">
                 <CirclePlay className="h-4 w-4" />
@@ -181,11 +178,10 @@ export function CourseWorkspaceSidebar({
                   onToggle();
                 }
               }}
-              className={`motion-link flex items-center justify-between rounded-xl border px-3 py-2.5 text-sm ${
-                activeView === "quiz"
+              className={`motion-link flex items-center justify-between rounded-xl border px-3 py-2.5 text-sm ${activeView === "quiz"
                   ? "border-primary/40 bg-primary/12 text-primary"
                   : "border-border bg-card/70 text-foreground hover:border-primary/30"
-              }`}
+                }`}
             >
               <span className="inline-flex items-center gap-2">
                 <BookOpenCheck className="h-4 w-4" />
@@ -197,11 +193,10 @@ export function CourseWorkspaceSidebar({
 
           <Link
             href={`/learn/${courseId}/complete`}
-            className={`motion-link flex items-center justify-between rounded-xl border px-3 py-2.5 text-sm ${
-              activeView === "complete"
+            className={`motion-link flex items-center justify-between rounded-xl border px-3 py-2.5 text-sm ${activeView === "complete"
                 ? "border-primary/40 bg-primary/12 text-primary"
                 : "border-border bg-card/70 text-foreground hover:border-primary/30"
-            }`}
+              }`}
           >
             <span className="inline-flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4" />
@@ -212,11 +207,10 @@ export function CourseWorkspaceSidebar({
 
           <Link
             href={`/explore/${courseId}`}
-            className={`motion-link flex items-center justify-between rounded-xl border px-3 py-2.5 text-sm ${
-              activeView === "preview"
+            className={`motion-link flex items-center justify-between rounded-xl border px-3 py-2.5 text-sm ${activeView === "preview"
                 ? "border-primary/40 bg-primary/12 text-primary"
                 : "border-border bg-card/70 text-foreground hover:border-primary/30"
-            }`}
+              }`}
           >
             <span className="inline-flex items-center gap-2">
               <BookCopy className="h-4 w-4" />
@@ -250,9 +244,8 @@ export function CourseWorkspaceSidebar({
                 <details
                   key={module.moduleId}
                   open={isCurrentModule || undefined}
-                  className={`rounded-xl border bg-card/65 ${
-                    isCurrentModule ? "border-primary/30" : "border-border"
-                  }`}
+                  className={`rounded-xl border bg-card/65 ${isCurrentModule ? "border-primary/30" : "border-border"
+                    }`}
                 >
                   <summary className="cursor-pointer list-none px-3 py-2.5">
                     <span className="flex items-center justify-between gap-2">
@@ -280,11 +273,10 @@ export function CourseWorkspaceSidebar({
                               onToggle();
                             }
                           }}
-                          className={`motion-link block rounded-lg px-2.5 py-2 text-xs ${
-                            isActive
+                          className={`motion-link block rounded-lg px-2.5 py-2 text-xs ${isActive
                               ? "bg-primary/12 text-primary"
                               : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                          }`}
+                            }`}
                         >
                           <span className="line-clamp-2 break-words">
                             Lesson {lesson.order}: {lesson.title}

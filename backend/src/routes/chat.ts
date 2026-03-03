@@ -3,6 +3,7 @@ import { Types } from "mongoose";
 import { randomUUID } from "crypto";
 import { requireAuth } from "../middleware/auth";
 import { Conversation, type IMessage } from "../models/Conversation";
+import { Course } from "../models/Course";
 import {
   chat,
   generateSubjectFromConversation,
@@ -13,6 +14,101 @@ import type { ModelMessage } from "ai";
 const router = Router();
 
 const MAX_REPLIES_PER_ROUND = 5;
+const MAX_RELATED_COURSES = 5;
+
+type RelatedCoursePreview = {
+  id: string;
+  title: string;
+  description: string;
+  level: string;
+  authorName: string;
+  moduleCount: number;
+  lessonCount: number;
+};
+
+function escapeRegex(input: string): string {
+  return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function toSearchTerms(subject: string): string[] {
+  const normalized = subject.trim();
+  if (!normalized) return [];
+
+  const terms = normalized
+    .split(/\s+/)
+    .map((term) => term.trim().toLowerCase())
+    .filter((term) => term.length >= 3);
+
+  const uniqueTerms = Array.from(new Set([normalized, ...terms]));
+  return uniqueTerms.slice(0, 6);
+}
+
+function countLessons(course: {
+  curriculum?: Array<{ lessons?: unknown[] }>;
+  modules?: Array<{ lessons?: unknown[] }>;
+}): number {
+  if (Array.isArray(course.curriculum) && course.curriculum.length > 0) {
+    return course.curriculum.reduce((sum, module) => {
+      return sum + (Array.isArray(module.lessons) ? module.lessons.length : 0);
+    }, 0);
+  }
+
+  if (Array.isArray(course.modules)) {
+    return course.modules.reduce((sum, module) => {
+      return sum + (Array.isArray(module.lessons) ? module.lessons.length : 0);
+    }, 0);
+  }
+
+  return 0;
+}
+
+async function findRelatedPublishedCourses(subject: string): Promise<RelatedCoursePreview[]> {
+  const terms = toSearchTerms(subject);
+  if (terms.length === 0) return [];
+
+  const searchConditions = terms.flatMap((term) => {
+    const pattern = escapeRegex(term);
+    return [
+      { title: { $regex: pattern, $options: "i" } },
+      { subject: { $regex: pattern, $options: "i" } },
+      { topic: { $regex: pattern, $options: "i" } },
+      { description: { $regex: pattern, $options: "i" } },
+    ];
+  });
+
+  const related = await Course.find({
+    visibility: "published",
+    status: { $in: ["active", "completed"] },
+    $and: [
+      {
+        $or: [
+          { generationStatus: "ready" },
+          { generationStatus: { $exists: false } },
+        ],
+      },
+      {
+        $or: searchConditions,
+      },
+    ],
+  })
+    .sort({ updatedAt: -1 })
+    .limit(MAX_RELATED_COURSES)
+    .select("title description level ownerName curriculum modules");
+
+  return related.map((course) => ({
+    id: course._id.toString(),
+    title: String(course.title ?? "Untitled Course"),
+    description: String(course.description ?? ""),
+    level: String(course.level ?? ""),
+    authorName: String(course.ownerName ?? "Unknown Author"),
+    moduleCount: Array.isArray(course.curriculum) && course.curriculum.length > 0
+      ? course.curriculum.length
+      : Array.isArray(course.modules)
+        ? course.modules.length
+        : 0,
+    lessonCount: countLessons(course),
+  }));
+}
 
 function toAIMessages(messages: IMessage[]): ModelMessage[] {
   return messages.map((m) => ({
@@ -312,15 +408,39 @@ router.post("/confirm-subject", requireAuth, async (req: Request, res: Response)
       conversation.phase = "resource_retrieval";
 
       console.log("[confirm-subject] Saving phase=resource_retrieval for conversation", conversation._id.toString(), "subject:", subject);
+      const relatedCourses = await findRelatedPublishedCourses(subject);
+      const discoveryMessage =
+        relatedCourses.length > 0
+          ? `Before I build a new course, I found ${relatedCourses.length} similar public course${relatedCourses.length === 1 ? "" : "s"} you can explore first.`
+          : "I checked for similar public courses and found nothing close right now. I'll create a new course for you.";
+
+      const discoveryAssistantMessage: IMessage = {
+        id: randomUUID(),
+        role: "assistant",
+        content: discoveryMessage,
+        timestamp: new Date(),
+        metadata: {
+          relatedCourses,
+        },
+      };
+      conversation.messages.push(discoveryAssistantMessage);
+
       await conversation.save();
-      console.log("[confirm-subject] Saved. Phase is now:", conversation.phase);
+      console.log(
+        "[confirm-subject] Saved. Phase is now:",
+        conversation.phase,
+        "relatedCourses:",
+        relatedCourses.length
+      );
 
       res.json({
         success: true,
         conversationId: conversation._id.toString(),
         phase: "resource_retrieval",
         subject,
-        message: "Subject confirmed. Ready for course generation.",
+        message: discoveryMessage,
+        relatedCourses,
+        hasRelatedCourses: relatedCourses.length > 0,
       });
     } else {
       // Rejection — increment counter, let user continue chatting

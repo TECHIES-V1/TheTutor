@@ -9,6 +9,8 @@ import { ArrowRight, CheckCircle2, BookCopy } from "lucide-react";
 import { useCoursePreview } from "@/hooks/useCoursePreview";
 import { CourseWorkspaceSidebar } from "@/components/course/CourseWorkspaceSidebar";
 import { useCoursePanelState } from "@/hooks/useCoursePanelState";
+import { AiAssistantButton } from "@/components/course/AiAssistantButton";
+import { PageLoader } from "@/components/ui/PageLoader";
 
 export default function ExploreCourseDetailPage() {
   const params = useParams<{ courseId: string }>();
@@ -44,7 +46,10 @@ export default function ExploreCourseDetailPage() {
   if (loading) {
     return (
       <div className="px-6 py-8">
-        <div className="neo-surface rounded-2xl p-6 text-sm text-muted-foreground">Loading preview...</div>
+        <PageLoader
+          title="Loading course preview..."
+          subtitle="Preparing curriculum, access, and enrollment details."
+        />
       </div>
     );
   }
@@ -63,7 +68,6 @@ export default function ExploreCourseDetailPage() {
 
   return (
     <div className="relative px-6 py-8">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_15%_8%,rgba(212,175,55,0.08),transparent_28%),radial-gradient(circle_at_84%_16%,rgba(212,175,55,0.05),transparent_24%)]" />
 
       <div className="relative z-10 mx-auto w-full max-w-7xl space-y-4">
         <div className="flex justify-end">
@@ -212,6 +216,12 @@ export default function ExploreCourseDetailPage() {
             onToggle={toggleCoursePanel}
           />
         </div>
+
+        {/* AI Assistant Button */}
+        <AiAssistantButton
+          courseId={data.course.id}
+          lessonId={data.curriculumOutline[0]?.lessons[0]?.lessonId || ""}
+        />
       </div>
     </div>
   );

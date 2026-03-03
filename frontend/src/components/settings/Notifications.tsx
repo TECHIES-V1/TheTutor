@@ -25,7 +25,7 @@ function NotificationToggle({ label, description, value, onChange }: Notificatio
                     }`}
             >
                 <div
-                    className={`absolute h-5 w-5 top-0.5 rounded-full bg-background shadow transition-transform ${value ? "translate-x-5" : "translate-x-0.5"
+                    className={`absolute h-5 w-5 top-0.5 rounded-full bg-background transition-transform ${value ? "translate-x-5" : "translate-x-0.5"
                         }`}
                 />
             </button>

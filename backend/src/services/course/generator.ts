@@ -27,7 +27,7 @@ import {
 } from "../youtube/youtube.service";
 
 const MAX_REPAIR_ATTEMPTS = 3;
-const MIN_LESSON_CONTENT_CHARS = 5000;
+const MIN_LESSON_CONTENT_CHARS = 2000;
 
 type StreamMilestoneEvent = Extract<
   SSEEvent,

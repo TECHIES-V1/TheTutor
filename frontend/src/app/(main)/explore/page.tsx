@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { CourseSummary } from "@/types/course";
 import { Button } from "@/components/ui/button";
 import { Search, ArrowRight } from "lucide-react";
+import { PageLoader } from "@/components/ui/PageLoader";
 
 export default function ExplorePage() {
   const [courses, setCourses] = useState<CourseSummary[]>([]);
@@ -63,7 +64,6 @@ export default function ExplorePage() {
 
   return (
     <div className="relative min-h-full px-6 py-6 sm:py-8">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_15%_8%,rgba(212,175,55,0.08),transparent_28%),radial-gradient(circle_at_84%_16%,rgba(212,175,55,0.05),transparent_24%)]" />
 
       <div className="relative z-10 w-full max-w-5xl">
         <div className="mb-8 sm:mb-10">
@@ -104,7 +104,10 @@ export default function ExplorePage() {
         )}
 
         {loading ? (
-          <div className="neo-surface rounded-2xl p-6 text-sm text-muted-foreground">Loading courses...</div>
+          <PageLoader
+            title="Loading courses..."
+            subtitle="Fetching published courses from the marketplace."
+          />
         ) : filtered.length === 0 ? (
           <div className="neo-surface rounded-2xl p-6 text-sm text-muted-foreground">
             No courses found for this search.

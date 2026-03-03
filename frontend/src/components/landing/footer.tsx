@@ -1,4 +1,6 @@
-import { TutorAvatarMark } from "@/components/brand/TutorAvatarMark";
+
+import Link from "next/link";
+
 
 export function Footer() {
   return (
@@ -7,7 +9,8 @@ export function Footer() {
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3">
-              <TutorAvatarMark size={40} className="rounded-lg" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="TheTutor" className="h-10 w-10 rounded-lg object-contain" />
               <div>
                 <p className="font-playfair text-2xl font-bold text-[#111111]">TheTutor</p>
                 <p className="text-sm text-[#575757]">AI-Powered Learning Coach</p>
@@ -30,9 +33,10 @@ export function Footer() {
           <div>
             <h4 className="font-playfair text-lg font-bold text-[#111111]">Company</h4>
             <ul className="mt-4 space-y-2 text-sm text-[#575757]">
-              <li><a href="#" className="hover:text-[#b48b1d]">About</a></li>
-              <li><a href="#" className="hover:text-[#b48b1d]">Contact</a></li>
-              <li><a href="#" className="hover:text-[#b48b1d]">Privacy</a></li>
+              <li><Link href="/about" className="hover:text-[#b48b1d]">About</Link></li>
+              <li><Link href="/contact" className="hover:text-[#b48b1d]">Contact</Link></li>
+              <li><Link href="/privacy" className="hover:text-[#b48b1d]">Privacy</Link></li>
+              <li><Link href="/terms" className="hover:text-[#b48b1d]">Terms</Link></li>
             </ul>
           </div>
         </div>

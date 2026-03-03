@@ -77,7 +77,6 @@ export default function CourseCompletePage() {
 
   return (
     <div className="relative px-6 py-8">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_15%_8%,rgba(212,175,55,0.08),transparent_28%),radial-gradient(circle_at_84%_16%,rgba(212,175,55,0.05),transparent_24%)]" />
 
       <div className="relative z-10 mx-auto w-full max-w-7xl space-y-4">
         <div className="flex justify-end">

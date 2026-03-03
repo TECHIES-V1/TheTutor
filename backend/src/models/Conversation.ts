@@ -13,6 +13,15 @@ export interface IMessage {
   metadata?: {
     isConfirmation?: boolean;
     suggestedSubject?: string;
+    relatedCourses?: Array<{
+      id: string;
+      title: string;
+      description: string;
+      level: string;
+      authorName: string;
+      moduleCount: number;
+      lessonCount: number;
+    }>;
   };
 }
 
@@ -43,6 +52,20 @@ const MessageSchema = new Schema<IMessage>(
     metadata: {
       isConfirmation: { type: Boolean },
       suggestedSubject: { type: String },
+      relatedCourses: {
+        type: [
+          {
+            id: { type: String, required: true },
+            title: { type: String, required: true },
+            description: { type: String, default: "" },
+            level: { type: String, default: "" },
+            authorName: { type: String, default: "" },
+            moduleCount: { type: Number, default: 0 },
+            lessonCount: { type: Number, default: 0 },
+          },
+        ],
+        default: undefined,
+      },
     },
   },
   { _id: false }

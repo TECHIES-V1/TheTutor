@@ -18,16 +18,31 @@ export function sendSSE(
   event: string,
   data: Record<string, unknown>
 ): void {
-  res.write(`event: ${event}\n`);
-  res.write(`data: ${JSON.stringify(data)}\n\n`);
+  if (res.writableEnded || res.destroyed) return;
+  try {
+    res.write(`event: ${event}\n`);
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  } catch {
+    // Ignore write failures after client disconnect.
+  }
 }
 
 export function sendSSEComment(res: Response, comment: string): void {
-  res.write(`: ${comment}\n\n`);
+  if (res.writableEnded || res.destroyed) return;
+  try {
+    res.write(`: ${comment}\n\n`);
+  } catch {
+    // Ignore write failures after client disconnect.
+  }
 }
 
 export function endSSE(res: Response): void {
-  res.end();
+  if (res.writableEnded || res.destroyed) return;
+  try {
+    res.end();
+  } catch {
+    // Ignore close failures after disconnect.
+  }
 }
 
 // ── Keep-Alive Utility ────────────────────────────────────────────────────

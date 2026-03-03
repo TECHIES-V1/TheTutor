@@ -8,6 +8,7 @@ import { DashboardCourseCard as DashboardCourseCardData } from "@/types/course";
 import { Button } from "@/components/ui/button";
 import { DashboardCourseCard } from "@/components/dashboard/DashboardCourseCard";
 import { useDashboardOverview } from "@/hooks/useDashboardOverview";
+import { PageLoader } from "@/components/ui/PageLoader";
 
 export default function DashboardCoursesPage() {
   const { isLoading } = useAuth();
@@ -26,31 +27,33 @@ export default function DashboardCoursesPage() {
 
   if (isLoading || loading) {
     return (
-      <div className="px-6 py-8">
-        <div className="neo-surface rounded-2xl p-6 text-sm text-muted-foreground">Loading created courses...</div>
+      <div className="px-4 py-6 sm:px-6 sm:py-8">
+        <PageLoader
+          title="Loading created courses..."
+          subtitle="Fetching your authored courses and publish states."
+        />
       </div>
     );
   }
 
   return (
-    <div className="relative px-6 py-8">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_15%_8%,rgba(212,175,55,0.08),transparent_28%),radial-gradient(circle_at_84%_16%,rgba(212,175,55,0.05),transparent_24%)]" />
+    <div className="relative px-4 py-6 sm:px-6 sm:py-8">
 
       <div className="relative z-10 mx-auto w-full max-w-7xl space-y-6">
-        <section className="neo-surface rounded-3xl p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <section className="neo-surface rounded-3xl p-4 sm:p-6">
+          <div className="flex flex-col gap-4">
             <div>
               <p className="text-xs uppercase tracking-[0.12em] text-primary/75">Dashboard</p>
-              <h1 className="mt-1 text-3xl font-bold text-foreground">Created Courses</h1>
+              <h1 className="mt-1 text-2xl sm:text-3xl font-bold text-foreground">Created Courses</h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 Manage publishing and continue course authoring.
               </p>
             </div>
-            <div className="flex gap-2">
-              <Button asChild variant="ghost" className="rounded-full border border-border">
+            <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+              <Button asChild variant="ghost" className="rounded-full border border-border text-sm" size="sm">
                 <Link href="/dashboard">Overview</Link>
               </Button>
-              <Button asChild className="skeuo-gold rounded-full hover:!opacity-100">
+              <Button asChild className="skeuo-gold rounded-full hover:!opacity-100 text-sm" size="sm">
                 <Link href="/create-course">Create Course</Link>
               </Button>
             </div>
@@ -58,7 +61,7 @@ export default function DashboardCoursesPage() {
         </section>
 
         {error && (
-          <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 sm:px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         )}
@@ -75,7 +78,7 @@ export default function DashboardCoursesPage() {
             ))}
           </div>
         ) : (
-          <div className="neo-surface rounded-2xl p-6 text-sm text-muted-foreground">
+          <div className="neo-surface rounded-2xl p-4 sm:p-6 text-sm text-muted-foreground">
             No created courses yet. Use Create Course to bootstrap your first curriculum.
           </div>
         )}
@@ -83,4 +86,3 @@ export default function DashboardCoursesPage() {
     </div>
   );
 }
-

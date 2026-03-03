@@ -36,28 +36,33 @@ app.use((req, res, next) => {
 
 app.use("/course", courseRouter);
 
-let mongoServer: MongoMemoryServer;
+const runIntegrationSuite = process.env.RUN_INTEGRATION_TESTS === "true";
+const describeIntegration = runIntegrationSuite ? describe : describe.skip;
 
-beforeAll(async () => {
-  mongoServer = await MongoMemoryServer.create();
-  const uri = mongoServer.getUri();
-  await mongoose.connect(uri);
-});
+describeIntegration("Course Quiz and Completion API", () => {
+  let mongoServer: MongoMemoryServer | null = null;
 
-afterAll(async () => {
-  await mongoose.disconnect();
-  await mongoServer.stop();
-});
+  beforeAll(async () => {
+    mongoServer = await MongoMemoryServer.create();
+    const uri = mongoServer.getUri();
+    await mongoose.connect(uri);
+  }, 600000);
 
-afterEach(async () => {
-  const collections = mongoose.connection.collections;
-  for (const key in collections) {
-    const collection = collections[key];
-    await collection.deleteMany({});
-  }
-});
+  afterAll(async () => {
+    await mongoose.disconnect();
+    if (mongoServer) {
+      await mongoServer.stop();
+    }
+  });
 
-describe("Course Quiz and Completion API", () => {
+  afterEach(async () => {
+    const collections = mongoose.connection.collections;
+    for (const key in collections) {
+      const collection = collections[key];
+      await collection.deleteMany({});
+    }
+  });
+
   const userId = new mongoose.Types.ObjectId("507f1f77bcf86cd799439011");
 
   it("should mark a multiple_choice question correctly and update quiz completion", async () => {

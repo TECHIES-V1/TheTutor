@@ -101,11 +101,6 @@ type DialogContentProps = {
 
 export function DialogContent({ children, className }: DialogContentProps) {
   const { open, setOpen } = useDialogContext("DialogContent");
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -122,7 +117,7 @@ export function DialogContent({ children, className }: DialogContentProps) {
     };
   }, [open, setOpen]);
 
-  if (!mounted || !open) return null;
+  if (!open || typeof document === "undefined") return null;
 
   return createPortal(
     <div
@@ -132,7 +127,7 @@ export function DialogContent({ children, className }: DialogContentProps) {
     >
       <div
         className={cn(
-          "relative w-full max-w-lg rounded-2xl border border-border bg-background p-5 shadow-xl",
+          "relative w-full max-w-lg rounded-2xl border border-border bg-background p-5",
           className,
         )}
         onClick={(event) => event.stopPropagation()}

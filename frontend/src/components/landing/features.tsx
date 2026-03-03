@@ -1,27 +1,28 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 const features = [
   {
     title: "Adaptive Tutor Guidance",
     description: "The tutor responds based on your level and adjusts the pace as you progress.",
-    image: "https://images.unsplash.com/photo-1584697964192-58c4f4bfc55a?auto=format&fit=crop&w=900&q=80",
+    image: "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=900&q=80",
   },
   {
     title: "Structured Learning Plans",
     description: "Turn any topic into a clear curriculum with milestones, checkpoints, and revision cycles.",
-    image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=900&q=80",
+    image: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=900&q=80",
   },
   {
     title: "Feedback In Seconds",
     description: "Ask questions, practice, and get immediate explanations without waiting for office hours.",
-    image: "https://images.unsplash.com/photo-1588072432836-e10032774350?auto=format&fit=crop&w=900&q=80",
+    image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80",
   },
   {
     title: "Certificate Ready Learning",
     description: "Build confidence for exams and portfolio outcomes with trackable completion and proof.",
-    image: "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=900&q=80",
+    image: "https://images.unsplash.com/photo-1522881193457-37ae97c905bf?auto=format&fit=crop&w=900&q=80",
   },
 ];
 
@@ -53,7 +54,15 @@ export function Features() {
               transition={{ duration: 0.45, delay: index * 0.08 }}
               className="landing-surface overflow-hidden rounded-3xl"
             >
-              <img src={feature.image} alt={feature.title} className="h-52 w-full object-cover" />
+              <div className="relative h-52 w-full">
+                <Image
+                  src={feature.image}
+                  alt={feature.title}
+                  fill
+                  sizes="(min-width: 768px) 50vw, 100vw"
+                  className="object-cover"
+                />
+              </div>
               <div className="p-6">
                 <h3 className="font-playfair text-2xl font-bold text-[#111111]">{feature.title}</h3>
                 <p className="mt-3 text-base leading-relaxed text-[#505050]">{feature.description}</p>
