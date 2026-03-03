@@ -37,6 +37,10 @@ describe("YouTube Service", () => {
                         id: {
                             videoId: "dQw4w9WgXcQ",
                         },
+                        snippet: {
+                            title: "Never Gonna Give You Up",
+                            channelTitle: "RickAstleyVEVO",
+                        },
                     },
                 ],
             }),
@@ -45,7 +49,12 @@ describe("YouTube Service", () => {
         global.fetch = vi.fn().mockResolvedValue(mockResponse as unknown as Response);
 
         const result = await searchYouTubeVideo("Rick Astley");
-        expect(result).toBe("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+        expect(result).toEqual({
+            url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            title: "Never Gonna Give You Up",
+            channelName: "RickAstleyVEVO",
+            queryUsed: "Rick Astley",
+        });
         expect(global.fetch).toHaveBeenCalledTimes(1);
 
         // Check if the correct URL was built

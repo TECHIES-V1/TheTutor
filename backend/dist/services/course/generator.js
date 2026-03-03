@@ -11,11 +11,13 @@ const youtube_service_1 = require("../youtube/youtube.service");
 // ── Course Generator ──────────────────────────────────────────────────────
 async function* generate(conversationId, userId) {
     // Load conversation
+    console.log("[generator] Starting for conversationId:", conversationId, "userId:", userId);
     const conversation = await Conversation_1.Conversation.findOne({
         _id: conversationId,
         userId: new mongoose_1.Types.ObjectId(userId),
     });
     if (!conversation) {
+        console.log("[generator] Conversation not found");
         yield {
             type: "error",
             data: {
@@ -27,7 +29,9 @@ async function* generate(conversationId, userId) {
         };
         return;
     }
+    console.log("[generator] Conversation found. Phase:", conversation.phase, "OnboardingData:", JSON.stringify(conversation.onboardingData));
     if (conversation.phase !== "resource_retrieval") {
+        console.log("[generator] PHASE MISMATCH — expected resource_retrieval, got:", conversation.phase);
         yield {
             type: "error",
             data: {

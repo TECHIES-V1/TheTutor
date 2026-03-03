@@ -6,15 +6,14 @@ import { api } from "@/lib/api";
 import { CourseSummary } from "@/types/course";
 import { Button } from "@/components/ui/button";
 import { Search, ArrowRight } from "lucide-react";
-
-const LEVELS: Array<CourseSummary["level"] | "all"> = ["all", "beginner", "intermediate", "advanced"];
+import { PageLoader } from "@/components/ui/PageLoader";
 
 export default function ExplorePage() {
   const [courses, setCourses] = useState<CourseSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [level, setLevel] = useState<(typeof LEVELS)[number]>("all");
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -51,22 +50,20 @@ export default function ExplorePage() {
   }, []);
 
   const filtered = useMemo(() => {
+    const normalizedQuery = searchTerm.trim().toLowerCase();
     return courses.filter((course) => {
       const queryMatch =
-        !query.trim() ||
-        course.title.toLowerCase().includes(query.toLowerCase()) ||
-        course.description.toLowerCase().includes(query.toLowerCase()) ||
-        course.topic.toLowerCase().includes(query.toLowerCase()) ||
-        course.ownerName.toLowerCase().includes(query.toLowerCase());
-
-      const levelMatch = level === "all" || course.level === level;
-      return queryMatch && levelMatch;
+        !normalizedQuery ||
+        course.title.toLowerCase().includes(normalizedQuery) ||
+        course.description.toLowerCase().includes(normalizedQuery) ||
+        course.topic.toLowerCase().includes(normalizedQuery) ||
+        course.ownerName.toLowerCase().includes(normalizedQuery);
+      return queryMatch;
     });
-  }, [courses, query, level]);
+  }, [courses, searchTerm]);
 
   return (
     <div className="relative min-h-full px-6 py-6 sm:py-8">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_15%_8%,rgba(212,175,55,0.08),transparent_28%),radial-gradient(circle_at_84%_16%,rgba(212,175,55,0.05),transparent_24%)]" />
 
       <div className="relative z-10 w-full max-w-5xl">
         <div className="mb-8 sm:mb-10">
@@ -76,33 +73,29 @@ export default function ExplorePage() {
           </p>
         </div>
 
-        <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center">
+        <form
+          className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"
+          onSubmit={(event) => {
+            event.preventDefault();
+            setSearchTerm(query);
+          }}
+        >
           <div className="neo-inset relative flex-1 rounded-xl">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search by title, topic, or owner"
+              placeholder="Search by title, topic, or author"
               className="h-11 w-full rounded-xl bg-transparent pl-10 pr-4 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
             />
           </div>
-
-          <div className="flex flex-wrap gap-2">
-            {LEVELS.map((item) => (
-              <button
-                key={item}
-                onClick={() => setLevel(item)}
-                className={`rounded-full border px-3 py-2 text-xs capitalize transition ${
-                  level === item
-                    ? "border-primary/40 bg-primary/15 text-primary"
-                    : "border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
-                }`}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-        </div>
+          <Button
+            type="submit"
+            className="skeuo-gold h-11 rounded-xl px-5 text-sm hover:!opacity-100"
+          >
+            Search
+          </Button>
+        </form>
 
         {error && (
           <div className="mb-4 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -111,10 +104,13 @@ export default function ExplorePage() {
         )}
 
         {loading ? (
-          <div className="neo-surface rounded-2xl p-6 text-sm text-muted-foreground">Loading courses...</div>
+          <PageLoader
+            title="Loading courses..."
+            subtitle="Fetching published courses from the marketplace."
+          />
         ) : filtered.length === 0 ? (
           <div className="neo-surface rounded-2xl p-6 text-sm text-muted-foreground">
-            No courses found with the current filters.
+            No courses found for this search.
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
@@ -129,7 +125,9 @@ export default function ExplorePage() {
                     <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-xs text-primary capitalize">
                       {course.level}
                     </span>
-                    <span className="text-xs text-muted-foreground">By {course.ownerName}</span>
+                    <span className="text-xs text-muted-foreground">
+                      By {course.author?.name || course.ownerName}
+                    </span>
                   </div>
                   <h4 className="font-playfair text-lg font-bold text-foreground">{course.title}</h4>
                   <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{course.description}</p>
@@ -143,7 +141,7 @@ export default function ExplorePage() {
                     </Button>
                     <Button asChild size="sm" className="skeuo-gold rounded-full hover:!opacity-100">
                       <Link href={continueHref}>
-                        {course.enrollment ? "Continue" : "Open"}
+                        {course.enrollment ? "Continue" : "Enroll"}
                         <ArrowRight className="h-4 w-4" />
                       </Link>
                     </Button>

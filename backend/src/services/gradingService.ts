@@ -1,5 +1,11 @@
-import { IQuizQuestion } from "../models/Course";
 import { IQuizAnswer, IQuizFeedback } from "../models/QuizAttempt";
+
+interface GradingQuestion {
+  questionId: string;
+  prompt: string;
+  expectedConcepts: string[][];
+  remediationTip: string;
+}
 
 export const PASS_THRESHOLD = 0.7;
 
@@ -21,7 +27,7 @@ function formatMissingConcept(group: string[]): string {
   return group[0] ?? "key concept";
 }
 
-export function gradeQuiz(quiz: IQuizQuestion[], answers: IQuizAnswer[]): GradeResult {
+export function gradeQuiz(quiz: GradingQuestion[], answers: IQuizAnswer[]): GradeResult {
   const byQuestionId = new Map<string, string>();
   for (const answer of answers) {
     byQuestionId.set(answer.questionId, answer.response);
@@ -71,4 +77,3 @@ export function gradeQuiz(quiz: IQuizQuestion[], answers: IQuizAnswer[]): GradeR
     feedback,
   };
 }
-

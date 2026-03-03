@@ -9,6 +9,7 @@ export interface IEnrollment extends Document {
   progressPercent: number;
   currentLessonId: string;
   completedLessonIds: string[];
+  completedModuleQuizIds: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,6 +26,7 @@ const EnrollmentSchema = new Schema<IEnrollment>(
     progressPercent: { type: Number, default: 0, min: 0, max: 100 },
     currentLessonId: { type: String, required: true },
     completedLessonIds: { type: [String], default: [] },
+    completedModuleQuizIds: { type: [String], default: [] },
   },
   { timestamps: true }
 );

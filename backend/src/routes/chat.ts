@@ -3,40 +3,112 @@ import { Types } from "mongoose";
 import { randomUUID } from "crypto";
 import { requireAuth } from "../middleware/auth";
 import { Conversation, type IMessage } from "../models/Conversation";
-import { chat, extractData, generateSubjectName } from "../services/ai/nova";
-import type {
-  OnboardingPhase,
-  ConversationPhase,
-  OnboardingData,
-  SendMessageRequest,
-  ConfirmSubjectRequest,
-} from "../types";
+import { Course } from "../models/Course";
+import {
+  chat,
+  generateSubjectFromConversation,
+  extractOnboardingDataFromConversation,
+} from "../services/ai/nova";
 import type { ModelMessage } from "ai";
 
 const router = Router();
 
-// ── Determine Onboarding Phase ────────────────────────────────────────────
+const MAX_REPLIES_PER_ROUND = 5;
+const MAX_RELATED_COURSES = 5;
 
-function determineOnboardingPhase(data: Partial<OnboardingData>): OnboardingPhase {
-  if (!data.topic) return "topic";
-  if (!data.level) return "level";
-  if (!data.hoursPerWeek) return "time";
-  if (!data.goal) return "goal";
-  return "confirmation";
+type RelatedCoursePreview = {
+  id: string;
+  title: string;
+  description: string;
+  level: string;
+  authorName: string;
+  moduleCount: number;
+  lessonCount: number;
+};
+
+function escapeRegex(input: string): string {
+  return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function getOnboardingProgress(phase: OnboardingPhase): number {
-  const progressMap: Record<OnboardingPhase, number> = {
-    topic: 1,
-    level: 2,
-    time: 3,
-    goal: 4,
-    confirmation: 5,
-  };
-  return progressMap[phase];
+function toSearchTerms(subject: string): string[] {
+  const normalized = subject.trim();
+  if (!normalized) return [];
+
+  const terms = normalized
+    .split(/\s+/)
+    .map((term) => term.trim().toLowerCase())
+    .filter((term) => term.length >= 3);
+
+  const uniqueTerms = Array.from(new Set([normalized, ...terms]));
+  return uniqueTerms.slice(0, 6);
 }
 
-// ── Convert Messages to AI Format ─────────────────────────────────────────
+function countLessons(course: {
+  curriculum?: Array<{ lessons?: unknown[] }>;
+  modules?: Array<{ lessons?: unknown[] }>;
+}): number {
+  if (Array.isArray(course.curriculum) && course.curriculum.length > 0) {
+    return course.curriculum.reduce((sum, module) => {
+      return sum + (Array.isArray(module.lessons) ? module.lessons.length : 0);
+    }, 0);
+  }
+
+  if (Array.isArray(course.modules)) {
+    return course.modules.reduce((sum, module) => {
+      return sum + (Array.isArray(module.lessons) ? module.lessons.length : 0);
+    }, 0);
+  }
+
+  return 0;
+}
+
+async function findRelatedPublishedCourses(subject: string): Promise<RelatedCoursePreview[]> {
+  const terms = toSearchTerms(subject);
+  if (terms.length === 0) return [];
+
+  const searchConditions = terms.flatMap((term) => {
+    const pattern = escapeRegex(term);
+    return [
+      { title: { $regex: pattern, $options: "i" } },
+      { subject: { $regex: pattern, $options: "i" } },
+      { topic: { $regex: pattern, $options: "i" } },
+      { description: { $regex: pattern, $options: "i" } },
+    ];
+  });
+
+  const related = await Course.find({
+    visibility: "published",
+    status: { $in: ["active", "completed"] },
+    $and: [
+      {
+        $or: [
+          { generationStatus: "ready" },
+          { generationStatus: { $exists: false } },
+        ],
+      },
+      {
+        $or: searchConditions,
+      },
+    ],
+  })
+    .sort({ updatedAt: -1 })
+    .limit(MAX_RELATED_COURSES)
+    .select("title description level ownerName curriculum modules");
+
+  return related.map((course) => ({
+    id: course._id.toString(),
+    title: String(course.title ?? "Untitled Course"),
+    description: String(course.description ?? ""),
+    level: String(course.level ?? ""),
+    authorName: String(course.ownerName ?? "Unknown Author"),
+    moduleCount: Array.isArray(course.curriculum) && course.curriculum.length > 0
+      ? course.curriculum.length
+      : Array.isArray(course.modules)
+        ? course.modules.length
+        : 0,
+    lessonCount: countLessons(course),
+  }));
+}
 
 function toAIMessages(messages: IMessage[]): ModelMessage[] {
   return messages.map((m) => ({
@@ -49,7 +121,7 @@ function toAIMessages(messages: IMessage[]): ModelMessage[] {
 
 router.post("/message", requireAuth, async (req: Request, res: Response) => {
   try {
-    const { message, conversationId } = req.body as SendMessageRequest;
+    const { message, conversationId } = req.body as { message?: string; conversationId?: string };
     const userId = req.jwtUser!.userId;
 
     if (!message?.trim()) {
@@ -60,28 +132,43 @@ router.post("/message", requireAuth, async (req: Request, res: Response) => {
     // Find or create conversation
     let conversation = conversationId
       ? await Conversation.findOne({
-        _id: conversationId,
-        userId: new Types.ObjectId(userId),
-        status: "active",
-      })
-      : await Conversation.findOne({
-        userId: new Types.ObjectId(userId),
-        status: "active",
-        phase: "onboarding",
-      });
+          _id: conversationId,
+          userId: new Types.ObjectId(userId),
+          status: "active",
+        })
+      : null;
 
-    if (!conversation) {
-      // Create new conversation
+    if (!conversationId) {
+      console.log("[chat/message] No conversationId provided. Starting a fresh onboarding chat.");
+      await Conversation.updateMany(
+        {
+          userId: new Types.ObjectId(userId),
+          status: "active",
+          phase: "onboarding",
+        },
+        { status: "abandoned" }
+      );
       conversation = new Conversation({
         userId: new Types.ObjectId(userId),
         messages: [],
-        phase: "onboarding" as ConversationPhase,
+        phase: "onboarding",
         onboardingData: {},
+        confirmationAttempts: 0,
         status: "active",
       });
     }
 
-    // Check if conversation is in onboarding phase
+    if (!conversation) {
+      conversation = new Conversation({
+        userId: new Types.ObjectId(userId),
+        messages: [],
+        phase: "onboarding",
+        onboardingData: {},
+        confirmationAttempts: 0,
+        status: "active",
+      });
+    }
+
     if (conversation.phase !== "onboarding") {
       res.status(400).json({
         error: "Conversation is not in onboarding phase",
@@ -90,9 +177,6 @@ router.post("/message", requireAuth, async (req: Request, res: Response) => {
       });
       return;
     }
-
-    // Determine current onboarding phase
-    const currentPhase = determineOnboardingPhase(conversation.onboardingData);
 
     // Add user message
     const userMessage: IMessage = {
@@ -103,63 +187,55 @@ router.post("/message", requireAuth, async (req: Request, res: Response) => {
     };
     conversation.messages.push(userMessage);
 
-    // Extract data from user message
-    const extractedData = await extractData(
-      message,
-      currentPhase,
-      conversation.onboardingData
-    );
-
-    // Update onboarding data
-    if (extractedData.topic) {
-      conversation.onboardingData.topic = extractedData.topic;
-    }
-    if (extractedData.level) {
-      conversation.onboardingData.level = extractedData.level;
-    }
-    if (extractedData.hoursPerWeek) {
-      conversation.onboardingData.hoursPerWeek = extractedData.hoursPerWeek;
-    }
-    if (extractedData.goal) {
-      conversation.onboardingData.goal = extractedData.goal;
-    }
-
-    // Determine next phase after extraction
-    const nextPhase = determineOnboardingPhase(conversation.onboardingData);
-
-    // Generate AI response
-    const aiMessages = toAIMessages(conversation.messages);
-    let aiResponse = await chat(aiMessages, nextPhase, conversation.onboardingData);
-
-    // If we're in confirmation phase, generate a subject name if needed
-    let suggestedSubject: string | undefined;
-    if (nextPhase === "confirmation" && !conversation.onboardingData.confirmedSubject) {
-      suggestedSubject = await generateSubjectName(conversation.onboardingData);
-      // Include the subject in the response if not already mentioned
-      if (!aiResponse.includes(suggestedSubject)) {
-        aiResponse += `\n\nI'd like to create a course called: **${suggestedSubject}**\n\nDoes this sound right for what you're looking for?`;
+    // Count assistant messages since the last confirmation message (current round)
+    const allMessages = conversation.messages;
+    let lastConfirmIndex = -1;
+    for (let i = allMessages.length - 1; i >= 0; i--) {
+      if (allMessages[i].role === "assistant" && allMessages[i].metadata?.isConfirmation) {
+        lastConfirmIndex = i;
+        break;
       }
     }
+    const currentRoundMessages = allMessages.slice(lastConfirmIndex + 1);
+    const assistantCountInRound = currentRoundMessages.filter((m) => m.role === "assistant").length;
+    const messagesLeft = MAX_REPLIES_PER_ROUND - assistantCountInRound - 1;
 
-    // Create assistant message
+    let aiResponse: string;
+    let suggestedSubject: string | undefined;
+    let requiresConfirmation = false;
+
+    if (assistantCountInRound >= MAX_REPLIES_PER_ROUND - 1) {
+      // Round limit reached — generate subject from the full conversation
+      [suggestedSubject] = await Promise.all([
+        generateSubjectFromConversation(conversation.messages),
+      ]);
+      const extracted = await extractOnboardingDataFromConversation(conversation.messages);
+      conversation.onboardingData = {
+        ...conversation.onboardingData,
+        ...extracted,
+      };
+      aiResponse =
+        `Based on our conversation, I'd like to create a course called:\n\n` +
+        `**${suggestedSubject}**\n\n` +
+        `Is this what you want to learn?`;
+      requiresConfirmation = true;
+    } else {
+      aiResponse = await chat(toAIMessages(conversation.messages), Math.max(0, messagesLeft));
+    }
+
     const assistantMessage: IMessage = {
       id: randomUUID(),
       role: "assistant",
       content: aiResponse,
       timestamp: new Date(),
       metadata: {
-        phase: nextPhase,
-        extractedData: {
-          ...extractedData,
-          ...(suggestedSubject ? { suggestedSubject } : {}),
-        },
+        isConfirmation: requiresConfirmation,
+        ...(suggestedSubject ? { suggestedSubject } : {}),
       },
     };
     conversation.messages.push(assistantMessage);
-
     await conversation.save();
 
-    // Build response
     res.json({
       conversationId: conversation._id.toString(),
       message: {
@@ -169,16 +245,42 @@ router.post("/message", requireAuth, async (req: Request, res: Response) => {
         timestamp: assistantMessage.timestamp.toISOString(),
         metadata: assistantMessage.metadata,
       },
-      phase: conversation.phase,
-      onboardingProgress: getOnboardingProgress(nextPhase),
-      requiresConfirmation: nextPhase === "confirmation",
+      requiresConfirmation,
+      isFinalConfirmation: requiresConfirmation && conversation.confirmationAttempts >= 1,
+      suggestedSubject,
     });
   } catch (error) {
     console.error("Chat error:", error);
-    res.status(500).json({
-      error: "Failed to process message",
-      code: "AI_ERROR",
+    res.status(500).json({ error: "Failed to process message", code: "AI_ERROR" });
+  }
+});
+
+// ── GET /chat/conversations ───────────────────────────────────────────────
+
+router.get("/conversations", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.jwtUser!.userId;
+
+    const conversations = await Conversation.find({ userId: new Types.ObjectId(userId) })
+      .sort({ updatedAt: -1 })
+      .limit(50)
+      .select("_id status phase onboardingData courseId createdAt updatedAt messages");
+
+    res.json({
+      conversations: conversations.map((c) => ({
+        id: c._id.toString(),
+        status: c.status,
+        phase: c.phase,
+        subject: c.onboardingData?.confirmedSubject ?? null,
+        messageCount: c.messages.length,
+        courseId: c.courseId?.toString() ?? null,
+        createdAt: c.createdAt.toISOString(),
+        updatedAt: c.updatedAt.toISOString(),
+      })),
     });
+  } catch (error) {
+    console.error("List conversations error:", error);
+    res.status(500).json({ error: "Failed to list conversations", code: "DB_ERROR" });
   }
 });
 
@@ -194,10 +296,7 @@ router.get("/conversation", requireAuth, async (req: Request, res: Response) => 
     }).sort({ updatedAt: -1 });
 
     if (!conversation) {
-      res.status(404).json({
-        error: "No active conversation",
-        code: "NO_CONVERSATION",
-      });
+      res.status(404).json({ error: "No active conversation", code: "NO_CONVERSATION" });
       return;
     }
 
@@ -213,10 +312,9 @@ router.get("/conversation", requireAuth, async (req: Request, res: Response) => 
         })),
         phase: conversation.phase,
         onboardingData: conversation.onboardingData,
+        confirmationAttempts: conversation.confirmationAttempts,
         status: conversation.status,
         courseId: conversation.courseId?.toString(),
-        createdAt: conversation.createdAt.toISOString(),
-        updatedAt: conversation.updatedAt.toISOString(),
       },
     });
   } catch (error) {
@@ -240,18 +338,12 @@ router.get("/conversation/:id", requireAuth, async (req: Request, res: Response)
     const conversation = await Conversation.findById(id);
 
     if (!conversation) {
-      res.status(404).json({
-        error: "Conversation not found",
-        code: "NOT_FOUND",
-      });
+      res.status(404).json({ error: "Conversation not found", code: "NOT_FOUND" });
       return;
     }
 
     if (conversation.userId.toString() !== userId) {
-      res.status(403).json({
-        error: "Not authorized to access this conversation",
-        code: "FORBIDDEN",
-      });
+      res.status(403).json({ error: "Not authorized", code: "FORBIDDEN" });
       return;
     }
 
@@ -267,10 +359,9 @@ router.get("/conversation/:id", requireAuth, async (req: Request, res: Response)
         })),
         phase: conversation.phase,
         onboardingData: conversation.onboardingData,
+        confirmationAttempts: conversation.confirmationAttempts,
         status: conversation.status,
         courseId: conversation.courseId?.toString(),
-        createdAt: conversation.createdAt.toISOString(),
-        updatedAt: conversation.updatedAt.toISOString(),
       },
     });
   } catch (error) {
@@ -283,7 +374,7 @@ router.get("/conversation/:id", requireAuth, async (req: Request, res: Response)
 
 router.post("/confirm-subject", requireAuth, async (req: Request, res: Response) => {
   try {
-    const { conversationId, confirmed } = req.body as ConfirmSubjectRequest;
+    const { conversationId, confirmed } = req.body as { conversationId?: string; confirmed?: boolean };
     const userId = req.jwtUser!.userId;
 
     if (!conversationId) {
@@ -298,73 +389,69 @@ router.post("/confirm-subject", requireAuth, async (req: Request, res: Response)
     });
 
     if (!conversation) {
-      res.status(404).json({
-        error: "Conversation not found",
-        code: "NO_CONVERSATION",
-      });
+      res.status(404).json({ error: "Conversation not found", code: "NO_CONVERSATION" });
       return;
     }
 
     if (confirmed) {
-      // Get the suggested subject from the last assistant message
-      const lastAssistantMessage = [...conversation.messages]
+      // Get confirmed subject from the last confirmation message
+      const lastConfirmMsg = [...conversation.messages]
         .reverse()
-        .find((m) => m.role === "assistant");
-      const suggestedSubject =
-        lastAssistantMessage?.metadata?.extractedData?.suggestedSubject ||
+        .find((m) => m.role === "assistant" && m.metadata?.isConfirmation);
+      const subject =
+        lastConfirmMsg?.metadata?.suggestedSubject ||
         conversation.onboardingData.topic ||
         "New Course";
 
-      // Confirm the subject and move to resource retrieval
-      conversation.onboardingData.confirmedSubject = suggestedSubject;
+      conversation.onboardingData.confirmedSubject = subject;
+      conversation.markModified("onboardingData");
       conversation.phase = "resource_retrieval";
+
+      console.log("[confirm-subject] Saving phase=resource_retrieval for conversation", conversation._id.toString(), "subject:", subject);
+      const relatedCourses = await findRelatedPublishedCourses(subject);
+      const discoveryMessage =
+        relatedCourses.length > 0
+          ? `Before I build a new course, I found ${relatedCourses.length} similar public course${relatedCourses.length === 1 ? "" : "s"} you can explore first.`
+          : "I checked for similar public courses and found nothing close right now. I'll create a new course for you.";
+
+      const discoveryAssistantMessage: IMessage = {
+        id: randomUUID(),
+        role: "assistant",
+        content: discoveryMessage,
+        timestamp: new Date(),
+        metadata: {
+          relatedCourses,
+        },
+      };
+      conversation.messages.push(discoveryAssistantMessage);
+
       await conversation.save();
+      console.log(
+        "[confirm-subject] Saved. Phase is now:",
+        conversation.phase,
+        "relatedCourses:",
+        relatedCourses.length
+      );
 
       res.json({
         success: true,
         conversationId: conversation._id.toString(),
         phase: "resource_retrieval",
-        subject: suggestedSubject,
-        message: "Subject confirmed. Ready for course generation.",
+        subject,
+        message: discoveryMessage,
+        relatedCourses,
+        hasRelatedCourses: relatedCourses.length > 0,
       });
     } else {
-      // Reject - tell the AI the user wants changes and ask what else is needed.
-      // Do NOT abandon the conversation or erase the onboarding data.
-
-      const userMessage: IMessage = {
-        id: randomUUID(),
-        role: "user",
-        content: "I do not want this subject. I want to adjust my learning goals. What else do you need to know to find the right course subject for me?",
-        timestamp: new Date(),
-      };
-      conversation.messages.push(userMessage);
-
-      // We maintain the phase as "confirmation" for the Chat logic (or reset to topic/goal if we wanted, 
-      // but feeding it into the AI as confirmation allows it to gracefully ask what is wrong).
-      // For best flexibility, we can let our `chat` AI function respond directly to the rejection.
-
-      const aiMessages = toAIMessages(conversation.messages);
-      const aiResponse = await chat(aiMessages, "confirmation", conversation.onboardingData);
-
-      const assistantMessage: IMessage = {
-        id: randomUUID(),
-        role: "assistant",
-        content: aiResponse,
-        timestamp: new Date(),
-        metadata: {
-          phase: "confirmation",
-          extractedData: conversation.onboardingData,
-        },
-      };
-      conversation.messages.push(assistantMessage);
-
+      // Rejection — increment counter, let user continue chatting
+      conversation.confirmationAttempts += 1;
       await conversation.save();
 
       res.json({
         success: true,
         conversationId: conversation._id.toString(),
-        phase: "onboarding", // keep the frontend in the onboarding chat view
-        message: assistantMessage.content,
+        phase: "onboarding",
+        message: "No problem! Tell me more about what you're looking for and I'll come up with a better fit.",
       });
     }
   } catch (error) {
@@ -380,32 +467,24 @@ router.post("/restart", requireAuth, async (req: Request, res: Response) => {
     const { conversationId } = req.body as { conversationId?: string };
     const userId = req.jwtUser!.userId;
 
-    // Abandon specified or current conversation
     if (conversationId) {
       await Conversation.findOneAndUpdate(
-        {
-          _id: conversationId,
-          userId: new Types.ObjectId(userId),
-          status: "active",
-        },
+        { _id: conversationId, userId: new Types.ObjectId(userId), status: "active" },
         { status: "abandoned" }
       );
     } else {
       await Conversation.updateMany(
-        {
-          userId: new Types.ObjectId(userId),
-          status: "active",
-        },
+        { userId: new Types.ObjectId(userId), status: "active" },
         { status: "abandoned" }
       );
     }
 
-    // Create new conversation
     const newConversation = new Conversation({
       userId: new Types.ObjectId(userId),
       messages: [],
-      phase: "onboarding" as ConversationPhase,
+      phase: "onboarding",
       onboardingData: {},
+      confirmationAttempts: 0,
       status: "active",
     });
     await newConversation.save();

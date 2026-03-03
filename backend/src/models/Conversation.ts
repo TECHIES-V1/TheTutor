@@ -1,7 +1,6 @@
 import mongoose, { Document, Schema, Types } from "mongoose";
 import type {
   ConversationPhase,
-  OnboardingPhase,
   ExperienceLevel,
   OnboardingData,
 } from "../types";
@@ -12,8 +11,17 @@ export interface IMessage {
   content: string;
   timestamp: Date;
   metadata?: {
-    phase: OnboardingPhase;
-    extractedData?: Partial<OnboardingData>;
+    isConfirmation?: boolean;
+    suggestedSubject?: string;
+    relatedCourses?: Array<{
+      id: string;
+      title: string;
+      description: string;
+      level: string;
+      authorName: string;
+      moduleCount: number;
+      lessonCount: number;
+    }>;
   };
 }
 
@@ -28,6 +36,7 @@ export interface IConversation extends Document {
     goal?: string;
     confirmedSubject?: string;
   };
+  confirmationAttempts: number;
   status: "active" | "completed" | "abandoned";
   courseId?: Types.ObjectId;
   createdAt: Date;
@@ -41,17 +50,21 @@ const MessageSchema = new Schema<IMessage>(
     content: { type: String, required: true },
     timestamp: { type: Date, default: Date.now },
     metadata: {
-      phase: {
-        type: String,
-        enum: ["topic", "level", "time", "goal", "confirmation"],
-      },
-      extractedData: {
-        topic: String,
-        level: { type: String, enum: ["beginner", "intermediate", "advanced"] },
-        hoursPerWeek: Number,
-        goal: String,
-        confirmedSubject: String,
-        suggestedSubject: String,
+      isConfirmation: { type: Boolean },
+      suggestedSubject: { type: String },
+      relatedCourses: {
+        type: [
+          {
+            id: { type: String, required: true },
+            title: { type: String, required: true },
+            description: { type: String, default: "" },
+            level: { type: String, default: "" },
+            authorName: { type: String, default: "" },
+            moduleCount: { type: Number, default: 0 },
+            lessonCount: { type: Number, default: 0 },
+          },
+        ],
+        default: undefined,
       },
     },
   },
@@ -74,6 +87,7 @@ const ConversationSchema = new Schema<IConversation>(
       goal: String,
       confirmedSubject: String,
     },
+    confirmationAttempts: { type: Number, default: 0 },
     status: {
       type: String,
       enum: ["active", "completed", "abandoned"],
@@ -84,7 +98,6 @@ const ConversationSchema = new Schema<IConversation>(
   { timestamps: true }
 );
 
-// Index for finding active conversations by user
 ConversationSchema.index({ userId: 1, status: 1 });
 
 export const Conversation = mongoose.model<IConversation>(

@@ -1,5 +1,6 @@
 import { Sparkles, Target, Zap, Award, Info } from "lucide-react";
 
+
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:5000";
 
 const features = [
@@ -28,19 +29,17 @@ const features = [
 const stats = [
   { value: "10K+", label: "Active Learners" },
   { value: "500+", label: "Subjects Taught" },
-  { value: "4.9★", label: "Average Rating" },
+  { value: "4.9*", label: "Average Rating" },
 ];
 
 export default function SignInPage() {
   return (
     <div className="grid min-h-screen bg-background lg:grid-cols-2">
       <div className="relative hidden flex-col overflow-hidden border-r border-border lg:flex">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_20%_50%,rgba(212,175,55,0.12)_0%,transparent_70%)]" />
 
         <div className="relative z-10 flex items-center gap-3 p-10">
-          <div className="skeuo-gold flex h-10 w-10 items-center justify-center rounded-lg">
-            <span className="font-playfair text-lg font-bold text-primary-foreground">T</span>
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="TheTutor" className="h-10 w-10 rounded-lg object-contain" />
           <span className="font-playfair text-xl font-bold text-primary">TheTutor</span>
         </div>
 
@@ -48,7 +47,7 @@ export default function SignInPage() {
           <div className="mb-10">
             <h1 className="mb-4 font-playfair text-4xl font-bold leading-tight lg:text-5xl">
               Transform How{" "}
-              <span className="bg-gradient-to-r from-primary via-[#e6c868] to-secondary bg-clip-text text-transparent">
+              <span className="text-primary">
                 You Learn
               </span>
             </h1>
@@ -75,7 +74,7 @@ export default function SignInPage() {
             <div className="flex items-center gap-8">
               {stats.map(({ value, label }) => (
                 <div key={label}>
-                  <p className="bg-gradient-to-r from-primary to-[#e6c868] bg-clip-text font-playfair text-2xl font-bold text-transparent">
+                  <p className="font-playfair text-2xl font-bold text-primary">
                     {value}
                   </p>
                   <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
@@ -87,13 +86,11 @@ export default function SignInPage() {
       </div>
 
       <div className="relative flex min-h-screen flex-col items-center justify-center p-8 lg:min-h-0 lg:p-16">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_40%,rgba(212,175,55,0.08)_0%,transparent_70%)] lg:hidden" />
 
         <div className="relative w-full max-w-sm">
           <div className="mb-8 flex items-center justify-center gap-3 lg:hidden">
-            <div className="skeuo-gold flex h-10 w-10 items-center justify-center rounded-lg">
-              <span className="font-playfair text-lg font-bold text-primary-foreground">T</span>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="TheTutor" className="h-10 w-10 rounded-lg object-contain" />
             <span className="font-playfair text-xl font-bold text-primary">TheTutor</span>
           </div>
 
@@ -144,3 +141,4 @@ export default function SignInPage() {
     </div>
   );
 }
+

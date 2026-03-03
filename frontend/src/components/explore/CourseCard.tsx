@@ -14,7 +14,7 @@ function formatStudents(n: number) {
 
 export function CourseCard({ course }: CourseCardProps) {
     return (
-        <article className="neo-surface group flex flex-col rounded-2xl p-5 transition-all duration-200 hover:border-primary/40 hover:shadow-[0_0_28px_rgba(212,175,55,0.08)]">
+        <article className="neo-surface group flex flex-col rounded-2xl p-5 transition-all duration-200 hover:border-primary/40">
             {/* Card Header */}
             <div className="mb-3 flex items-start justify-between gap-2">
                 <span

@@ -10,10 +10,13 @@ const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const passport_1 = __importDefault(require("passport"));
 const database_1 = require("./config/database");
 const passport_2 = require("./config/passport");
+const demoCourses_1 = require("./seeds/demoCourses");
 const auth_1 = __importDefault(require("./routes/auth"));
 const user_1 = __importDefault(require("./routes/user"));
 const chat_1 = __importDefault(require("./routes/chat"));
 const course_1 = __importDefault(require("./routes/course"));
+const courses_1 = __importDefault(require("./routes/courses"));
+const dashboard_1 = __importDefault(require("./routes/dashboard"));
 const app = (0, express_1.default)();
 const PORT = process.env.PORT ?? 5000;
 const FRONTEND_URL = process.env.FRONTEND_URL ?? "http://localhost:3000";
@@ -32,21 +35,24 @@ app.use("/auth", auth_1.default);
 app.use("/user", user_1.default);
 app.use("/chat", chat_1.default);
 app.use("/course", course_1.default);
+app.use("/courses", courses_1.default);
+app.use("/dashboard", dashboard_1.default);
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
 // ── Start ───────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-    console.log(`🚀 Backend running on http://localhost:${PORT}`);
-});
 (0, database_1.connectDatabase)()
     .then(async () => {
     try {
-        await seedDemoCourses();
+        await (0, demoCourses_1.seedDemoCourses)();
     }
     catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         console.error("⚠️ Demo course seed failed:", message);
     }
+    app.listen(PORT, () => {
+        console.log(`🚀 Backend running on http://localhost:${PORT}`);
+    });
 })
     .catch((err) => {
     console.error("❌ MongoDB connection failed:", err.message);
+    process.exit(1);
 });

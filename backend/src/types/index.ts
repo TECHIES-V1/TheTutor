@@ -55,6 +55,21 @@ export interface LessonResource {
   type: "article" | "video" | "book" | "exercise";
 }
 
+export interface VideoReference {
+  url: string;
+  title: string;
+  channelName: string;
+  queryUsed: string;
+}
+
+export interface LessonCitation {
+  citationText: string;
+  sourceTitle: string;
+  authors: string[];
+  source: string;
+  citationKey: string;
+}
+
 export interface QuizQuestion {
   id: string;
   type: "multiple_choice" | "open_ended";
@@ -89,11 +104,26 @@ export interface Lesson {
   estimatedMinutes: number;
   videoLinks?: string[];
   videoSearchQueries?: string[];
+  videoReferences?: VideoReference[];
+  citations?: LessonCitation[];
   resources?: LessonResource[];
   quizzes?: Quiz[];
   interactiveElements?: InteractiveElement[];
   completed: boolean;
   order: number;
+}
+
+export interface ModuleQuizQuestion {
+  questionId: string;
+  prompt: string;
+  expectedConcepts: string[][];
+  remediationTip: string;
+}
+
+export interface ModuleQuiz {
+  quizId: string;
+  title: string;
+  questions: ModuleQuizQuestion[];
 }
 
 export interface Module {
@@ -102,6 +132,7 @@ export interface Module {
   description: string;
   order: number;
   completed: boolean;
+  moduleQuiz?: ModuleQuiz;
   lessons: Lesson[];
 }
 
@@ -182,6 +213,20 @@ export interface SSECourseChunkEvent {
   type: "module_header" | "lesson" | "resource" | "content";
 }
 
+export interface SSECourseTitleEvent {
+  title: string;
+}
+
+export interface SSEModuleStartedEvent {
+  index: number;
+  title: string;
+}
+
+export interface SSEModuleCompleteEvent {
+  index: number;
+  title: string;
+}
+
 export interface SSECompleteEvent {
   courseId: string;
   title: string;
@@ -214,6 +259,11 @@ export interface SSEToolResultEvent {
   toolName: string;
   toolCallId: string;
   summary: string;
+  resourceRefs?: Array<{
+    title: string;
+    authors: string[];
+    source: string;
+  }>;
 }
 
 export type SSEEvent =
@@ -221,6 +271,9 @@ export type SSEEvent =
   | { type: "resources"; data: SSEResourcesEvent }
   | { type: "parsing_progress"; data: SSEParsingProgressEvent }
   | { type: "course_chunk"; data: SSECourseChunkEvent }
+  | { type: "course_title"; data: SSECourseTitleEvent }
+  | { type: "module_started"; data: SSEModuleStartedEvent }
+  | { type: "module_complete"; data: SSEModuleCompleteEvent }
   | { type: "complete"; data: SSECompleteEvent }
   | { type: "error"; data: SSEErrorEvent }
   | { type: "tool_call"; data: SSEToolCallEvent }

@@ -2,7 +2,7 @@
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
-const PROTECTED = ["/create-course", "/dashboard", "/explore", "/learn", "/settings"];
+const PROTECTED = ["/create-course", "/dashboard", "/learn", "/settings"];
 const AUTH_ONLY = ["/auth/signin"];
 
 export async function proxy(req: NextRequest) {

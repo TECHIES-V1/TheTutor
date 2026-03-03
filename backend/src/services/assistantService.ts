@@ -12,6 +12,14 @@ function normalize(input: string): string {
 export function generateLessonAssistantReply(lesson: ILesson, question: string): AssistantResult {
   const q = normalize(question);
   const title = lesson.title;
+  const summaryText =
+    lesson.description?.trim() ||
+    String(lesson.content ?? "")
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .slice(0, 2)
+      .join(" ");
 
   if (!q) {
     return {
@@ -22,7 +30,7 @@ export function generateLessonAssistantReply(lesson: ILesson, question: string):
 
   if (q.includes("summary") || q.includes("what is this about")) {
     return {
-      answer: lesson.summary,
+      answer: summaryText || `This lesson focuses on ${title}.`,
       contextTag: "lesson_summary",
     };
   }
@@ -48,4 +56,3 @@ export function generateLessonAssistantReply(lesson: ILesson, question: string):
     contextTag: "default_contextual_help",
   };
 }
-

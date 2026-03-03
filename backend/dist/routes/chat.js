@@ -7,29 +7,7 @@ const auth_1 = require("../middleware/auth");
 const Conversation_1 = require("../models/Conversation");
 const nova_1 = require("../services/ai/nova");
 const router = (0, express_1.Router)();
-// ── Determine Onboarding Phase ────────────────────────────────────────────
-function determineOnboardingPhase(data) {
-    if (!data.topic)
-        return "topic";
-    if (!data.level)
-        return "level";
-    if (!data.hoursPerWeek)
-        return "time";
-    if (!data.goal)
-        return "goal";
-    return "confirmation";
-}
-function getOnboardingProgress(phase) {
-    const progressMap = {
-        topic: 1,
-        level: 2,
-        time: 3,
-        goal: 4,
-        confirmation: 5,
-    };
-    return progressMap[phase];
-}
-// ── Convert Messages to AI Format ─────────────────────────────────────────
+const MAX_REPLIES_PER_ROUND = 5;
 function toAIMessages(messages) {
     return messages.map((m) => ({
         role: m.role,
@@ -58,16 +36,15 @@ router.post("/message", auth_1.requireAuth, async (req, res) => {
                 phase: "onboarding",
             });
         if (!conversation) {
-            // Create new conversation
             conversation = new Conversation_1.Conversation({
                 userId: new mongoose_1.Types.ObjectId(userId),
                 messages: [],
                 phase: "onboarding",
                 onboardingData: {},
+                confirmationAttempts: 0,
                 status: "active",
             });
         }
-        // Check if conversation is in onboarding phase
         if (conversation.phase !== "onboarding") {
             res.status(400).json({
                 error: "Conversation is not in onboarding phase",
@@ -76,8 +53,6 @@ router.post("/message", auth_1.requireAuth, async (req, res) => {
             });
             return;
         }
-        // Determine current onboarding phase
-        const currentPhase = determineOnboardingPhase(conversation.onboardingData);
         // Add user message
         const userMessage = {
             id: (0, crypto_1.randomUUID)(),
@@ -86,52 +61,52 @@ router.post("/message", auth_1.requireAuth, async (req, res) => {
             timestamp: new Date(),
         };
         conversation.messages.push(userMessage);
-        // Extract data from user message
-        const extractedData = await (0, nova_1.extractData)(message, currentPhase, conversation.onboardingData);
-        // Update onboarding data
-        if (extractedData.topic) {
-            conversation.onboardingData.topic = extractedData.topic;
-        }
-        if (extractedData.level) {
-            conversation.onboardingData.level = extractedData.level;
-        }
-        if (extractedData.hoursPerWeek) {
-            conversation.onboardingData.hoursPerWeek = extractedData.hoursPerWeek;
-        }
-        if (extractedData.goal) {
-            conversation.onboardingData.goal = extractedData.goal;
-        }
-        // Determine next phase after extraction
-        const nextPhase = determineOnboardingPhase(conversation.onboardingData);
-        // Generate AI response
-        const aiMessages = toAIMessages(conversation.messages);
-        let aiResponse = await (0, nova_1.chat)(aiMessages, nextPhase, conversation.onboardingData);
-        // If we're in confirmation phase, generate a subject name if needed
-        let suggestedSubject;
-        if (nextPhase === "confirmation" && !conversation.onboardingData.confirmedSubject) {
-            suggestedSubject = await (0, nova_1.generateSubjectName)(conversation.onboardingData);
-            // Include the subject in the response if not already mentioned
-            if (!aiResponse.includes(suggestedSubject)) {
-                aiResponse += `\n\nI'd like to create a course called: **${suggestedSubject}**\n\nDoes this sound right for what you're looking for?`;
+        // Count assistant messages since the last confirmation message (current round)
+        const allMessages = conversation.messages;
+        let lastConfirmIndex = -1;
+        for (let i = allMessages.length - 1; i >= 0; i--) {
+            if (allMessages[i].role === "assistant" && allMessages[i].metadata?.isConfirmation) {
+                lastConfirmIndex = i;
+                break;
             }
         }
-        // Create assistant message
+        const currentRoundMessages = allMessages.slice(lastConfirmIndex + 1);
+        const assistantCountInRound = currentRoundMessages.filter((m) => m.role === "assistant").length;
+        const messagesLeft = MAX_REPLIES_PER_ROUND - assistantCountInRound - 1;
+        let aiResponse;
+        let suggestedSubject;
+        let requiresConfirmation = false;
+        if (assistantCountInRound >= MAX_REPLIES_PER_ROUND - 1) {
+            // Round limit reached — generate subject from the full conversation
+            [suggestedSubject] = await Promise.all([
+                (0, nova_1.generateSubjectFromConversation)(conversation.messages),
+            ]);
+            const extracted = await (0, nova_1.extractOnboardingDataFromConversation)(conversation.messages);
+            conversation.onboardingData = {
+                ...conversation.onboardingData,
+                ...extracted,
+            };
+            aiResponse =
+                `Based on our conversation, I'd like to create a course called:\n\n` +
+                    `**${suggestedSubject}**\n\n` +
+                    `Is this what you want to learn?`;
+            requiresConfirmation = true;
+        }
+        else {
+            aiResponse = await (0, nova_1.chat)(toAIMessages(conversation.messages), Math.max(0, messagesLeft));
+        }
         const assistantMessage = {
             id: (0, crypto_1.randomUUID)(),
             role: "assistant",
             content: aiResponse,
             timestamp: new Date(),
             metadata: {
-                phase: nextPhase,
-                extractedData: {
-                    ...extractedData,
-                    ...(suggestedSubject ? { suggestedSubject } : {}),
-                },
+                isConfirmation: requiresConfirmation,
+                ...(suggestedSubject ? { suggestedSubject } : {}),
             },
         };
         conversation.messages.push(assistantMessage);
         await conversation.save();
-        // Build response
         res.json({
             conversationId: conversation._id.toString(),
             message: {
@@ -141,17 +116,40 @@ router.post("/message", auth_1.requireAuth, async (req, res) => {
                 timestamp: assistantMessage.timestamp.toISOString(),
                 metadata: assistantMessage.metadata,
             },
-            phase: conversation.phase,
-            onboardingProgress: getOnboardingProgress(nextPhase),
-            requiresConfirmation: nextPhase === "confirmation",
+            requiresConfirmation,
+            isFinalConfirmation: requiresConfirmation && conversation.confirmationAttempts >= 1,
+            suggestedSubject,
         });
     }
     catch (error) {
         console.error("Chat error:", error);
-        res.status(500).json({
-            error: "Failed to process message",
-            code: "AI_ERROR",
+        res.status(500).json({ error: "Failed to process message", code: "AI_ERROR" });
+    }
+});
+// ── GET /chat/conversations ───────────────────────────────────────────────
+router.get("/conversations", auth_1.requireAuth, async (req, res) => {
+    try {
+        const userId = req.jwtUser.userId;
+        const conversations = await Conversation_1.Conversation.find({ userId: new mongoose_1.Types.ObjectId(userId) })
+            .sort({ updatedAt: -1 })
+            .limit(50)
+            .select("_id status phase onboardingData courseId createdAt updatedAt messages");
+        res.json({
+            conversations: conversations.map((c) => ({
+                id: c._id.toString(),
+                status: c.status,
+                phase: c.phase,
+                subject: c.onboardingData?.confirmedSubject ?? null,
+                messageCount: c.messages.length,
+                courseId: c.courseId?.toString() ?? null,
+                createdAt: c.createdAt.toISOString(),
+                updatedAt: c.updatedAt.toISOString(),
+            })),
         });
+    }
+    catch (error) {
+        console.error("List conversations error:", error);
+        res.status(500).json({ error: "Failed to list conversations", code: "DB_ERROR" });
     }
 });
 // ── GET /chat/conversation ────────────────────────────────────────────────
@@ -163,10 +161,7 @@ router.get("/conversation", auth_1.requireAuth, async (req, res) => {
             status: "active",
         }).sort({ updatedAt: -1 });
         if (!conversation) {
-            res.status(404).json({
-                error: "No active conversation",
-                code: "NO_CONVERSATION",
-            });
+            res.status(404).json({ error: "No active conversation", code: "NO_CONVERSATION" });
             return;
         }
         res.json({
@@ -181,10 +176,9 @@ router.get("/conversation", auth_1.requireAuth, async (req, res) => {
                 })),
                 phase: conversation.phase,
                 onboardingData: conversation.onboardingData,
+                confirmationAttempts: conversation.confirmationAttempts,
                 status: conversation.status,
                 courseId: conversation.courseId?.toString(),
-                createdAt: conversation.createdAt.toISOString(),
-                updatedAt: conversation.updatedAt.toISOString(),
             },
         });
     }
@@ -204,17 +198,11 @@ router.get("/conversation/:id", auth_1.requireAuth, async (req, res) => {
         }
         const conversation = await Conversation_1.Conversation.findById(id);
         if (!conversation) {
-            res.status(404).json({
-                error: "Conversation not found",
-                code: "NOT_FOUND",
-            });
+            res.status(404).json({ error: "Conversation not found", code: "NOT_FOUND" });
             return;
         }
         if (conversation.userId.toString() !== userId) {
-            res.status(403).json({
-                error: "Not authorized to access this conversation",
-                code: "FORBIDDEN",
-            });
+            res.status(403).json({ error: "Not authorized", code: "FORBIDDEN" });
             return;
         }
         res.json({
@@ -229,10 +217,9 @@ router.get("/conversation/:id", auth_1.requireAuth, async (req, res) => {
                 })),
                 phase: conversation.phase,
                 onboardingData: conversation.onboardingData,
+                confirmationAttempts: conversation.confirmationAttempts,
                 status: conversation.status,
                 courseId: conversation.courseId?.toString(),
-                createdAt: conversation.createdAt.toISOString(),
-                updatedAt: conversation.updatedAt.toISOString(),
             },
         });
     }
@@ -256,64 +243,40 @@ router.post("/confirm-subject", auth_1.requireAuth, async (req, res) => {
             status: "active",
         });
         if (!conversation) {
-            res.status(404).json({
-                error: "Conversation not found",
-                code: "NO_CONVERSATION",
-            });
+            res.status(404).json({ error: "Conversation not found", code: "NO_CONVERSATION" });
             return;
         }
         if (confirmed) {
-            // Get the suggested subject from the last assistant message
-            const lastAssistantMessage = [...conversation.messages]
+            // Get confirmed subject from the last confirmation message
+            const lastConfirmMsg = [...conversation.messages]
                 .reverse()
-                .find((m) => m.role === "assistant");
-            const suggestedSubject = lastAssistantMessage?.metadata?.extractedData?.suggestedSubject ||
+                .find((m) => m.role === "assistant" && m.metadata?.isConfirmation);
+            const subject = lastConfirmMsg?.metadata?.suggestedSubject ||
                 conversation.onboardingData.topic ||
                 "New Course";
-            // Confirm the subject and move to resource retrieval
-            conversation.onboardingData.confirmedSubject = suggestedSubject;
+            conversation.onboardingData.confirmedSubject = subject;
+            conversation.markModified("onboardingData");
             conversation.phase = "resource_retrieval";
+            console.log("[confirm-subject] Saving phase=resource_retrieval for conversation", conversation._id.toString(), "subject:", subject);
             await conversation.save();
+            console.log("[confirm-subject] Saved. Phase is now:", conversation.phase);
             res.json({
                 success: true,
                 conversationId: conversation._id.toString(),
                 phase: "resource_retrieval",
-                subject: suggestedSubject,
+                subject,
                 message: "Subject confirmed. Ready for course generation.",
             });
         }
         else {
-            // Reject - tell the AI the user wants changes and ask what else is needed.
-            // Do NOT abandon the conversation or erase the onboarding data.
-            const userMessage = {
-                id: (0, crypto_1.randomUUID)(),
-                role: "user",
-                content: "I do not want this subject. I want to adjust my learning goals. What else do you need to know to find the right course subject for me?",
-                timestamp: new Date(),
-            };
-            conversation.messages.push(userMessage);
-            // We maintain the phase as "confirmation" for the Chat logic (or reset to topic/goal if we wanted, 
-            // but feeding it into the AI as confirmation allows it to gracefully ask what is wrong).
-            // For best flexibility, we can let our `chat` AI function respond directly to the rejection.
-            const aiMessages = toAIMessages(conversation.messages);
-            const aiResponse = await (0, nova_1.chat)(aiMessages, "confirmation", conversation.onboardingData);
-            const assistantMessage = {
-                id: (0, crypto_1.randomUUID)(),
-                role: "assistant",
-                content: aiResponse,
-                timestamp: new Date(),
-                metadata: {
-                    phase: "confirmation",
-                    extractedData: conversation.onboardingData,
-                },
-            };
-            conversation.messages.push(assistantMessage);
+            // Rejection — increment counter, let user continue chatting
+            conversation.confirmationAttempts += 1;
             await conversation.save();
             res.json({
                 success: true,
                 conversationId: conversation._id.toString(),
-                phase: "onboarding", // keep the frontend in the onboarding chat view
-                message: assistantMessage.content,
+                phase: "onboarding",
+                message: "No problem! Tell me more about what you're looking for and I'll come up with a better fit.",
             });
         }
     }
@@ -327,26 +290,18 @@ router.post("/restart", auth_1.requireAuth, async (req, res) => {
     try {
         const { conversationId } = req.body;
         const userId = req.jwtUser.userId;
-        // Abandon specified or current conversation
         if (conversationId) {
-            await Conversation_1.Conversation.findOneAndUpdate({
-                _id: conversationId,
-                userId: new mongoose_1.Types.ObjectId(userId),
-                status: "active",
-            }, { status: "abandoned" });
+            await Conversation_1.Conversation.findOneAndUpdate({ _id: conversationId, userId: new mongoose_1.Types.ObjectId(userId), status: "active" }, { status: "abandoned" });
         }
         else {
-            await Conversation_1.Conversation.updateMany({
-                userId: new mongoose_1.Types.ObjectId(userId),
-                status: "active",
-            }, { status: "abandoned" });
+            await Conversation_1.Conversation.updateMany({ userId: new mongoose_1.Types.ObjectId(userId), status: "active" }, { status: "abandoned" });
         }
-        // Create new conversation
         const newConversation = new Conversation_1.Conversation({
             userId: new mongoose_1.Types.ObjectId(userId),
             messages: [],
             phase: "onboarding",
             onboardingData: {},
+            confirmationAttempts: 0,
             status: "active",
         });
         await newConversation.save();

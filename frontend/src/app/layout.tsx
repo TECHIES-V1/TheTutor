@@ -1,24 +1,25 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Lato } from "next/font/google";
+import { Comfortaa, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
+
+const comfortaa = Comfortaa({
+  subsets: ["latin"],
+  variable: "--font-comfortaa",
+  weight: ["300", "400", "500", "600", "700"],
+});
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-playfair",
-  weight: ["600", "700", "800"],
-});
-
-const lato = Lato({
-  subsets: ["latin"],
-  variable: "--font-lato",
-  weight: ["300", "400", "700", "900"],
+  weight: ["400", "600", "700"],
 });
 
 export const metadata: Metadata = {
   title: "TheTutor - AI-Powered Personalized Learning",
   description:
-    "Experience AI-powered education that adapts to your pace, learning style, and goals. From curriculum generation to verified certificates—all personalized just for you.",
+    "Experience AI-powered education that adapts to your pace, learning style, and goals. From curriculum generation to verified certificates, all personalized for you.",
   keywords: [
     "AI learning",
     "personalized education",
@@ -41,13 +42,21 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Apply stored theme before React hydrates to prevent flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var p=window.location.pathname||'/';var themed=['/dashboard','/explore','/learn','/profile','/settings','/create-course'].some(function(prefix){return p===prefix||p.indexOf(prefix+'/')===0;});if(themed){var t=localStorage.getItem('thetutor-theme');document.documentElement.dataset.theme=(t==='dark'||t==='light')?t:'light';}else{document.documentElement.dataset.theme='light';}}catch(e){document.documentElement.dataset.theme='light';}`,
+          }}
+        />
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1.0, maximum-scale=1"
         />
       </head>
-      <body className={`${playfair.variable} ${lato.variable}`}>
-        <AuthProvider>{children}</AuthProvider>
+      <body className={`${comfortaa.variable} ${playfair.variable}`}>
+        <ThemeProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -6,6 +6,9 @@ export interface IUser extends Document {
   name: string;
   image: string;
   onboardingCompleted: boolean;
+  preferences?: {
+    theme?: "light" | "dark";
+  };
   createdAt: Date;
 }
 
@@ -16,6 +19,13 @@ const UserSchema = new Schema<IUser>(
     name: { type: String, required: true },
     image: { type: String, default: "" },
     onboardingCompleted: { type: Boolean, default: false },
+    preferences: {
+      theme: {
+        type: String,
+        enum: ["light", "dark"],
+        default: "light",
+      },
+    },
   },
   { timestamps: true }
 );

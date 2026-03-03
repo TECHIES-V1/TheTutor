@@ -5,30 +5,29 @@ import {
   getOnboardingSystemPrompt,
   getBookFilteringPrompt,
   getCourseGenerationPrompt,
-  getDataExtractionPrompt,
+  getSubjectFromConversationPrompt,
+  getOnboardingDataExtractionPrompt,
   getToolAwareGenerationPrompt,
 } from "./prompts";
 import type {
   OnboardingData,
-  OnboardingPhase,
+  ExperienceLevel,
   BookContext,
   DiscoveredBook,
   SSEEvent,
 } from "../../types";
+import type { IMessage } from "../../models/Conversation";
 import { getMCPTools, closeMCPClient } from "../mcp/mcpClient";
 
 // ── Chat (Non-streaming for onboarding) ───────────────────────────────────
 
 export async function chat(
   messages: ModelMessage[],
-  currentPhase: OnboardingPhase,
-  collectedData: Partial<OnboardingData>
+  messagesLeft: number
 ): Promise<string> {
-  const systemPrompt = getOnboardingSystemPrompt(currentPhase, collectedData);
-
   const result = await generateText({
     model: getModel(),
-    system: systemPrompt,
+    system: getOnboardingSystemPrompt(messagesLeft),
     messages,
     maxOutputTokens: GENERATION_CONFIG.maxOutputTokens,
     temperature: GENERATION_CONFIG.temperature,
@@ -37,33 +36,49 @@ export async function chat(
   return result.text;
 }
 
-// ── Extract Data from User Message ────────────────────────────────────────
+// ── Generate Subject Name from Conversation ───────────────────────────────
 
-export async function extractData(
-  userMessage: string,
-  currentPhase: OnboardingPhase,
-  existingData: Partial<OnboardingData>
-): Promise<Partial<OnboardingData & { confirmed?: boolean; feedback?: string }>> {
-  const prompt = getDataExtractionPrompt(userMessage, currentPhase, existingData);
+export async function generateSubjectFromConversation(messages: IMessage[]): Promise<string> {
+  const conversationText = messages
+    .map((m) => `${m.role === "user" ? "Learner" : "Tutor"}: ${m.content}`)
+    .join("\n");
 
   const result = await generateText({
     model: getModel(),
-    prompt,
-    maxOutputTokens: 256,
-    temperature: GENERATION_CONFIG.temperature,
+    prompt: getSubjectFromConversationPrompt(conversationText),
+    maxOutputTokens: 64,
+    temperature: 0.7,
+  });
+
+  return result.text.trim().replace(/^["']|["']$/g, "");
+}
+
+// ── Extract Onboarding Data from Conversation ─────────────────────────────
+
+export async function extractOnboardingDataFromConversation(messages: IMessage[]): Promise<{
+  level: ExperienceLevel;
+  hoursPerWeek: number;
+  goal: string;
+}> {
+  const conversationText = messages
+    .map((m) => `${m.role === "user" ? "Learner" : "Tutor"}: ${m.content}`)
+    .join("\n");
+
+  const result = await generateText({
+    model: getModel(),
+    prompt: getOnboardingDataExtractionPrompt(conversationText),
+    maxOutputTokens: 128,
+    temperature: 0.3,
   });
 
   try {
-    // Extract JSON from the response
-    const jsonMatch = result.text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
-    }
-    return {};
+    const match = result.text.match(/\{[\s\S]*\}/);
+    if (match) return JSON.parse(match[0]);
   } catch {
-    console.error("Failed to parse extraction result:", result.text);
-    return {};
+    console.error("Failed to parse onboarding data extraction:", result.text);
   }
+
+  return { level: "beginner", hoursPerWeek: 5, goal: "build practical skills" };
 }
 
 // ── Filter Books ──────────────────────────────────────────────────────────
@@ -123,8 +138,7 @@ export async function* streamCourseWithMCPTools(
     stopWhen: stepCountIs(10), // Max 10 tool call rounds
     maxOutputTokens: STREAMING_CONFIG.maxOutputTokens,
     onFinish: async () => {
-      // Close MCP client when done (optional for long-running)
-      // await closeMCPClient();
+      await closeMCPClient();
     },
   });
 
@@ -146,7 +160,8 @@ export async function* streamCourseWithMCPTools(
         data: {
           toolName: chunk.toolName,
           toolCallId: chunk.toolCallId,
-          summary: summarizeToolResult(resultObj)
+          summary: summarizeToolResult(resultObj),
+          resourceRefs: extractResourceRefs(resultObj),
         }
       };
     } else if (chunk.type === "text-delta") {
@@ -156,15 +171,63 @@ export async function* streamCourseWithMCPTools(
 }
 
 function summarizeToolResult(result: unknown): string {
+  if (Array.isArray(result)) {
+    return `Found ${result.length} items`;
+  }
+
   if (typeof result === "object" && result !== null) {
     const obj = result as Record<string, unknown>;
-    if (Array.isArray(obj)) {
-      return `Found ${obj.length} items`;
-    }
     if ("summary" in obj) return String(obj.summary);
     if ("title" in obj) return `Parsed: ${obj.title}`;
   }
   return "Tool executed successfully";
+}
+
+function extractResourceRefs(
+  result: unknown
+): Array<{ title: string; authors: string[]; source: string }> {
+  if (typeof result !== "object" || result === null) return [];
+
+  const refs: Array<{ title: string; authors: string[]; source: string }> = [];
+
+  const normalizeAuthors = (value: unknown): string[] => {
+    if (!Array.isArray(value)) return [];
+    return value
+      .map((item) => (typeof item === "string" ? item : typeof item === "object" && item ? String((item as { name?: string }).name ?? "") : ""))
+      .map((name) => name.trim())
+      .filter(Boolean);
+  };
+
+  const pushRef = (candidate: Record<string, unknown>) => {
+    const title = String(candidate.title ?? "").trim();
+    if (!title) return;
+    refs.push({
+      title,
+      authors: normalizeAuthors(candidate.authors),
+      source: String(candidate.source ?? "").trim(),
+    });
+  };
+
+  if (Array.isArray(result)) {
+    for (const item of result) {
+      if (typeof item === "object" && item) {
+        pushRef(item as Record<string, unknown>);
+      }
+    }
+  } else {
+    const obj = result as Record<string, unknown>;
+    if (Array.isArray(obj.books)) {
+      for (const raw of obj.books) {
+        if (typeof raw === "object" && raw) {
+          pushRef(raw as Record<string, unknown>);
+        }
+      }
+    } else {
+      pushRef(obj);
+    }
+  }
+
+  return refs;
 }
 
 export async function* streamCourse(
@@ -206,10 +269,10 @@ The subject name should be:
 Respond with ONLY the subject name, nothing else.
 
 Examples:
-- "Introduction to Python Programming"
-- "Advanced Machine Learning Techniques"
-- "Web Development with React for Beginners"
-- "Data Analysis with Python"`;
+- "Classical Guitar for Absolute Beginners"
+- "The History of the Roman Empire"
+- "Home Cooking: From Basics to Bold Flavours"
+- "Mastering Personal Finance"`;
 
   const result = await generateText({
     model: getModel(),
@@ -219,4 +282,69 @@ Examples:
   });
 
   return result.text.trim().replace(/^["']|["']$/g, "");
+}
+
+export async function repairGeneratedCourseMarkdown(params: {
+  markdown: string;
+  issues: string[];
+  sourceRefs: Array<{ title: string; authors: string[]; source: string }>;
+  onboardingData: OnboardingData;
+}): Promise<string> {
+  const sourceBlock =
+    params.sourceRefs.length > 0
+      ? params.sourceRefs
+        .map(
+          (ref, index) =>
+            `${index + 1}. ${ref.title} | Authors: ${ref.authors.length > 0 ? ref.authors.join(", ") : "Unknown"
+            } | Source: ${ref.source || "unknown"}`
+        )
+        .join("\n")
+      : "No source references available.";
+
+  const prompt = `Repair the provided course markdown to satisfy strict validation.
+
+Validation issues:
+${params.issues.map((issue, index) => `${index + 1}. ${issue}`).join("\n")}
+
+Allowed source references (for citations):
+${sourceBlock}
+
+Student profile:
+- Topic: ${params.onboardingData.confirmedSubject || params.onboardingData.topic || ""}
+- Level: ${params.onboardingData.level || "beginner"}
+- Weekly Time: ${params.onboardingData.hoursPerWeek || 5}
+- Goal: ${params.onboardingData.goal || ""}
+
+Rules:
+- Keep the same high-level structure and module ordering when possible.
+- Every lesson must include:
+  - substantial **Content** (at least 2 full paragraphs, not just bullet points — aim for 200+ characters),
+  - **Key Takeaways** with 2-3 bullet points,
+  - **Videos** section with at least one [Search: "query"],
+  - **Citations** section with at least one APA citation line:
+    - [Source: "Exact textbook title"] Author, A. A. (Year). *Book title*. Publisher.
+  - **Quiz** section containing a fenced JSON code block DIRECTLY after the heading, like:
+    **Quiz**:
+    \`\`\`json
+    [{"id":"q1","type":"multiple_choice","question":"...","options":["A","B","C","D"],"correctAnswerIndex":0,"explanation":"..."}]
+    \`\`\`
+- Every module must include a module checkpoint quiz in this EXACT format immediately after the last lesson of that module:
+  ### Module N Quiz
+  \`\`\`json
+  [{"questionId":"mq-N-1","prompt":"Question text?","expectedConcepts":[["concept1","concept2"]],"remediationTip":"Review tip."}]
+  \`\`\`
+
+Return ONLY corrected markdown. Do not wrap in code fences.
+
+Original markdown:
+${params.markdown}`;
+
+  const result = await generateText({
+    model: getModel(),
+    prompt,
+    maxOutputTokens: GENERATION_CONFIG.maxOutputTokens,
+    temperature: 0.2,
+  });
+
+  return result.text.trim();
 }

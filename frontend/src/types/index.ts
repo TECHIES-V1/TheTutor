@@ -2,6 +2,16 @@
  * Shared TypeScript types for the application.
  */
 
+export interface RelatedCoursePreview {
+  id: string;
+  title: string;
+  description: string;
+  level: string;
+  authorName: string;
+  moduleCount: number;
+  lessonCount: number;
+}
+
 /**
  * Authenticated user returned from the backend JWT payload / /auth/me endpoint.
  */
@@ -20,6 +30,7 @@ export interface Message {
     id: string;
     role: "user" | "tutor";
     content: string;
+    relatedCourses?: RelatedCoursePreview[];
 }
 
 /**
@@ -29,6 +40,7 @@ export interface MessageProps {
     id: string;
     role: "user" | "tutor";
     content: string;
+    relatedCourses?: RelatedCoursePreview[];
 }
 
 /**
