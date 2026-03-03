@@ -8,7 +8,7 @@ frontend/.next/
 frontend/out/
 
 # Build output
-backend/dist/git config pull.rebase false  # merge
+backend/dist/
 frontend/build/
 
 # Environment variables
