@@ -1,4 +1,5 @@
 import { Sparkles, Target, Zap, Award, Info } from "lucide-react";
+import { TutorAvatarMark } from "@/components/brand/TutorAvatarMark";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:5000";
 
@@ -28,7 +29,7 @@ const features = [
 const stats = [
   { value: "10K+", label: "Active Learners" },
   { value: "500+", label: "Subjects Taught" },
-  { value: "4.9★", label: "Average Rating" },
+  { value: "4.9*", label: "Average Rating" },
 ];
 
 export default function SignInPage() {
@@ -38,9 +39,7 @@ export default function SignInPage() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_20%_50%,rgba(212,175,55,0.12)_0%,transparent_70%)]" />
 
         <div className="relative z-10 flex items-center gap-3 p-10">
-          <div className="skeuo-gold flex h-10 w-10 items-center justify-center rounded-lg">
-            <span className="font-playfair text-lg font-bold text-primary-foreground">T</span>
-          </div>
+          <TutorAvatarMark size={40} className="rounded-lg" />
           <span className="font-playfair text-xl font-bold text-primary">TheTutor</span>
         </div>
 
@@ -91,9 +90,7 @@ export default function SignInPage() {
 
         <div className="relative w-full max-w-sm">
           <div className="mb-8 flex items-center justify-center gap-3 lg:hidden">
-            <div className="skeuo-gold flex h-10 w-10 items-center justify-center rounded-lg">
-              <span className="font-playfair text-lg font-bold text-primary-foreground">T</span>
-            </div>
+            <TutorAvatarMark size={40} className="rounded-lg" />
             <span className="font-playfair text-xl font-bold text-primary">TheTutor</span>
           </div>
 
@@ -144,3 +141,4 @@ export default function SignInPage() {
     </div>
   );
 }
+

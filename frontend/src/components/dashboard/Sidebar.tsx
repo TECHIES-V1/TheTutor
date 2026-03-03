@@ -7,13 +7,16 @@ import {
   Compass,
   LayoutDashboard,
   LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plus,
-  Settings,
   Sparkles,
+  UserCircle2,
   X,
 } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
+import { TutorAvatarMark } from "@/components/brand/TutorAvatarMark";
 
 interface NavChildItem {
   label: string;
@@ -40,7 +43,7 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    label: "Courses",
+    label: "Discover",
     href: "/explore",
     icon: Compass,
     children: [
@@ -50,20 +53,22 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    label: "Settings",
-    href: "/settings",
-    icon: Settings,
-    children: [
-      { label: "Profile", href: "/settings/personal-info", matchPrefix: "/settings/personal-info" },
-      { label: "Notifications", href: "/settings/notifications", matchPrefix: "/settings/notifications" },
-      { label: "Security", href: "/settings/security", matchPrefix: "/settings/security" },
-    ],
+    label: "Profile",
+    href: "/profile",
+    icon: UserCircle2,
+    children: [{ label: "Account Center", href: "/profile", matchPrefix: "/profile" }],
   },
 ];
 
 interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
+}
+
+function cx(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(" ");
 }
 
 function isChildActive(pathname: string, child: NavChildItem) {
@@ -73,11 +78,19 @@ function isChildActive(pathname: string, child: NavChildItem) {
   return pathname === child.href;
 }
 
-export function Sidebar({ isOpen, onClose }: SidebarProps) {
+export function Sidebar({
+  isOpen,
+  onClose,
+  isCollapsed = false,
+  onToggleCollapse,
+}: SidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
-  const isCourseWorkspace = pathname.startsWith("/learn/") || /^\/explore\/[^/]+$/.test(pathname);
-  const lessonRouteMatch = pathname.match(/^\/learn\/([^/]+)\/lessons\/([^/]+)(?:\/quiz)?$/);
+  const isCourseWorkspace =
+    pathname.startsWith("/learn/") || /^\/explore\/[^/]+$/.test(pathname);
+  const lessonRouteMatch = pathname.match(
+    /^\/learn\/([^/]+)\/lessons\/([^/]+)(?:\/quiz)?$/
+  );
   const completeRouteMatch = pathname.match(/^\/learn\/([^/]+)\/complete$/);
   const previewRouteMatch = pathname.match(/^\/explore\/([^/]+)$/);
 
@@ -92,112 +105,146 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     activeCourseId && activeLessonId
       ? `/learn/${activeCourseId}/lessons/${activeLessonId}/quiz`
       : "/dashboard";
-  const completionHref = activeCourseId ? `/learn/${activeCourseId}/complete` : "/dashboard";
+  const completionHref = activeCourseId
+    ? `/learn/${activeCourseId}/complete`
+    : "/dashboard";
+
+  const textRevealClass = cx(
+    "overflow-hidden whitespace-nowrap transition-all duration-300",
+    isCollapsed
+      ? "lg:max-w-0 lg:translate-x-1 lg:opacity-0 lg:group-hover/sidebar:max-w-[11rem] lg:group-hover/sidebar:translate-x-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:max-w-[11rem] lg:group-focus-within/sidebar:translate-x-0 lg:group-focus-within/sidebar:opacity-100"
+      : "max-w-[11rem] translate-x-0 opacity-100"
+  );
+  const desktopDetailsClass = cx(
+    "transition-all duration-300",
+    isCollapsed
+      ? "lg:max-h-0 lg:overflow-hidden lg:opacity-0 lg:group-hover/sidebar:max-h-96 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:max-h-96 lg:group-focus-within/sidebar:opacity-100"
+      : "max-h-96 opacity-100"
+  );
+  const buttonJustifyClass = isCollapsed
+    ? "lg:justify-center lg:px-0 lg:group-hover/sidebar:justify-start lg:group-hover/sidebar:px-3 lg:group-focus-within/sidebar:justify-start lg:group-focus-within/sidebar:px-3"
+    : "";
 
   return (
     <>
-      {/* Mobile Backdrop */}
       <div
-        className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${isOpen ? "opacity-100" : "pointer-events-none opacity-0"
-          }`}
+        className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
+          isOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
         onClick={onClose}
       />
 
-      {/* Sidebar Container */}
       <aside
-        className={`neo-surface fixed left-0 top-0 bottom-0 z-50 flex w-64 flex-col border-r border-primary/20 transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
+        className={cx(
+          "group/sidebar neo-surface fixed bottom-0 left-0 top-0 z-50 flex flex-col border-r border-primary/20 transition-[transform,width] duration-300 ease-in-out lg:translate-x-0",
+          isCollapsed ? "w-72 lg:w-20 lg:hover:w-72 lg:focus-within:w-72" : "w-72",
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        )}
       >
-        {/* Brand */}
-        <div className="flex items-center justify-between gap-3 px-6 py-5 border-b border-primary/10">
+        <div className="flex items-center justify-between gap-2 border-b border-primary/10 px-4 py-5">
           <div className="flex items-center gap-3">
-            <div className="skeuo-gold flex h-9 w-9 items-center justify-center rounded-lg text-sm font-bold shrink-0">
-              T
-            </div>
-            <div>
-              <p className="font-playfair text-lg font-bold text-primary leading-none">TheTutor</p>
-              <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground mt-0.5">
+            <TutorAvatarMark size={36} className="shrink-0 rounded-lg" />
+            <div className={textRevealClass}>
+              <p className="font-playfair text-lg font-bold leading-none text-primary">TheTutor</p>
+              <p className="mt-0.5 text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
                 AI Learning Coach
               </p>
             </div>
           </div>
 
-          {/* Mobile Close Button */}
           <button
+            type="button"
+            onClick={onToggleCollapse}
+            className="hidden rounded-md border border-border bg-card/60 p-1.5 text-muted-foreground transition hover:text-foreground lg:inline-flex"
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!isCollapsed}
+          >
+            {isCollapsed ? (
+              <PanelLeftOpen className="h-4 w-4" />
+            ) : (
+              <PanelLeftClose className="h-4 w-4" />
+            )}
+          </button>
+
+          <button
+            type="button"
             onClick={onClose}
-            className="lg:hidden p-2 text-muted-foreground hover:text-primary transition-colors"
+            className="p-2 text-muted-foreground transition-colors hover:text-primary lg:hidden"
+            aria-label="Close sidebar"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Create Course CTA */}
         <div className="px-4 pt-5">
           <Button
             asChild
             size="sm"
             onClick={onClose}
-            className="skeuo-gold w-full rounded-full hover:!opacity-100 gap-2"
+            className={cx(
+              "skeuo-gold w-full gap-2 rounded-full hover:!opacity-100",
+              buttonJustifyClass
+            )}
           >
-            <Link href="/create-course">
+            <Link href="/create-course" title={isCollapsed ? "New Course" : undefined}>
               <Plus className="h-4 w-4" />
-              New Course
+              <span className={textRevealClass}>New Course</span>
             </Link>
           </Button>
         </div>
 
-        {/* Nav */}
-        <nav className="flex flex-col gap-4 px-3 pt-5 flex-1 overflow-y-auto">
-          {navItems.map(({ label, href, icon: Icon }) => {
-            const item = navItems.find((entry) => entry.href === href);
+        <nav className="flex flex-1 flex-col gap-4 overflow-y-auto px-3 pt-5">
+          {navItems.map((item) => {
             const active =
-              pathname === href ||
-              pathname.startsWith(`${href}/`) ||
-              item?.children.some((child) => isChildActive(pathname, child));
+              pathname === item.href ||
+              pathname.startsWith(`${item.href}/`) ||
+              item.children.some((child) => isChildActive(pathname, child));
 
             return (
-              <div key={href} className="group/navitem space-y-1">
+              <div key={item.href} className="group/navitem space-y-1">
                 <Link
-                  href={href}
+                  href={item.href}
                   onClick={onClose}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
+                  title={isCollapsed ? item.label : undefined}
+                  className={cx(
+                    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors",
                     active
                       ? "border border-primary/25 bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  }`}
+                  )}
                 >
-                  <Icon className={`h-4 w-4 ${active ? "text-primary" : ""}`} />
-                  {label}
+                  <item.icon className={cx("h-4 w-4", active && "text-primary")} />
+                  <span className={textRevealClass}>{item.label}</span>
                 </Link>
 
-                {item?.children.length ? (
-                  <div className="ml-6 max-h-40 overflow-hidden border-l border-primary/15 pl-3 opacity-100 transition-all duration-200 lg:max-h-0 lg:opacity-0 lg:group-hover/navitem:max-h-40 lg:group-hover/navitem:opacity-100 lg:group-focus-within/navitem:max-h-40 lg:group-focus-within/navitem:opacity-100">
+                {item.children.length > 0 && (
+                  <div className={cx("ml-6 overflow-hidden border-l border-primary/15 pl-3", desktopDetailsClass)}>
                     {item.children.map((child) => {
                       const childActive = isChildActive(pathname, child);
-
                       return (
                         <Link
                           key={child.label}
                           href={child.href}
                           onClick={onClose}
-                          className={`motion-link block rounded-lg px-2 py-1.5 text-xs ${
+                          className={cx(
+                            "motion-link block rounded-lg px-2 py-1.5 text-xs",
                             childActive
                               ? "bg-primary/12 text-primary"
                               : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                          }`}
+                          )}
                         >
-                          {child.label}
+                          <span className="whitespace-nowrap">{child.label}</span>
                         </Link>
                       );
                     })}
                   </div>
-                ) : null}
+                )}
               </div>
             );
           })}
 
           {isCourseWorkspace && (
-            <div className="space-y-2 rounded-2xl border border-primary/20 bg-primary/8 p-3">
+            <div className={cx("space-y-2 rounded-2xl border border-primary/20 bg-primary/10 p-3", desktopDetailsClass)}>
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary/70">
                 Course Shortcuts
               </p>
@@ -229,27 +276,32 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           )}
         </nav>
 
-        {/* User + Logout */}
         {user && (
           <div className="border-t border-primary/10 px-4 py-4">
-            <div className="flex items-center gap-3 mb-3">
+            <Link
+              href="/profile"
+              onClick={onClose}
+              title={isCollapsed ? "Profile" : undefined}
+              className="mb-3 flex items-center gap-3 rounded-xl px-1 py-1 transition hover:bg-muted/60"
+            >
               {user.image ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={user.image}
                   alt={user.name}
-                  className="h-9 w-9 rounded-full object-cover border border-primary/20"
+                  className="h-9 w-9 rounded-full border border-primary/20 object-cover"
                 />
               ) : (
-                <div className="skeuo-gold flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold shrink-0">
+                <div className="skeuo-gold flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold">
                   {user.name?.[0] ?? "U"}
                 </div>
               )}
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate">{user.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+              <div className={cx("min-w-0", textRevealClass)}>
+                <p className="truncate text-sm font-semibold text-foreground">{user.name}</p>
+                <p className="truncate text-xs text-muted-foreground">{user.email}</p>
               </div>
-            </div>
+              <UserCircle2 className={cx("ml-auto h-4 w-4 text-muted-foreground", textRevealClass)} />
+            </Link>
             <Button
               variant="ghost"
               size="sm"
@@ -257,10 +309,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 logout();
                 onClose?.();
               }}
-              className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground hover:bg-muted"
+              className={cx(
+                "w-full justify-start gap-2 text-muted-foreground hover:bg-muted hover:text-foreground",
+                buttonJustifyClass
+              )}
             >
               <LogOut className="h-4 w-4" />
-              Sign Out
+              <span className={textRevealClass}>Sign Out</span>
             </Button>
           </div>
         )}

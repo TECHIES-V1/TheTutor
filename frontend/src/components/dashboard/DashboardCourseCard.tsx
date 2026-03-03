@@ -54,14 +54,14 @@ export function DashboardCourseCard({
           ) : (
             <Globe className="h-4 w-4 text-primary/70" />
           )}
-          {course.role === "owner" ? "Owned" : `By ${course.ownerName}`}
+          {course.role === "owner" ? "Owned" : `By ${course.author?.name || course.ownerName}`}
         </div>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <Button asChild size="sm" className="skeuo-gold rounded-full hover:!opacity-100">
           <Link href={continueHref}>
-            {course.currentLessonTitle ? "Continue Lesson" : "Open Course"}
+            {course.currentLessonTitle ? "Continue Lesson" : "Enroll"}
             <ArrowRight className="h-4 w-4" />
           </Link>
         </Button>
@@ -98,7 +98,6 @@ export function DashboardCourseCard({
           </Button>
         )}
       </div>
-    </article>
+    </article >
   );
 }
-

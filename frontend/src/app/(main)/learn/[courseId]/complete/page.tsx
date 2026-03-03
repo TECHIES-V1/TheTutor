@@ -159,6 +159,7 @@ export default function CourseCompletePage() {
             <CourseWorkspaceSidebar
               courseId={preview.course.id}
               title={preview.course.title}
+              authorName={preview.course.author?.name || preview.course.ownerName}
               level={preview.course.level}
               moduleCount={preview.course.moduleCount}
               lessonCount={preview.course.lessonCount}

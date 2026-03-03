@@ -6,7 +6,6 @@ import passport from "passport";
 
 import { connectDatabase } from "./config/database";
 import { configurePassport } from "./config/passport";
-import { seedDemoCourses } from "./seeds/demoCourses";
 import authRoutes from "./routes/auth";
 import userRoutes from "./routes/user";
 import chatRoutes from "./routes/chat";
@@ -44,13 +43,7 @@ app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
 // ── Start ───────────────────────────────────────────────────────────────────
 connectDatabase()
-  .then(async () => {
-    try {
-      await seedDemoCourses();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error("⚠️ Demo course seed failed:", message);
-    }
+  .then(() => {
     app.listen(PORT, () => {
       console.log(`🚀 Backend running on http://localhost:${PORT}`);
     });

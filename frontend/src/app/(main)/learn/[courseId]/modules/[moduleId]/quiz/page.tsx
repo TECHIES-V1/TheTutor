@@ -4,83 +4,77 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
-import { LessonDetailResponse, QuizAttemptResult } from "@/types/course";
+import { ModuleQuizResponse, ModuleQuizAttemptResult } from "@/types/course";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, RotateCcw, Trophy } from "lucide-react";
+import { ArrowLeft, ArrowRight, RotateCcw, LayoutDashboard } from "lucide-react";
 import { useCoursePreview } from "@/hooks/useCoursePreview";
 import { CourseWorkspaceSidebar } from "@/components/course/CourseWorkspaceSidebar";
 import { useCoursePanelState } from "@/hooks/useCoursePanelState";
 
-export default function LessonQuizPage() {
-  const params = useParams<{ courseId: string; lessonId: string }>();
-  const { courseId, lessonId } = params;
+export default function ModuleQuizPage() {
+  const params = useParams<{ courseId: string; moduleId: string }>();
+  const { courseId, moduleId } = params;
   const { data: preview } = useCoursePreview(courseId);
   const { isOpen: isCoursePanelOpen, toggle: toggleCoursePanel } = useCoursePanelState();
 
-  const [lessonData, setLessonData] = useState<LessonDetailResponse | null>(null);
+  const [quizData, setQuizData] = useState<ModuleQuizResponse | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [result, setResult] = useState<QuizAttemptResult | null>(null);
+  const [result, setResult] = useState<ModuleQuizAttemptResult | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    const loadLesson = async () => {
+
+    const loadQuiz = async () => {
       setLoading(true);
+      setLoadError(null);
       try {
-        const response = await api.get(`/courses/${courseId}/lessons/${lessonId}`);
-        if (!response.ok) throw new Error("load lesson failed");
-        const payload = (await response.json()) as LessonDetailResponse;
+        const response = await api.get(`/courses/${courseId}/modules/${moduleId}/quiz`);
+        if (!response.ok) throw new Error("load failed");
+        const payload = (await response.json()) as ModuleQuizResponse;
         if (!cancelled) {
-          setLessonData(payload);
+          setQuizData(payload);
           setAnswers(
-            payload.lesson.quiz.reduce<Record<string, string>>((acc, question) => {
-              acc[question.questionId] = "";
+            payload.questions.reduce<Record<string, string>>((acc, q) => {
+              acc[q.questionId] = "";
               return acc;
             }, {})
           );
         }
       } catch {
-        if (!cancelled) {
-          setSubmitError("Could not load quiz.");
-        }
+        if (!cancelled) setLoadError("Could not load the module quiz.");
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     };
 
-    loadLesson();
+    loadQuiz();
     return () => {
       cancelled = true;
     };
-  }, [courseId, lessonId]);
+  }, [courseId, moduleId]);
 
   const isFormValid = useMemo(() => {
-    if (!lessonData) return false;
-    return lessonData.lesson.quiz.every((question) => (answers[question.questionId] ?? "").trim().length > 0);
-  }, [lessonData, answers]);
+    if (!quizData) return false;
+    return quizData.questions.every((q) => (answers[q.questionId] ?? "").trim().length > 0);
+  }, [quizData, answers]);
 
   const submitQuiz = async () => {
-    if (!lessonData) return;
-
+    if (!quizData) return;
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const response = await api.post(`/courses/${courseId}/lessons/${lessonId}/quiz-attempts`, {
-        answers: lessonData.lesson.quiz.map((question) => ({
-          questionId: question.questionId,
-          response: answers[question.questionId] ?? "",
+      const response = await api.post(`/courses/${courseId}/modules/${moduleId}/quiz-attempts`, {
+        answers: quizData.questions.map((q) => ({
+          questionId: q.questionId,
+          response: answers[q.questionId] ?? "",
         })),
       });
-
-      if (!response.ok) {
-        throw new Error("submit failed");
-      }
-
-      const payload = (await response.json()) as QuizAttemptResult;
+      if (!response.ok) throw new Error("submit failed");
+      const payload = (await response.json()) as ModuleQuizAttemptResult;
       setResult(payload);
     } catch {
       setSubmitError("Quiz submission failed. Please try again.");
@@ -89,19 +83,21 @@ export default function LessonQuizPage() {
     }
   };
 
+  const nextLessonId = preview?.course.enrollment?.currentLessonId ?? null;
+
   if (loading) {
     return (
       <div className="px-6 py-8">
-        <div className="neo-surface rounded-2xl p-6 text-sm text-muted-foreground">Loading quiz...</div>
+        <div className="neo-surface rounded-2xl p-6 text-sm text-muted-foreground">Loading module quiz...</div>
       </div>
     );
   }
 
-  if (!lessonData) {
+  if (!quizData) {
     return (
       <div className="px-6 py-8">
         <div className="neo-surface rounded-2xl p-6 text-sm text-muted-foreground">
-          {submitError ?? "Quiz not available."}
+          {loadError ?? "Module quiz not available."}
         </div>
       </div>
     );
@@ -126,14 +122,14 @@ export default function LessonQuizPage() {
         <div className={`grid w-full gap-6 ${isCoursePanelOpen ? "lg:grid-cols-[1fr_21.5rem]" : "lg:grid-cols-1"}`}>
           <div className="space-y-6">
             <section className="neo-surface rounded-3xl p-6">
-              <p className="text-xs uppercase tracking-wide text-primary/80">Lesson Quiz</p>
-              <h1 className="mt-2 text-3xl font-bold text-foreground">{lessonData.lesson.title}</h1>
+              <p className="text-xs uppercase tracking-wide text-primary/80">Module Checkpoint</p>
+              <h1 className="mt-2 text-3xl font-bold text-foreground">{quizData.title}</h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Short-answer assessment. Pass score: {Math.round((result?.passThreshold ?? 0.7) * 100)}%.
+                Demonstrate your understanding of this module. Pass score: {Math.round((result?.passThreshold ?? 0.7) * 100)}%.
               </p>
 
               <div className="mt-6 space-y-4">
-                {lessonData.lesson.quiz.map((question, index) => (
+                {quizData.questions.map((question, index) => (
                   <div key={question.questionId} className="rounded-2xl border border-border/80 bg-card/60 p-4">
                     <p className="text-sm font-medium text-foreground">
                       {index + 1}. {question.prompt}
@@ -161,9 +157,9 @@ export default function LessonQuizPage() {
 
               <div className="mt-6 flex flex-wrap gap-2">
                 <Button asChild variant="ghost" className="rounded-full border border-border">
-                  <Link href={`/learn/${courseId}/lessons/${lessonId}`}>
+                  <Link href={`/dashboard`}>
                     <ArrowLeft className="h-4 w-4" />
-                    Back to Lesson
+                    Back to Dashboard
                   </Link>
                 </Button>
                 <Button
@@ -179,7 +175,7 @@ export default function LessonQuizPage() {
             {result && (
               <section className="neo-surface rounded-3xl p-6">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="text-2xl font-bold text-foreground">Assessment Feedback</h2>
+                  <h2 className="text-2xl font-bold text-foreground">Module Feedback</h2>
                   <span
                     className={`rounded-full border px-3 py-1 text-sm ${
                       result.passed
@@ -213,20 +209,20 @@ export default function LessonQuizPage() {
                     </Button>
                   )}
 
-                  {result.passed && result.nextLessonId && (
+                  {result.passed && nextLessonId && (
                     <Button asChild className="skeuo-gold rounded-full hover:!opacity-100">
-                      <Link href={`/learn/${courseId}/lessons/${result.nextLessonId}`}>
+                      <Link href={`/learn/${courseId}/lessons/${nextLessonId}`}>
                         Continue to Next Lesson
                         <ArrowRight className="h-4 w-4" />
                       </Link>
                     </Button>
                   )}
 
-                  {result.passed && result.courseReadyToComplete && (
-                    <Button asChild className="skeuo-gold rounded-full hover:!opacity-100">
-                      <Link href={`/learn/${courseId}/complete`}>
-                        <Trophy className="h-4 w-4" />
-                        Finish Course
+                  {result.passed && (
+                    <Button asChild variant="ghost" className="rounded-full border border-border">
+                      <Link href="/dashboard">
+                        <LayoutDashboard className="h-4 w-4" />
+                        Dashboard
                       </Link>
                     </Button>
                   )}
@@ -245,9 +241,9 @@ export default function LessonQuizPage() {
               lessonCount={preview.course.lessonCount}
               curriculum={preview.curriculumOutline}
               activeView="quiz"
-              activeLessonId={lessonId}
-              currentLessonId={lessonData.progress?.currentLessonId ?? preview.course.enrollment?.currentLessonId ?? null}
-              progressPercent={result?.progressPercent ?? lessonData.progress?.progressPercent ?? preview.course.enrollment?.progressPercent ?? null}
+              activeLessonId={null}
+              currentLessonId={preview.course.enrollment?.currentLessonId ?? null}
+              progressPercent={preview.course.enrollment?.progressPercent ?? null}
               canOpenLessons
               isOpen={isCoursePanelOpen}
               onToggle={toggleCoursePanel}

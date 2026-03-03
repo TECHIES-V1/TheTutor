@@ -49,8 +49,17 @@ void main() {
     d += sin(uv.y * i + a);
   }
   d += uTime * 0.5 * uSpeed;
-  vec3 col = vec3(cos(uv * vec2(d, a)) * 0.6 + 0.4, cos(a + d) * 0.5 + 0.5);
-  col = cos(col * cos(vec3(d, a, 2.5)) * 0.5 + 0.5) * uColor;
+
+  // Keep the iridescent motion but constrain the palette to white/black/gold.
+  float wave = cos(uv.x * (1.7 + d * 0.08) + a * 0.22) * 0.5 + 0.5;
+  float grain = sin((uv.x + uv.y) * 5.4 + d * 0.35) * 0.5 + 0.5;
+  float intensity = clamp(wave * 0.72 + grain * 0.28, 0.0, 1.0);
+  float glow = smoothstep(0.58, 0.92, intensity);
+
+  vec3 base = mix(vec3(0.02), vec3(0.97), intensity);
+  vec3 gold = vec3(0.83, 0.69, 0.23);
+  vec3 col = mix(base, gold, glow * 0.42) * uColor;
+
   gl_FragColor = vec4(col, 1.0);
 }
 `;

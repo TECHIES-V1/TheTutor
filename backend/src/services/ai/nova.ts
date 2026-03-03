@@ -171,11 +171,12 @@ export async function* streamCourseWithMCPTools(
 }
 
 function summarizeToolResult(result: unknown): string {
+  if (Array.isArray(result)) {
+    return `Found ${result.length} items`;
+  }
+
   if (typeof result === "object" && result !== null) {
     const obj = result as Record<string, unknown>;
-    if (Array.isArray(obj)) {
-      return `Found ${obj.length} items`;
-    }
     if ("summary" in obj) return String(obj.summary);
     if ("title" in obj) return `Parsed: ${obj.title}`;
   }
@@ -186,7 +187,6 @@ function extractResourceRefs(
   result: unknown
 ): Array<{ title: string; authors: string[]; source: string }> {
   if (typeof result !== "object" || result === null) return [];
-  const obj = result as Record<string, unknown>;
 
   const refs: Array<{ title: string; authors: string[]; source: string }> = [];
 
@@ -208,14 +208,23 @@ function extractResourceRefs(
     });
   };
 
-  if (Array.isArray(obj.books)) {
-    for (const raw of obj.books) {
-      if (typeof raw === "object" && raw) {
-        pushRef(raw as Record<string, unknown>);
+  if (Array.isArray(result)) {
+    for (const item of result) {
+      if (typeof item === "object" && item) {
+        pushRef(item as Record<string, unknown>);
       }
     }
   } else {
-    pushRef(obj);
+    const obj = result as Record<string, unknown>;
+    if (Array.isArray(obj.books)) {
+      for (const raw of obj.books) {
+        if (typeof raw === "object" && raw) {
+          pushRef(raw as Record<string, unknown>);
+        }
+      }
+    } else {
+      pushRef(obj);
+    }
   }
 
   return refs;
@@ -284,13 +293,12 @@ export async function repairGeneratedCourseMarkdown(params: {
   const sourceBlock =
     params.sourceRefs.length > 0
       ? params.sourceRefs
-          .map(
-            (ref, index) =>
-              `${index + 1}. ${ref.title} | Authors: ${
-                ref.authors.length > 0 ? ref.authors.join(", ") : "Unknown"
-              } | Source: ${ref.source || "unknown"}`
-          )
-          .join("\n")
+        .map(
+          (ref, index) =>
+            `${index + 1}. ${ref.title} | Authors: ${ref.authors.length > 0 ? ref.authors.join(", ") : "Unknown"
+            } | Source: ${ref.source || "unknown"}`
+        )
+        .join("\n")
       : "No source references available.";
 
   const prompt = `Repair the provided course markdown to satisfy strict validation.
@@ -310,14 +318,21 @@ Student profile:
 Rules:
 - Keep the same high-level structure and module ordering when possible.
 - Every lesson must include:
-  - substantial **Content** (at least 2 paragraphs),
+  - substantial **Content** (at least 2 full paragraphs, not just bullet points — aim for 200+ characters),
+  - **Key Takeaways** with 2-3 bullet points,
   - **Videos** section with at least one [Search: "query"],
   - **Citations** section with at least one APA citation line:
     - [Source: "Exact textbook title"] Author, A. A. (Year). *Book title*. Publisher.
-  - **Quiz** JSON array with questionId/prompt/expectedConcepts/remediationTip.
-- Every module must include:
-  - ### Module N Quiz
-  - **Module Quiz** JSON array with questionId/prompt/expectedConcepts/remediationTip.
+  - **Quiz** section containing a fenced JSON code block DIRECTLY after the heading, like:
+    **Quiz**:
+    \`\`\`json
+    [{"id":"q1","type":"multiple_choice","question":"...","options":["A","B","C","D"],"correctAnswerIndex":0,"explanation":"..."}]
+    \`\`\`
+- Every module must include a module checkpoint quiz in this EXACT format immediately after the last lesson of that module:
+  ### Module N Quiz
+  \`\`\`json
+  [{"questionId":"mq-N-1","prompt":"Question text?","expectedConcepts":[["concept1","concept2"]],"remediationTip":"Review tip."}]
+  \`\`\`
 
 Return ONLY corrected markdown. Do not wrap in code fences.
 

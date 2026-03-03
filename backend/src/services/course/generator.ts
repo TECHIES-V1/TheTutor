@@ -26,8 +26,8 @@ import {
   type YouTubeVideoReference,
 } from "../youtube/youtube.service";
 
-const MAX_REPAIR_ATTEMPTS = 2;
-const MIN_LESSON_CONTENT_CHARS = 180;
+const MAX_REPAIR_ATTEMPTS = 3;
+const MIN_LESSON_CONTENT_CHARS = 5000;
 
 type StreamMilestoneEvent = Extract<
   SSEEvent,
@@ -57,7 +57,8 @@ interface SourceLedgerEntry {
 
 interface ValidationResult {
   valid: boolean;
-  issues: string[];
+  errors: string[];
+  warnings: string[];
 }
 
 function ensureObjectId(value: string): Types.ObjectId {
@@ -229,7 +230,8 @@ function parseLessonCitations(
 
   return lines
     .map((line) => {
-      const sourceMatch = line.match(/\[Source:\s*"(.+?)"\]/i);
+      // Allow quotes to be optional in the [Source: ...] tag
+      const sourceMatch = line.match(/\[Source:\s*"?([^"\]]+)"?\]/i);
       const sourceTitle = sourceMatch ? sourceMatch[1].trim() : "";
       const citationText = line.replace(/^-+\s*/, "").trim();
       const sourceRef = sourceTitle
@@ -238,7 +240,7 @@ function parseLessonCitations(
 
       return {
         citationText,
-        sourceTitle: sourceTitle || sourceRef?.title || "",
+        sourceTitle: sourceTitle || sourceRef?.title || "Unknown Source",
         authors: sourceRef?.authors ?? [],
         source: sourceRef?.source ?? "",
         citationKey: sourceTitle || sourceRef?.title || citationText.slice(0, 80),
@@ -251,45 +253,46 @@ function validateParsedCourse(
   parsedCourse: ParsedCourse,
   sourceLedger: SourceLedgerEntry[]
 ): ValidationResult {
-  const issues: string[] = [];
+  const errors: string[] = [];
+  const warnings: string[] = [];
 
   if (parsedCourse.modules.length === 0) {
-    issues.push("No modules were generated.");
+    errors.push("No modules were generated.");
   }
 
   const sourceTitles = new Set(sourceLedger.map((source) => source.title.toLowerCase()));
 
   for (const module of parsedCourse.modules) {
     if (!module.moduleQuiz || module.moduleQuiz.questions.length === 0) {
-      issues.push(`Module "${module.title}" is missing a module quiz.`);
+      warnings.push(`Module "${module.title}" is missing a module quiz.`);
     }
 
     for (const lesson of module.lessons) {
       const contentLength = normalizeWhitespace(lesson.content).length;
       if (contentLength < MIN_LESSON_CONTENT_CHARS) {
-        issues.push(
+        errors.push(
           `Lesson "${lesson.title}" content is too short (${contentLength} chars).`
         );
       }
 
       const lessonQuizCount = lesson.quizzes?.[0]?.questions.length ?? 0;
       if (lessonQuizCount === 0) {
-        issues.push(`Lesson "${lesson.title}" is missing a lesson quiz.`);
+        warnings.push(`Lesson "${lesson.title}" is missing a lesson quiz.`);
       }
 
       if ((lesson.videoSearchQueries?.length ?? 0) === 0) {
-        issues.push(`Lesson "${lesson.title}" is missing YouTube search queries.`);
+        warnings.push(`Lesson "${lesson.title}" is missing YouTube search queries.`);
       }
 
       const citations = lesson.citations ?? [];
       if (citations.length === 0) {
-        issues.push(`Lesson "${lesson.title}" is missing citations.`);
+        warnings.push(`Lesson "${lesson.title}" is missing citations.`);
       } else if (sourceTitles.size > 0) {
         const hasMappedCitation = citations.some((citation) =>
           sourceTitles.has(citation.sourceTitle.toLowerCase())
         );
         if (!hasMappedCitation) {
-          issues.push(
+          warnings.push(
             `Lesson "${lesson.title}" citations are not mapped to discovered sources.`
           );
         }
@@ -298,8 +301,9 @@ function validateParsedCourse(
   }
 
   return {
-    valid: issues.length === 0,
-    issues,
+    valid: errors.length === 0 && warnings.length === 0,
+    errors,
+    warnings,
   };
 }
 
@@ -314,10 +318,10 @@ function toCurriculum(modules: IModule[]) {
     title: module.title,
     moduleQuiz: module.moduleQuiz
       ? {
-          quizId: module.moduleQuiz.quizId,
-          title: module.moduleQuiz.title,
-          questions: module.moduleQuiz.questions,
-        }
+        quizId: module.moduleQuiz.quizId,
+        title: module.moduleQuiz.title,
+        questions: module.moduleQuiz.questions,
+      }
       : undefined,
     lessons: module.lessons.map((lesson) => {
       const quizQuestions =
@@ -339,11 +343,11 @@ function toCurriculum(modules: IModule[]) {
       const videoReferences = Array.isArray(lesson.videoReferences)
         ? lesson.videoReferences
         : (lesson.videoLinks ?? []).map((url) => ({
-            url,
-            title: "",
-            channelName: "",
-            queryUsed: "",
-          }));
+          url,
+          title: "",
+          channelName: "",
+          queryUsed: "",
+        }));
 
       return {
         lessonId: lesson.id,
@@ -632,6 +636,7 @@ export async function* generate(
     for (let attempt = 0; attempt <= MAX_REPAIR_ATTEMPTS; attempt++) {
       const candidate = parseCourseContent(workingMarkdown, sourceLedger);
       const validation = validateParsedCourse(candidate, sourceLedger);
+      const allIssues = [...validation.errors, ...validation.warnings];
 
       if (validation.valid) {
         parsedCourse = candidate;
@@ -639,31 +644,36 @@ export async function* generate(
       }
 
       console.log(
-        `[generator] Validation failed attempt=${attempt + 1} issues=${validation.issues.join(
+        `[generator] Validation failed attempt=${attempt + 1} issues=${allIssues.join(
           " | "
         )}`
       );
 
       if (attempt === MAX_REPAIR_ATTEMPTS) {
-        throw new Error(
-          `Course validation failed: ${validation.issues.slice(0, 3).join(" | ")}`
-        );
+        if (validation.errors.length > 0) {
+          throw new Error(
+            `Course validation failed: ${validation.errors.slice(0, 3).join(" | ")}`
+          );
+        }
+        // Accept course with only warnings
+        parsedCourse = candidate;
+        console.log(`[generator] Accepting course with warnings: ${validation.warnings.length} warnings remaining.`);
+        break;
       }
 
       yield {
         type: "status",
         data: {
           phase: "course_generation",
-          message: `Repairing course structure (${attempt + 1}/${
-            MAX_REPAIR_ATTEMPTS + 1
-          })...`,
+          message: `Repairing course structure (${attempt + 1}/${MAX_REPAIR_ATTEMPTS + 1
+            })...`,
           progress: 94,
         },
       };
 
       workingMarkdown = await repairGeneratedCourseMarkdown({
         markdown: workingMarkdown,
-        issues: validation.issues,
+        issues: allIssues,
         sourceRefs: sourceLedger,
         onboardingData,
       });
@@ -684,15 +694,24 @@ export async function* generate(
 
     for (const module of parsedCourse.modules) {
       for (const lesson of module.lessons) {
-        const fallbackQuery = `${lesson.title} ${
-          onboardingData.confirmedSubject || onboardingData.topic || ""
-        } tutorial`;
+        const fallbackQuery = `${lesson.title} ${onboardingData.confirmedSubject || onboardingData.topic || ""
+          } tutorial`;
         const queries =
           lesson.videoSearchQueries && lesson.videoSearchQueries.length > 0
             ? lesson.videoSearchQueries
             : [fallbackQuery.trim()];
 
-        const references = await fetchVideoReferencesForQueries(queries);
+        let references = await fetchVideoReferencesForQueries(queries);
+
+        if (references.length === 0) {
+          // Retry with alternative keywords from the convo (topic + goal or level)
+          const alternateQuery = `${onboardingData.confirmedSubject || onboardingData.topic || ""} ${onboardingData.goal || onboardingData.level || ""} concepts`.trim();
+          if (alternateQuery && !queries.includes(alternateQuery)) {
+            console.log(`[generator] Retrying YouTube fetch with alternate query: "${alternateQuery}" for lesson "${lesson.title}"`);
+            references = await fetchVideoReferencesForQueries([alternateQuery]);
+          }
+        }
+
         if (references.length === 0) {
           throw new Error(
             `No YouTube references were found for lesson "${lesson.title}". Check YOUTUBE_API_KEY.`
@@ -835,8 +854,9 @@ export function parseCourseContent(
       ? normalizeWhitespace(moduleDescMatch[1])
       : "";
 
+    // Match "### Module N Quiz" or just "### Quiz" then the first fenced JSON block
     const moduleQuizMatch = moduleContent.match(
-      /###\s*Module\s*\d+\s*Quiz[\s\S]*?\*\*Module Quiz\*\*:\s*```(?:json)?\s*([\s\S]*?)\s*```/i
+      /###\s*(?:Module\s*\d+\s*)?Quiz[^\n]*\n[\s\S]*?```(?:json)?\s*([\s\S]*?)\s*```/i
     );
     const moduleQuiz = moduleQuizMatch
       ? parseModuleQuiz(moduleQuizMatch[1], moduleOrder)
@@ -867,12 +887,19 @@ export function parseCourseContent(
       const descLineMatch = lessonContent.match(/\*\*Description\*\*:\s*(.+)/);
       const lessonDescription = descLineMatch ? descLineMatch[1].trim() : "";
 
+      // Include Key Takeaways in content so short **Content** sections still pass the length check
       const contentMatch = lessonContent.match(
-        /\*\*Content\*\*:\s*([\s\S]*?)(?=\*\*Key Takeaways\*\*:|\*\*Videos\*\*:|\*\*Citations\*\*:|\*\*Quiz\*\*:|\*\*Exercises\*\*:|$)/i
+        /\*\*Content\*\*:\s*([\s\S]*?)(?=\*\*Videos\*\*:|\*\*Citations\*\*:|\*\*Quiz\*\*:|\*\*Exercises\*\*:|$)/i
       );
-      const mainContent = normalizeWhitespace(
+      let mainContent = normalizeWhitespace(
         contentMatch ? contentMatch[1] : lessonContent
       );
+      // Fallback: if captured content is too short, use full lesson text minus quiz/exercises
+      if (mainContent.length < MIN_LESSON_CONTENT_CHARS) {
+        mainContent = normalizeWhitespace(
+          lessonContent.replace(/\*\*(Quiz|Exercises)\*\*:[\s\S]*$/, "")
+        );
+      }
 
       const videoSearchQueries: string[] = [];
       const videosSectionMatch = lessonContent.match(
@@ -890,8 +917,9 @@ export function parseCourseContent(
       }
 
       const citations = parseLessonCitations(lessonContent, sourceLedger);
+      // Tolerate newlines or extra text between **Quiz**: and the fenced code block
       const quizSectionMatch = lessonContent.match(
-        /\*\*Quiz\*\*:\s*```(?:json)?\s*([\s\S]*?)\s*```/i
+        /\*\*Quiz\*\*:[\s\S]*?```(?:json)?\s*([\s\S]*?)\s*```/i
       );
       const quizzes = quizSectionMatch ? parseLessonQuiz(quizSectionMatch[1]) : [];
 

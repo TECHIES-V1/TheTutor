@@ -6,6 +6,7 @@ import { Conversation } from "../models/Conversation";
 import { Course } from "../models/Course";
 import "../models/Resource"; // Ensure it is registered for population
 import { generate } from "../services/course/generator";
+import { gradeOpenEndedAnswer } from "../services/ai/grader";
 import type { GenerateCourseRequest, UpdateProgressRequest } from "../types";
 
 const router = Router();
@@ -344,14 +345,19 @@ router.post(
       questionFound = true;
 
       // Check answer correctness
+      let explanation = question.explanation;
+
       if (question.type === "multiple_choice") {
         isCorrect = parseInt(answer, 10) === question.correctAnswerIndex;
       } else if (question.type === "open_ended") {
-        // Simple case-insensitive exact match or inclusion for now.
-        // In a real scenario, this might use AI grading.
-        const expected = (question.correctAnswerText || "").toLowerCase().trim();
-        const provided = (answer || "").toString().toLowerCase().trim();
-        isCorrect = expected === provided || provided.includes(expected);
+        const aiEvaluation = await gradeOpenEndedAnswer({
+          question: question.question,
+          expectedAnswer: question.correctAnswerText || "",
+          studentAnswer: answer,
+          lessonContent: lesson.content,
+        });
+        isCorrect = aiEvaluation.isCorrect;
+        explanation = aiEvaluation.feedback;
       }
 
       question.isAnsweredCorrectly = isCorrect;
@@ -364,7 +370,7 @@ router.post(
       res.json({
         success: true,
         isCorrect,
-        explanation: question.explanation,
+        explanation,
         quizCompleted: quiz.isCompleted,
       });
     } catch (error) {
@@ -417,8 +423,8 @@ router.put("/:id/progress", requireAuth, async (req: Request, res: Response) => 
 
     const courseDoc = await Course.findById(id);
     if (!courseDoc) {
-        res.status(404).json({ error: "Course not found", code: "NOT_FOUND" });
-        return;
+      res.status(404).json({ error: "Course not found", code: "NOT_FOUND" });
+      return;
     }
 
     for (const module of courseDoc.modules) {
@@ -429,8 +435,8 @@ router.put("/:id/progress", requireAuth, async (req: Request, res: Response) => 
           const hasIncompleteInteractiveElements = lesson.interactiveElements?.some((ie) => !ie.isCompleted);
 
           if (completed && (hasIncompleteQuizzes || hasIncompleteInteractiveElements)) {
-             res.status(400).json({ error: "All quizzes and interactive elements must be completed first." });
-             return;
+            res.status(400).json({ error: "All quizzes and interactive elements must be completed first." });
+            return;
           }
 
           lesson.completed = completed;
@@ -440,15 +446,15 @@ router.put("/:id/progress", requireAuth, async (req: Request, res: Response) => 
       }
 
       if (lessonFound) {
-          // Check if all lessons in module are complete
-          const allLessonsComplete = module.lessons.every((l) => l.completed);
-          if (allLessonsComplete !== module.completed) {
-            module.completed = allLessonsComplete;
-            if (allLessonsComplete) {
-              moduleCompleted = true;
-            }
+        // Check if all lessons in module are complete
+        const allLessonsComplete = module.lessons.every((l) => l.completed);
+        if (allLessonsComplete !== module.completed) {
+          module.completed = allLessonsComplete;
+          if (allLessonsComplete) {
+            moduleCompleted = true;
           }
-          break;
+        }
+        break;
       }
     }
 

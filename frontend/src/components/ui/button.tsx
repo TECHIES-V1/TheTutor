@@ -13,10 +13,10 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
-          "motion-press skeuo-outline text-[#173b7c] hover:text-[#173b7c]",
+          "motion-press skeuo-outline text-foreground hover:text-foreground",
         secondary:
-          "motion-press skeuo-outline text-[#173b7c] hover:text-[#173b7c]",
-        ghost: "text-[#173b7c] hover:bg-[#e6efff] hover:text-[#173b7c]",
+          "motion-press skeuo-outline text-foreground hover:text-foreground",
+        ghost: "text-foreground hover:bg-muted hover:text-foreground",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

@@ -7,10 +7,10 @@ export function getOnboardingSystemPrompt(messagesLeft: number): string {
     messagesLeft <= 0
       ? "This is your LAST message. Tell the user you have enough to suggest a great course for them."
       : messagesLeft === 1
-      ? "You have 1 message left. Start wrapping up — you'll be suggesting a course subject next."
-      : messagesLeft <= 2
-      ? "You're almost out of messages. Start steering toward a conclusion."
-      : "";
+        ? "You have 1 message left. Start wrapping up — you'll be suggesting a course subject next."
+        : messagesLeft <= 2
+          ? "You're almost out of messages. Start steering toward a conclusion."
+          : "";
 
   return `You are a friendly AI tutor having a conversation to understand what someone wants to learn. Your only job right now is to ask questions — NOT to suggest a course name or subject. The system will handle that automatically.
 
@@ -81,9 +81,11 @@ Create a comprehensive course structure in Markdown format. The course should:
 
 1. **Match the learner's level**: ${level === "beginner" ? "Start from absolute basics, avoid jargon, build foundations" : level === "intermediate" ? "Assume basic knowledge, focus on deepening understanding" : "Focus on advanced concepts, optimization, and mastery"}
 
-2. **Fit the time commitment**: Design for ~${hoursPerWeek} hours/week, with ${hoursPerWeek && hoursPerWeek <= 3 ? "3-4 modules, 2-3 lessons each" : hoursPerWeek && hoursPerWeek <= 6 ? "4-5 modules, 3-4 lessons each" : "5-6 modules, 4-5 lessons each"}
+2. **Fit the time commitment**: Design for ~${hoursPerWeek} hours/week. Include as many modules and lessons as needed for the learner to truly master the subject — do not artificially limit the course length. Each lesson should be 15-45 minutes
 
-3. **Work toward the goal**: Ensure the course culminates in skills/knowledge to achieve: ${goal}
+3. **Deep, Textbook-Driven Content**: Modules should NOT be rushed. Write rich, detailed content (minimum 2500 words, maximum 7000 words per lesson). Include practical examples. Draw heavily from the provided textbook/source materials. Make it feel like a real, comprehensive course chapter.
+
+4. **Work toward the goal**: Ensure the course culminates in skills/knowledge to achieve: ${goal}
 
 ## Output Format
 Generate the course in this exact Markdown structure:
@@ -102,7 +104,14 @@ Generate the course in this exact Markdown structure:
 **Description**: [What the learner will learn]
 
 **Content**:
-[Detailed lesson content - 3-5 paragraphs covering the topic, with practical examples]
+#### [Appropriate Subheading 1]
+[Extensive textbook-style explanation of this sub-topic. Minimum 600 words...]
+
+#### [Appropriate Subheading 2]
+[Extensive textbook-style explanation of this sub-topic. Minimum 600 words...]
+
+#### [Appropriate Subheading 3]
+[Extensive textbook-style explanation of this sub-topic. Minimum 600 words...]
 
 **Key Takeaways**:
 - [Key point 1]
@@ -132,7 +141,7 @@ Generate the course in this exact Markdown structure:
     "id": "q2",
     "type": "open_ended",
     "question": "Explain how this concept applies to real-world scenarios.",
-    "correctAnswerText": "Expected answer or keyword",
+    "correctAnswerText": "Detailed grading rubric or key concepts the student must mention for a correct answer",
     "explanation": "Explanation of the expected answer."
   }
 ]
@@ -160,10 +169,12 @@ Generate the course in this exact Markdown structure:
 - **Must include Citations section** in every lesson with 1-3 APA citations, and each citation must include \`[Source: "Exact textbook title"]\`
 - **Must include Quiz section** with a valid JSON array of questions, containing a mix of multiple_choice and open_ended types
 - **Must include Exercises section** with practical tasks
-- **Must include module checkpoint quiz** after each module as:
-  - \`### Module X Quiz\`
-  - \`**Module Quiz**:\` followed by JSON array of questions with questionId/prompt/expectedConcepts/remediationTip
-- Total course should be achievable in 4-8 weeks given the weekly time commitment`;
+- **Must include module checkpoint quiz** after the last lesson of each module in this EXACT format (no extra text before the code block):
+  \`### Module X Quiz\`
+  \`\`\`json
+  [{"questionId":"mq-X-1","prompt":"Question?","expectedConcepts":[["concept"]],"remediationTip":"Review tip."}]
+  \`\`\`
+- The course should include as many modules as needed for the learner to achieve mastery — do not artificially cap the number of modules or lessons`;
 }
 
 export function getToolAwareGenerationPrompt(data: OnboardingData): string {
@@ -190,7 +201,7 @@ export function getToolAwareGenerationPrompt(data: OnboardingData): string {
 
 ## Your Process
 
-1. **Discover Resources**: Use discover_books with the topic query. Try 2-3 different queries if results are limited.
+1. **Discover Resources**: Use discover_books with the topic query. If it returns no references or results are limited, you MUST try another keyword from the student profile (topic, goal, level). Try 2-3 different queries until you find sufficient materials.
 
 2. **Parse Selected Books**: Use fetch_and_parse_book on 3-5 of the most relevant books. Select based on:
    - Relevance to "${data.confirmedSubject || data.topic}"
@@ -202,21 +213,22 @@ export function getToolAwareGenerationPrompt(data: OnboardingData): string {
 ## Output Format
 
 Generate the course in Markdown with:
-- 3-6 modules building progressively
+- As many modules as needed for the learner to achieve mastery — do not artificially cap
 - 2-5 lessons per module (15-45 min each based on ${data.hoursPerWeek}hrs/week)
-- Content drawn directly from parsed textbook material
+- **CRITICAL FORMAT RULE**: The \`**Content**:\` section MUST be broken down into 3-4 appropriate subheadings tailored to the specific topic (e.g., \`#### Historical Context\`, \`#### Core Mechanics\`). Under EVERY subheading, you MUST write extensively (minimum 2-3 detailed paragraphs). Do not summarize or rush.
 - Clear learning objectives for each lesson
 - A **Videos** section for each lesson with at least one query in this exact format:
   - \`[Search: "specific YouTube query"]\`
 - A **Citations** section for each lesson with 1-3 APA references in this exact format:
   - \`- [Source: "Exact textbook title"] Author, A. A. (Year). *Book title*. Publisher.\`
-- A **Module Quiz** for each module in this exact structure:
-  - \`### Module N Quiz\`
-  - \`**Module Quiz**:\`
-  - fenced JSON array with objects: \`questionId\`, \`prompt\`, \`expectedConcepts\` (array of arrays), \`remediationTip\`
+- A **Module Quiz** for each module placed immediately after its last lesson in this EXACT format (no text between heading and code block):
+  ${"`"}### Module N Quiz${"`"}
+  ${"`"}${"`"}${"`"}json
+  [{"questionId":"mq-N-1","prompt":"Question?","expectedConcepts":[["concept"]],"remediationTip":"Review tip."}]
+  ${"`"}${"`"}${"`"}
 
 ## Hard Requirements
-- Every lesson must include substantial teaching content (not outline-only bullets)
+- Every lesson must include substantial teaching content across 3-4 topic-specific subheadings (not outline-only bullets)
 - Every lesson must include at least one YouTube search query
 - Every lesson must include at least one APA citation mapped to a source book title from parsed tools
 - Every module must include a module quiz

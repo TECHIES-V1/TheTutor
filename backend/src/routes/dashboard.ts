@@ -39,13 +39,14 @@ function getCourseVisibility(course: ICourse): "draft" | "published" {
 }
 
 async function buildOwnerNameMap(courses: ICourse[]): Promise<Map<string, string>> {
-  const ownerIds = Array.from(
+  const ownerIdStrings = Array.from(
     new Set(
       courses
         .map((course) => getCourseOwnerId(course))
-        .filter((id): id is string => Boolean(id) && Types.ObjectId.isValid(id))
+        .filter((id): id is string => typeof id === "string" && Types.ObjectId.isValid(id))
     )
-  ).map((id) => new Types.ObjectId(id));
+  );
+  const ownerIds = ownerIdStrings.map((id) => new Types.ObjectId(id));
 
   if (ownerIds.length === 0) {
     return new Map();
@@ -68,6 +69,20 @@ function mapDashboardCourse(
 ) {
   const lessons = flattenLessons(course);
   const lessonCount = lessons.length;
+  const ownerId = getCourseOwnerId(course);
+  const ownerName = String(readCourseField(course, "ownerName") ?? ownerFallbackName);
+  const sourceRefsRaw = readCourseField(course, "sourceReferences");
+  const sourceAttribution = Array.isArray(sourceRefsRaw)
+    ? sourceRefsRaw
+        .map((ref: any) => ({
+          title: String(ref?.title ?? "").trim(),
+          authors: Array.isArray(ref?.authors)
+            ? ref.authors.map((author: unknown) => String(author)).filter(Boolean)
+            : [],
+          source: String(ref?.source ?? "").trim(),
+        }))
+        .filter((ref: { title: string }) => ref.title.length > 0)
+    : [];
   const currentLessonTitle =
     enrollment?.currentLessonId
       ? lessons.find((item) => item.lesson.lessonId === enrollment.currentLessonId)?.lesson.title ?? null
@@ -83,7 +98,12 @@ function mapDashboardCourse(
         ""
     ),
     level: course.level,
-    ownerName: String(readCourseField(course, "ownerName") ?? ownerFallbackName),
+    ownerName,
+    author: {
+      id: ownerId,
+      name: ownerName,
+    },
+    sourceAttribution,
     visibility: getCourseVisibility(course),
     role,
     lessonCount,

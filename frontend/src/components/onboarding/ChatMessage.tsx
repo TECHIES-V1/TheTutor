@@ -31,6 +31,7 @@ export function ChatMessage({ initialConversationId }: { initialConversationId?:
   const [suggestedSubject, setSuggestedSubject] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStatus, setGenerationStatus] = useState("Preparing your course...");
+  const [generationProgress, setGenerationProgress] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [liveTitle, setLiveTitle] = useState<string | null>(null);
@@ -142,6 +143,7 @@ export function ChatMessage({ initialConversationId }: { initialConversationId?:
       }
 
       setGenerationStatus("Preparing your course...");
+      setGenerationProgress(2);
       setLiveTitle(null);
       setCurriculumModules([]);
       setIsGenerating(true);
@@ -194,11 +196,13 @@ export function ChatMessage({ initialConversationId }: { initialConversationId?:
     setLiveTitle(null);
     setCurriculumModules([]);
     setGenerationStatus("Preparing your course...");
+    setGenerationProgress(0);
   };
 
   const startGeneration = async (convId: string) => {
     try {
       setGenerationStatus("Preparing your course...");
+      setGenerationProgress(4);
       setLiveTitle(null);
       setCurriculumModules([]);
 
@@ -234,10 +238,25 @@ export function ChatMessage({ initialConversationId }: { initialConversationId?:
           let data: Record<string, unknown> = {};
           try { data = JSON.parse(dataMatch[1].trim()); } catch { continue; }
 
-          if (eventType === "status") setGenerationStatus(String(data.message ?? "Working..."));
-          else if (eventType === "tool_call") setGenerationStatus("Discovering learning resources...");
-          else if (eventType === "tool_result") setGenerationStatus("Processing resources...");
-          else if (eventType === "course_chunk") setGenerationStatus("Building your course...");
+          if (eventType === "status") {
+            setGenerationStatus(String(data.message ?? "Working..."));
+            const progress = Number(data.progress);
+            if (Number.isFinite(progress)) {
+              setGenerationProgress(Math.max(0, Math.min(100, progress)));
+            }
+          }
+          else if (eventType === "tool_call") {
+            setGenerationStatus("Discovering learning resources...");
+            setGenerationProgress((prev) => Math.max(prev, 18));
+          }
+          else if (eventType === "tool_result") {
+            setGenerationStatus("Processing resources...");
+            setGenerationProgress((prev) => Math.max(prev, 28));
+          }
+          else if (eventType === "course_chunk") {
+            setGenerationStatus("Building your course...");
+            setGenerationProgress((prev) => Math.max(prev, 45));
+          }
           else if (eventType === "course_title") {
             const title = String(data.title ?? "").trim();
             if (title) setLiveTitle(title);
@@ -287,6 +306,7 @@ export function ChatMessage({ initialConversationId }: { initialConversationId?:
                 mod.status === "building" ? { ...mod, status: "done" as const } : mod
               )
             );
+            setGenerationProgress(100);
             const courseId = String(data.courseId ?? "").trim();
             router.push(courseId ? `/explore/${courseId}` : "/dashboard");
             return;
@@ -318,6 +338,18 @@ export function ChatMessage({ initialConversationId }: { initialConversationId?:
                 : "Building your course"}
             </h2>
             <p className="max-w-md text-sm text-muted-foreground">{generationStatus}</p>
+          </div>
+
+          <div className="mx-auto mt-4 w-full max-w-lg">
+            <div className="h-2 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-500"
+                style={{ width: `${Math.min(Math.max(generationProgress, 0), 100)}%` }}
+              />
+            </div>
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              {Math.round(generationProgress)}% complete
+            </p>
           </div>
 
           {curriculumModules.length > 0 && (

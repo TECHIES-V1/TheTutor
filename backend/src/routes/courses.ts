@@ -26,6 +26,11 @@ type NormalizedCourseOutline = Array<{
   moduleId: string;
   title: string;
   order: number;
+  moduleQuiz?: {
+    quizId: string;
+    title: string;
+    questionCount: number;
+  } | null;
   lessons: Array<{
     lessonId: string;
     title: string;
@@ -113,6 +118,15 @@ function buildNormalizedOutline(course: ICourse): NormalizedCourseOutline {
       moduleId: String(module.moduleId ?? `module-${moduleIndex + 1}`),
       title: String(module.title ?? `Module ${moduleIndex + 1}`),
       order: normalizePositiveOrder(module.order, moduleIndex + 1),
+      moduleQuiz: module.moduleQuiz
+        ? {
+            quizId: String(module.moduleQuiz.quizId ?? `module-quiz-${moduleIndex + 1}`),
+            title: String(module.moduleQuiz.title ?? `Module ${moduleIndex + 1} Checkpoint`),
+            questionCount: Array.isArray(module.moduleQuiz.questions)
+              ? module.moduleQuiz.questions.length
+              : 0,
+          }
+        : null,
       lessons: Array.isArray(module.lessons)
         ? module.lessons.map((lesson: any, lessonIndex: number) => ({
             lessonId: String(lesson.lessonId ?? `lesson-${moduleIndex + 1}-${lessonIndex + 1}`),
@@ -130,6 +144,15 @@ function buildNormalizedOutline(course: ICourse): NormalizedCourseOutline {
       moduleId: String(module.id ?? `module-${moduleIndex + 1}`),
       title: String(module.title ?? `Module ${moduleIndex + 1}`),
       order: normalizePositiveOrder(module.order, moduleIndex + 1),
+      moduleQuiz: module.moduleQuiz
+        ? {
+            quizId: String(module.moduleQuiz.quizId ?? `module-quiz-${moduleIndex + 1}`),
+            title: String(module.moduleQuiz.title ?? `Module ${moduleIndex + 1} Checkpoint`),
+            questionCount: Array.isArray(module.moduleQuiz.questions)
+              ? module.moduleQuiz.questions.length
+              : 0,
+          }
+        : null,
       lessons: Array.isArray(module.lessons)
         ? module.lessons.map((lesson: any, lessonIndex: number) => ({
             lessonId: String(lesson.id ?? `lesson-${moduleIndex + 1}-${lessonIndex + 1}`),
@@ -145,13 +168,14 @@ function buildNormalizedOutline(course: ICourse): NormalizedCourseOutline {
 }
 
 async function buildOwnerNameMap(courses: ICourse[]): Promise<Map<string, string>> {
-  const ownerIds = Array.from(
+  const ownerIdStrings = Array.from(
     new Set(
       courses
         .map((course) => getCourseOwnerId(course))
-        .filter((id): id is string => Boolean(id) && Types.ObjectId.isValid(id))
+        .filter((id): id is string => typeof id === "string" && Types.ObjectId.isValid(id))
     )
-  ).map((id) => new Types.ObjectId(id));
+  );
+  const ownerIds = ownerIdStrings.map((id) => new Types.ObjectId(id));
 
   if (ownerIds.length === 0) {
     return new Map();
@@ -308,13 +332,18 @@ router.post("/bootstrap", requireAuth, async (req: Request, res: Response) => {
     });
 
     const course = await Course.create({
+      userId: user._id,
       ownerId: user._id,
       ownerName: user.name,
+      conversationId: undefined,
       title: generated.course.title,
       description: generated.course.description,
+      subject: generated.course.topic,
       topic: generated.course.topic,
       level: generated.course.level,
       goal: generated.course.goal,
+      status: "active",
+      modules: [],
       visibility: "draft",
       accessModel: "free_hackathon",
       generationStatus: "ready",
@@ -378,9 +407,9 @@ router.get("/explore", optionalAuth, async (req: Request, res: Response) => {
   }
 });
 
-router.get("/:courseId/preview", requireAuth, async (req: Request, res: Response) => {
+router.get("/:courseId/preview", optionalAuth, async (req: Request, res: Response) => {
   try {
-    const { userId } = req.jwtUser as JwtPayload;
+    const userId = getRequesterUserId(req);
     const courseId = toCourseId(req.params.courseId);
     if (!courseId) {
       res.status(400).json({ error: "Invalid course ID" });
@@ -393,9 +422,11 @@ router.get("/:courseId/preview", requireAuth, async (req: Request, res: Response
       return;
     }
 
-    const { isOwner, enrollment } = await getAccessState(userId, course);
     const visibility = getCourseVisibility(course);
-    const canView = isOwner || !!enrollment || visibility === "published";
+    const accessState =
+      userId != null ? await getAccessState(userId, course) : { isOwner: false, enrollment: null };
+    const { isOwner, enrollment } = accessState;
+    const canView = userId != null ? isOwner || !!enrollment || visibility === "published" : visibility === "published";
 
     if (!canView) {
       res.status(403).json({ error: "Forbidden" });
@@ -415,7 +446,8 @@ router.get("/:courseId/preview", requireAuth, async (req: Request, res: Response
       access: {
         isOwner,
         isEnrolled: !!enrollment,
-        canEnroll: !isOwner && !enrollment && visibility === "published",
+        canEnroll: !!userId && !isOwner && !enrollment && visibility === "published",
+        requiresAuthToEnroll: !userId,
       },
     });
   } catch (err) {
@@ -496,6 +528,33 @@ router.get("/:courseId/lessons/:lessonId", requireAuth, async (req: Request, res
       return;
     }
 
+    const curriculumRaw = readCourseField(course, "curriculum");
+    const modulesRaw = readCourseField(course, "modules");
+    const moduleCollection = Array.isArray(curriculumRaw)
+      ? curriculumRaw
+      : Array.isArray(modulesRaw)
+      ? modulesRaw
+      : [];
+    const matchedModule = moduleCollection.find((module: any) =>
+      Array.isArray(module?.lessons)
+        ? module.lessons.some((lesson: any) => {
+            const lessonIdValue = String(lesson?.lessonId ?? lesson?.id ?? "");
+            return lessonIdValue === req.params.lessonId;
+          })
+        : false
+    );
+    const moduleQuizRaw = matchedModule?.moduleQuiz ?? null;
+    const currentModuleId = matchedModule
+      ? String(matchedModule.moduleId ?? matchedModule.id ?? "")
+      : "";
+
+    let isLastLessonInModule = false;
+    if (matchedModule && Array.isArray(matchedModule.lessons) && matchedModule.lessons.length > 0) {
+      const lastLesson = matchedModule.lessons[matchedModule.lessons.length - 1];
+      const lastLessonId = String(lastLesson?.lessonId ?? lastLesson?.id ?? "");
+      isLastLessonInModule = lastLessonId === req.params.lessonId;
+    }
+
     const flattened = flattenLessons(course);
     const lessonIndex = flattened.findIndex((item) => item.lesson.lessonId === req.params.lessonId);
     const previousLessonId = lessonIndex > 0 ? flattened[lessonIndex - 1].lesson.lessonId : null;
@@ -512,16 +571,32 @@ router.get("/:courseId/lessons/:lessonId", requireAuth, async (req: Request, res
         title: lessonRecord.lesson.title,
         summary: lessonRecord.lesson.summary,
         videoUrl: lessonRecord.lesson.videoUrl,
+        videoReferences: lessonRecord.lesson.videoReferences ?? [],
         contentMarkdown: lessonRecord.lesson.contentMarkdown,
+        citations: lessonRecord.lesson.citations ?? [],
         quiz: lessonRecord.lesson.quiz.map((question) => ({
           questionId: question.questionId,
           prompt: question.prompt,
         })),
+        moduleQuiz: isLastLessonInModule && moduleQuizRaw
+          ? {
+              quizId: String(moduleQuizRaw.quizId ?? ""),
+              title: String(moduleQuizRaw.title ?? "Module Quiz"),
+              questions: Array.isArray(moduleQuizRaw.questions)
+                ? moduleQuizRaw.questions.map((question: any) => ({
+                    questionId: String(question?.questionId ?? ""),
+                    prompt: String(question?.prompt ?? ""),
+                  }))
+                : [],
+            }
+          : null,
       },
       navigation: {
         previousLessonId,
         nextLessonId,
         isFinalLesson: !nextLessonId,
+        isLastLessonInModule,
+        moduleId: currentModuleId,
       },
       progress: enrollment
         ? {
@@ -894,6 +969,149 @@ router.get("/mine/list", requireAuth, async (req: Request, res: Response) => {
           ownerNameById.get(getCourseOwnerId(course) ?? "") ?? ""
         )
       ),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// GET /courses/:courseId/modules/:moduleId/quiz
+router.get("/:courseId/modules/:moduleId/quiz", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.jwtUser as JwtPayload;
+    const courseId = toCourseId(req.params.courseId);
+    if (!courseId) {
+      res.status(400).json({ error: "Invalid course ID" });
+      return;
+    }
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      res.status(404).json({ error: "Course not found" });
+      return;
+    }
+
+    const { isOwner, enrollment } = await getAccessState(userId, course);
+    if (!isOwner && !enrollment) {
+      res.status(403).json({ error: "Enrollment required" });
+      return;
+    }
+
+    const curriculumRaw = readCourseField(course, "curriculum");
+    const modulesRaw = readCourseField(course, "modules");
+    const moduleCollection = Array.isArray(curriculumRaw)
+      ? curriculumRaw
+      : Array.isArray(modulesRaw)
+      ? modulesRaw
+      : [];
+
+    const targetModuleId = req.params.moduleId;
+    const matchedModule = moduleCollection.find((module: any) => {
+      const modId = String(module?.moduleId ?? module?.id ?? "");
+      return modId === targetModuleId;
+    });
+
+    if (!matchedModule) {
+      res.status(404).json({ error: "Module not found" });
+      return;
+    }
+
+    const moduleQuiz = matchedModule.moduleQuiz;
+    if (!moduleQuiz || !Array.isArray(moduleQuiz.questions) || moduleQuiz.questions.length === 0) {
+      res.status(404).json({ error: "No quiz found for this module" });
+      return;
+    }
+
+    res.json({
+      moduleId: targetModuleId,
+      title: String(moduleQuiz.title ?? "Module Checkpoint"),
+      questions: moduleQuiz.questions.map((question: any) => ({
+        questionId: String(question?.questionId ?? ""),
+        prompt: String(question?.prompt ?? ""),
+      })),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /courses/:courseId/modules/:moduleId/quiz-attempts
+router.post("/:courseId/modules/:moduleId/quiz-attempts", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.jwtUser as JwtPayload;
+    const courseId = toCourseId(req.params.courseId);
+    if (!courseId) {
+      res.status(400).json({ error: "Invalid course ID" });
+      return;
+    }
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      res.status(404).json({ error: "Course not found" });
+      return;
+    }
+
+    const { isOwner, enrollment } = await getAccessState(userId, course);
+    if (!isOwner && !enrollment) {
+      res.status(403).json({ error: "Enrollment required" });
+      return;
+    }
+
+    const curriculumRaw = readCourseField(course, "curriculum");
+    const modulesRaw = readCourseField(course, "modules");
+    const moduleCollection = Array.isArray(curriculumRaw)
+      ? curriculumRaw
+      : Array.isArray(modulesRaw)
+      ? modulesRaw
+      : [];
+
+    const targetModuleId = req.params.moduleId;
+    const matchedModule = moduleCollection.find((module: any) => {
+      const modId = String(module?.moduleId ?? module?.id ?? "");
+      return modId === targetModuleId;
+    });
+
+    if (!matchedModule) {
+      res.status(404).json({ error: "Module not found" });
+      return;
+    }
+
+    const moduleQuiz = matchedModule.moduleQuiz;
+    if (!moduleQuiz || !Array.isArray(moduleQuiz.questions) || moduleQuiz.questions.length === 0) {
+      res.status(404).json({ error: "No quiz found for this module" });
+      return;
+    }
+
+    const answers = Array.isArray(req.body?.answers)
+      ? (req.body.answers as Array<{ questionId?: unknown; response?: unknown }>)
+      : [];
+    const parsedAnswers = answers
+      .map((entry) => ({
+        questionId: String(entry?.questionId ?? ""),
+        response: String(entry?.response ?? ""),
+      }))
+      .filter((entry) => entry.questionId.length > 0);
+
+    const grade = gradeQuiz(moduleQuiz.questions, parsedAnswers);
+
+    let moduleCompleted = false;
+    if (grade.passed) {
+      const enrollmentRecord = enrollment ?? (await ensureEnrollment(userId, course));
+      if (!enrollmentRecord.completedModuleQuizIds.includes(targetModuleId)) {
+        enrollmentRecord.completedModuleQuizIds.push(targetModuleId);
+        await enrollmentRecord.save();
+      }
+      moduleCompleted = true;
+    }
+
+    res.json({
+      score: grade.score,
+      passThreshold: PASS_THRESHOLD,
+      passed: grade.passed,
+      feedback: grade.feedback,
+      moduleCompleted,
     });
   } catch (err) {
     console.error(err);

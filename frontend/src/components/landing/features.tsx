@@ -27,7 +27,7 @@ const features = [
 
 export function Features() {
   return (
-    <section id="features" className="relative overflow-hidden border-y border-border/80 bg-background py-20 md:py-28">
+    <section id="features" className="relative overflow-hidden border-y border-[#d4af37]/25 bg-white py-20 md:py-28">
       <div className="container relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -36,9 +36,9 @@ export function Features() {
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           className="mx-auto mb-14 max-w-3xl text-center"
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">What You Get</p>
-          <h2 className="mt-3 text-4xl font-bold text-foreground md:text-5xl">A Tutor Experience Built Around You</h2>
-          <p className="mt-4 text-base text-muted-foreground md:text-lg">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#b48b1d]">What You Get</p>
+          <h2 className="mt-3 text-4xl font-bold text-[#111111] md:text-5xl">A Tutor Experience Built Around You</h2>
+          <p className="mt-4 text-base text-[#505050] md:text-lg">
             TheTutor combines guided conversation, clear structure, and fast response time so learning feels focused, not overwhelming.
           </p>
         </motion.div>
@@ -51,12 +51,12 @@ export function Features() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.45, delay: index * 0.08 }}
-              className="neo-surface overflow-hidden rounded-3xl"
+              className="landing-surface overflow-hidden rounded-3xl"
             >
               <img src={feature.image} alt={feature.title} className="h-52 w-full object-cover" />
               <div className="p-6">
-                <h3 className="font-playfair text-2xl font-bold text-primary">{feature.title}</h3>
-                <p className="mt-3 text-base leading-relaxed text-muted-foreground">{feature.description}</p>
+                <h3 className="font-playfair text-2xl font-bold text-[#111111]">{feature.title}</h3>
+                <p className="mt-3 text-base leading-relaxed text-[#505050]">{feature.description}</p>
               </div>
             </motion.article>
           ))}

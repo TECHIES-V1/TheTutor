@@ -7,8 +7,8 @@ import Link from "next/link";
 
 export function CTA() {
   return (
-    <section className="relative overflow-hidden border-y border-border/80 py-20 md:py-28">
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#0b0b0b] via-[#111111] to-[#201b0f]" />
+    <section id="cta" className="relative overflow-hidden border-y border-[#d4af37]/25 py-20 md:py-28">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#0a0a0a] via-[#121212] to-[#2a2414]" />
       <div className="pointer-events-none absolute inset-0 bg-[url('https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1400&q=80')] bg-cover bg-center opacity-15" />
 
       <div className="container relative z-10 text-center">
@@ -17,11 +17,11 @@ export function CTA() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-          className="neo-surface mx-auto max-w-4xl rounded-3xl p-8 backdrop-blur-md md:p-12"
+          className="landing-surface mx-auto max-w-4xl rounded-3xl p-8 backdrop-blur-md md:p-12"
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Ready To Begin</p>
-          <h2 className="mt-3 text-4xl font-bold text-foreground md:text-5xl">Build A Personalized Study Path Today</h2>
-          <p className="mx-auto mt-4 max-w-2xl text-base text-muted-foreground md:text-lg">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#b48b1d]">Ready To Begin</p>
+          <h2 className="mt-3 text-4xl font-bold text-[#111111] md:text-5xl">Build A Personalized Study Path Today</h2>
+          <p className="mx-auto mt-4 max-w-2xl text-base text-[#4f4f4f] md:text-lg">
             Ask your first question, get a tailored plan, and keep learning with a tutor that adapts to you.
           </p>
 
@@ -29,7 +29,7 @@ export function CTA() {
             <Button
               asChild
               size="lg"
-              className="skeuo-gold rounded-full px-8 hover:!opacity-100"
+              className="landing-gold rounded-full px-8 hover:!opacity-100"
             >
               <Link href="/auth/signin">
                 Start Learning
@@ -39,7 +39,7 @@ export function CTA() {
             <Button
               variant="outline"
               size="lg"
-              className="neo-inset rounded-full border-primary/25 bg-transparent px-8 text-foreground hover:bg-muted hover:text-foreground"
+              className="landing-outline rounded-full bg-transparent px-8"
             >
               Explore Features
             </Button>

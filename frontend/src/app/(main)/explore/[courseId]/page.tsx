@@ -83,6 +83,9 @@ export default function ExploreCourseDetailPage() {
               <p className="text-xs uppercase tracking-wide text-primary/80">Course Preview</p>
               <h1 className="mt-2 text-3xl font-bold text-foreground">{data.course.title}</h1>
               <p className="mt-2 max-w-3xl text-sm text-muted-foreground">{data.course.description}</p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Created by {data.course.author?.name || data.course.ownerName}
+              </p>
 
               <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
                 <span className="rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-primary capitalize">
@@ -113,6 +116,13 @@ export default function ExploreCourseDetailPage() {
                       <ArrowRight className="h-4 w-4" />
                     </Link>
                   </Button>
+                ) : data.access.requiresAuthToEnroll ? (
+                  <Button asChild className="skeuo-gold rounded-full hover:!opacity-100">
+                    <Link href="/auth/signin">
+                      Sign in to Enroll
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
                 ) : data.access.canEnroll ? (
                   <Button
                     onClick={handleEnroll}
@@ -128,7 +138,7 @@ export default function ExploreCourseDetailPage() {
                   </div>
                 )}
 
-                <Button asChild variant="ghost" className="rounded-full border border-border">
+                <Button asChild variant="ghost" className="hidden sm:inline-flex rounded-full border border-border">
                   <Link href="/explore">Back to Explore</Link>
                 </Button>
               </div>
@@ -145,6 +155,11 @@ export default function ExploreCourseDetailPage() {
                   <div key={module.moduleId} className="rounded-2xl border border-primary/15 bg-card/60 p-4">
                     <p className="text-xs uppercase tracking-wide text-primary/80">Module {module.order}</p>
                     <h3 className="mt-1 text-lg font-semibold text-foreground">{module.title}</h3>
+                    {module.moduleQuiz && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {module.moduleQuiz.title} • {module.moduleQuiz.questionCount} questions
+                      </p>
+                    )}
                     <ul className="mt-3 space-y-2">
                       {module.lessons.map((lesson) => (
                         <li
@@ -163,11 +178,28 @@ export default function ExploreCourseDetailPage() {
                 ))}
               </div>
             </section>
+
+            {data.course.sourceAttribution.length > 0 && (
+              <section id="course-sources" className="neo-surface rounded-3xl p-6">
+                <h2 className="text-xl font-bold text-foreground">Textbook Sources</h2>
+                <ul className="mt-3 space-y-2">
+                  {data.course.sourceAttribution.map((source) => (
+                    <li key={`${source.title}-${source.source}`} className="rounded-xl border border-border/70 bg-card/50 p-3">
+                      <p className="text-sm font-semibold text-foreground">{source.title}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {source.authors.length > 0 ? source.authors.join(", ") : "Unknown author"} • {source.source || "source unavailable"}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </div>
 
           <CourseWorkspaceSidebar
             courseId={data.course.id}
             title={data.course.title}
+            authorName={data.course.author?.name || data.course.ownerName}
             level={data.course.level}
             moduleCount={data.course.moduleCount}
             lessonCount={data.course.lessonCount}

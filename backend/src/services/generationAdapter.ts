@@ -43,6 +43,14 @@ function buildStubCourse(input: GenerationAdapterInput): GeneratedCoursePayload 
       title: `${topic}: Foundations`,
       summary: `Understand the core concepts and vocabulary for ${topic}.`,
       videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      videoReferences: [
+        {
+          url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          title: "Foundations Overview",
+          channelName: "Learning Channel",
+          queryUsed: `${topic} fundamentals`,
+        },
+      ],
       contentMarkdown: [
         `# ${topic} Foundations`,
         "",
@@ -53,6 +61,15 @@ function buildStubCourse(input: GenerationAdapterInput): GeneratedCoursePayload 
         "- Basic workflow",
         "- Common beginner mistakes",
       ].join("\n"),
+      citations: [
+        {
+          citationText: `Doe, J. (2021). *${topic} Foundations*. Open Learning Press.`,
+          sourceTitle: `${topic} Foundations`,
+          authors: ["Doe, J."],
+          source: "openlibrary",
+          citationKey: `${topic} Foundations`,
+        },
+      ],
       quiz: [
         {
           questionId: "q1",
@@ -74,6 +91,14 @@ function buildStubCourse(input: GenerationAdapterInput): GeneratedCoursePayload 
       title: `${topic}: Applied Practice`,
       summary: `Use guided exercises to apply ${topic} concepts.`,
       videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      videoReferences: [
+        {
+          url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          title: "Applied Practice Walkthrough",
+          channelName: "Learning Channel",
+          queryUsed: `${topic} practical exercises`,
+        },
+      ],
       contentMarkdown: [
         `# ${topic} Applied Practice`,
         "",
@@ -85,6 +110,15 @@ function buildStubCourse(input: GenerationAdapterInput): GeneratedCoursePayload 
         "- Review",
         "- Improve",
       ].join("\n"),
+      citations: [
+        {
+          citationText: `Smith, A. (2020). *Applied ${topic}*. Practical Learning House.`,
+          sourceTitle: `Applied ${topic}`,
+          authors: ["Smith, A."],
+          source: "gutendex",
+          citationKey: `Applied ${topic}`,
+        },
+      ],
       quiz: [
         {
           questionId: "q1",
@@ -106,6 +140,14 @@ function buildStubCourse(input: GenerationAdapterInput): GeneratedCoursePayload 
       title: `${topic}: Project and Mastery`,
       summary: `Deliver a small project aligned to your goal: ${goal}.`,
       videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      videoReferences: [
+        {
+          url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          title: "Project Planning and Mastery",
+          channelName: "Learning Channel",
+          queryUsed: `${topic} project tutorial`,
+        },
+      ],
       contentMarkdown: [
         `# ${topic} Project and Mastery`,
         "",
@@ -117,6 +159,15 @@ function buildStubCourse(input: GenerationAdapterInput): GeneratedCoursePayload 
         "- Validate outcomes",
         "- Document lessons learned",
       ].join("\n"),
+      citations: [
+        {
+          citationText: `Lee, M. (2019). *Mastering ${topic} Projects*. Study Press.`,
+          sourceTitle: `Mastering ${topic} Projects`,
+          authors: ["Lee, M."],
+          source: "standard-ebooks",
+          citationKey: `Mastering ${topic} Projects`,
+        },
+      ],
       quiz: [
         {
           questionId: "q1",
@@ -145,6 +196,18 @@ function buildStubCourse(input: GenerationAdapterInput): GeneratedCoursePayload 
         moduleId: `${topicSlug}-module-1`,
         order: 1,
         title: `${topic} Core Path`,
+        moduleQuiz: {
+          quizId: `${topicSlug}-module-1-quiz`,
+          title: `${topic} Core Path Checkpoint`,
+          questions: [
+            {
+              questionId: "mq1",
+              prompt: `Summarize the core workflow for ${topic}.`,
+              expectedConcepts: [["workflow"], ["practice"], ["review"]],
+              remediationTip: "Revisit the lesson summaries and list the core workflow steps.",
+            },
+          ],
+        },
         lessons,
       },
     ],
@@ -185,4 +248,3 @@ export async function generateCourse(input: GenerationAdapterInput): Promise<Gen
 
   return { source: "stub", course: buildStubCourse(input) };
 }
-

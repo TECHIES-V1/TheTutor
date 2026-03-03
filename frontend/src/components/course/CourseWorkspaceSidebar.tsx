@@ -18,6 +18,7 @@ type ActiveCourseView = "preview" | "lesson" | "quiz" | "complete";
 interface CourseWorkspaceSidebarProps {
   courseId: string;
   title: string;
+  authorName?: string;
   level: string;
   moduleCount: number;
   lessonCount: number;
@@ -49,6 +50,7 @@ function lessonHref({
 export function CourseWorkspaceSidebar({
   courseId,
   title,
+  authorName,
   level,
   moduleCount,
   lessonCount,
@@ -94,7 +96,7 @@ export function CourseWorkspaceSidebar({
       />
 
       <aside
-        className={`neo-surface fixed inset-y-0 right-0 z-50 w-[21.5rem] max-w-[92vw] overflow-y-auto border-l border-primary/20 p-4 transition-transform duration-300 lg:sticky lg:top-6 lg:z-10 lg:max-h-[calc(100svh-7rem)] lg:w-full lg:max-w-none lg:self-start lg:rounded-3xl lg:border lg:p-4 lg:transition-none ${
+        className={`neo-surface fixed inset-y-0 right-0 z-50 w-[20rem] max-w-[92vw] overflow-y-auto border-l border-primary/20 p-4 transition-transform duration-300 lg:sticky lg:top-6 lg:z-10 lg:max-h-[calc(100svh-7rem)] lg:w-full lg:max-w-none lg:self-start lg:rounded-3xl lg:border lg:p-4 lg:transition-none ${
           isOpen ? "translate-x-0" : "translate-x-full"
         } ${isOpen ? "lg:block" : "lg:hidden"}`}
       >
@@ -113,7 +115,10 @@ export function CourseWorkspaceSidebar({
 
         <div className="rounded-2xl border border-primary/15 bg-background/65 p-4">
           <p className="text-xs uppercase tracking-[0.14em] text-primary/75">Course</p>
-          <h2 className="mt-2 text-lg font-bold text-foreground">{title}</h2>
+          <h2 className="mt-2 line-clamp-2 break-words text-base font-bold leading-snug text-foreground">{title}</h2>
+          {authorName && (
+            <p className="mt-1 text-[11px] text-muted-foreground">Created by {authorName}</p>
+          )}
           <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
             <span className="rounded-full border border-primary/25 bg-primary/10 px-2 py-1 text-primary capitalize">
               {level}
@@ -132,7 +137,7 @@ export function CourseWorkspaceSidebar({
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary/80">
               Current Module
             </p>
-            <p className="mt-1 text-sm font-semibold text-primary">{currentModule.title}</p>
+            <p className="mt-1 line-clamp-2 break-words text-xs font-semibold text-primary">{currentModule.title}</p>
             {currentLesson && (
               <p className="mt-1 text-xs text-primary/80">
                 Lesson {currentLesson.order} of {currentModule.lessons.length}
@@ -253,7 +258,7 @@ export function CourseWorkspaceSidebar({
                     <span className="flex items-center justify-between gap-2">
                       <span className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
                         <ListTree className={`h-4 w-4 ${isCurrentModule ? "text-primary" : "text-primary/70"}`} />
-                        {module.title}
+                        <span className="line-clamp-2 break-words text-xs leading-snug">{module.title}</span>
                       </span>
                       <span className="text-xs text-muted-foreground">{module.lessons.length}</span>
                     </span>
@@ -281,7 +286,9 @@ export function CourseWorkspaceSidebar({
                               : "text-muted-foreground hover:bg-muted hover:text-foreground"
                           }`}
                         >
-                          Lesson {lesson.order}: {lesson.title}
+                          <span className="line-clamp-2 break-words">
+                            Lesson {lesson.order}: {lesson.title}
+                          </span>
                         </Link>
                       );
                     })}

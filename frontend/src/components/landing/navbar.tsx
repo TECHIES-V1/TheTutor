@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
+import { TutorAvatarMark } from "@/components/brand/TutorAvatarMark";
 
 const navLinks = [
   { label: "Features", href: "#features" },
@@ -26,18 +27,16 @@ export function NavBar() {
       <nav
         className={`fixed left-0 right-0 top-0 z-50 transition-all duration-300 ${
           isScrolled
-            ? "border-b border-primary/20 bg-background/90 backdrop-blur-md"
+            ? "border-b border-[#d4af37]/35 bg-white/95 backdrop-blur-md"
             : "bg-transparent"
         }`}
       >
         <div className="container flex items-center justify-between py-4">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="skeuo-gold flex h-10 w-10 items-center justify-center rounded-xl text-base font-bold">
-              T
-            </div>
+            <TutorAvatarMark size={40} className="rounded-xl" />
             <div>
-              <p className="font-playfair text-xl font-bold text-primary">TheTutor</p>
-              <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">AI Learning Coach</p>
+              <p className="font-playfair text-xl font-bold text-[#111111]">TheTutor</p>
+              <p className="text-[11px] uppercase tracking-[0.14em] text-[#595959]">AI Learning Coach</p>
             </div>
           </Link>
 
@@ -46,7 +45,7 @@ export function NavBar() {
               <a
                 key={link.href}
                 href={link.href}
-                className="text-sm font-semibold text-muted-foreground transition-colors hover:text-primary"
+                className="text-sm font-semibold text-[#525252] transition-colors hover:text-[#b48b1d]"
               >
                 {link.label}
               </a>
@@ -54,7 +53,7 @@ export function NavBar() {
             <Button
               asChild
               size="sm"
-              className="skeuo-gold rounded-full px-5 hover:!opacity-100"
+              className="landing-gold rounded-full px-5 hover:!opacity-100"
             >
               <Link href="/auth/signin">Start Learning</Link>
             </Button>
@@ -64,7 +63,7 @@ export function NavBar() {
             variant="ghost"
             size="icon"
             onClick={() => setIsSidebarOpen(true)}
-            className="text-foreground hover:bg-primary/10 hover:text-primary lg:hidden"
+            className="text-[#111111] hover:bg-[#d4af37]/15 hover:text-[#8a6a09] lg:hidden"
           >
             <Menu className="h-6 w-6" />
           </Button>
@@ -88,20 +87,18 @@ export function NavBar() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-              className="neo-surface fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-sm flex-col border-l border-primary/20 p-6 lg:hidden"
+              className="landing-surface fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-sm flex-col border-l border-[#d4af37]/35 p-6 lg:hidden"
             >
               <div className="mb-10 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="skeuo-gold flex h-9 w-9 items-center justify-center rounded-lg font-bold">
-                    T
-                  </div>
-                  <span className="font-playfair text-lg font-bold text-primary">TheTutor</span>
+                  <TutorAvatarMark size={36} className="rounded-lg" />
+                  <span className="font-playfair text-lg font-bold text-[#111111]">TheTutor</span>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsSidebarOpen(false)}
-                  className="text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                  className="text-[#595959] hover:bg-[#d4af37]/15 hover:text-[#8a6a09]"
                 >
                   <X className="h-6 w-6" />
                 </Button>
@@ -113,7 +110,7 @@ export function NavBar() {
                     key={link.href}
                     href={link.href}
                     onClick={() => setIsSidebarOpen(false)}
-                    className="border-b border-border/70 pb-4 text-base font-semibold text-muted-foreground transition-colors hover:text-primary"
+                    className="border-b border-[#d4af37]/25 pb-4 text-base font-semibold text-[#525252] transition-colors hover:text-[#b48b1d]"
                   >
                     {link.label}
                   </a>
@@ -123,7 +120,7 @@ export function NavBar() {
               <Button
                 asChild
                 size="lg"
-                className="skeuo-gold mt-8 rounded-full hover:!opacity-100"
+                className="landing-gold mt-8 rounded-full hover:!opacity-100"
               >
                 <Link href="/auth/signin" onClick={() => setIsSidebarOpen(false)}>
                   Start Learning

@@ -10,6 +10,15 @@ export interface CourseSummary {
   level: CourseLevel;
   goal: string;
   ownerName: string;
+  author: {
+    id: string | null;
+    name: string;
+  };
+  sourceAttribution: Array<{
+    title: string;
+    authors: string[];
+    source: string;
+  }>;
   visibility: CourseVisibility;
   accessModel: "free_hackathon";
   moduleCount: number;
@@ -26,6 +35,11 @@ export interface CurriculumOutline {
   moduleId: string;
   title: string;
   order: number;
+  moduleQuiz?: {
+    quizId: string;
+    title: string;
+    questionCount: number;
+  } | null;
   lessons: {
     lessonId: string;
     title: string;
@@ -41,6 +55,7 @@ export interface CoursePreviewResponse {
     isOwner: boolean;
     isEnrolled: boolean;
     canEnroll: boolean;
+    requiresAuthToEnroll?: boolean;
   };
 }
 
@@ -51,6 +66,15 @@ export interface DashboardCourseCard {
   topic: string;
   level: CourseLevel;
   ownerName: string;
+  author: {
+    id: string | null;
+    name: string;
+  };
+  sourceAttribution: Array<{
+    title: string;
+    authors: string[];
+    source: string;
+  }>;
   visibility: CourseVisibility;
   role: "owner" | "learner";
   lessonCount: number;
@@ -87,16 +111,39 @@ export interface LessonDetailResponse {
     title: string;
     summary: string;
     videoUrl: string;
+    videoReferences: Array<{
+      url: string;
+      title: string;
+      channelName: string;
+      queryUsed: string;
+    }>;
     contentMarkdown: string;
+    citations: Array<{
+      citationText: string;
+      sourceTitle: string;
+      authors: string[];
+      source: string;
+      citationKey: string;
+    }>;
     quiz: {
       questionId: string;
       prompt: string;
     }[];
+    moduleQuiz: {
+      quizId: string;
+      title: string;
+      questions: Array<{
+        questionId: string;
+        prompt: string;
+      }>;
+    } | null;
   };
   navigation: {
     previousLessonId: string | null;
     nextLessonId: string | null;
     isFinalLesson: boolean;
+    isLastLessonInModule: boolean;
+    moduleId: string;
   };
   progress: {
     status: EnrollmentStatus;
@@ -132,3 +179,24 @@ export interface CertificateSummary {
   downloadUrl: string;
 }
 
+export interface ModuleQuizResponse {
+  moduleId: string;
+  title: string;
+  questions: Array<{
+    questionId: string;
+    prompt: string;
+  }>;
+}
+
+export interface ModuleQuizAttemptResult {
+  score: number;
+  passThreshold: number;
+  passed: boolean;
+  moduleCompleted: boolean;
+  feedback: Array<{
+    questionId: string;
+    score: number;
+    missingConcepts: string[];
+    correctiveFeedback: string;
+  }>;
+}

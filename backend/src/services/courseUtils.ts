@@ -142,7 +142,7 @@ function normalizeLesson(rawLesson: any, fallbackId: string): RuntimeLesson {
   const videoReferences =
     explicitVideoReferences.length > 0
       ? explicitVideoReferences
-      : videoLinks.map((url) => ({
+      : videoLinks.map((url: string) => ({
           url,
           title: "",
           channelName: "",
@@ -190,7 +190,7 @@ function normalizeLesson(rawLesson: any, fallbackId: string): RuntimeLesson {
 
 function getRawModules(course: ICourse): any[] {
   const curriculum = getCourseField(course, "curriculum");
-  if (Array.isArray(curriculum)) {
+  if (Array.isArray(curriculum) && curriculum.length > 0) {
     return curriculum;
   }
 
