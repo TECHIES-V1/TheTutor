@@ -17,14 +17,31 @@ declare global {
   }
 }
 
+function decodeToken(token: string | undefined): JwtPayload | null {
+  if (!token) return null;
+
+  try {
+    return jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
+  } catch {
+    return null;
+  }
+}
+
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
-  // Mock user for testing without a valid token
-  req.jwtUser = {
-    userId: "507f1f77bcf86cd799439011",
-    email: "test@example.com",
-    name: "Test User",
-    image: "",
-    onboardingCompleted: false
-  };
+  const payload = decodeToken(req.cookies?.token);
+  if (!payload) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  req.jwtUser = payload;
+  next();
+}
+
+export function optionalAuth(req: Request, _res: Response, next: NextFunction): void {
+  const payload = decodeToken(req.cookies?.token);
+  if (payload) {
+    req.jwtUser = payload;
+  }
   next();
 }

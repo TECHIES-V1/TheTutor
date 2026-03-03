@@ -1,7 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.chat = chat;
-exports.extractData = extractData;
+exports.generateSubjectFromConversation = generateSubjectFromConversation;
+exports.extractOnboardingDataFromConversation = extractOnboardingDataFromConversation;
 exports.filterBooks = filterBooks;
 exports.streamCourseWithMCPTools = streamCourseWithMCPTools;
 exports.streamCourse = streamCourse;
@@ -11,38 +12,49 @@ const ai_2 = require("../../config/ai");
 const prompts_1 = require("./prompts");
 const mcpClient_1 = require("../mcp/mcpClient");
 // ── Chat (Non-streaming for onboarding) ───────────────────────────────────
-async function chat(messages, currentPhase, collectedData) {
-    const systemPrompt = (0, prompts_1.getOnboardingSystemPrompt)(currentPhase, collectedData);
+async function chat(messages, messagesLeft) {
     const result = await (0, ai_1.generateText)({
         model: (0, ai_2.getModel)(),
-        system: systemPrompt,
+        system: (0, prompts_1.getOnboardingSystemPrompt)(messagesLeft),
         messages,
         maxOutputTokens: ai_2.GENERATION_CONFIG.maxOutputTokens,
         temperature: ai_2.GENERATION_CONFIG.temperature,
     });
     return result.text;
 }
-// ── Extract Data from User Message ────────────────────────────────────────
-async function extractData(userMessage, currentPhase, existingData) {
-    const prompt = (0, prompts_1.getDataExtractionPrompt)(userMessage, currentPhase, existingData);
+// ── Generate Subject Name from Conversation ───────────────────────────────
+async function generateSubjectFromConversation(messages) {
+    const conversationText = messages
+        .map((m) => `${m.role === "user" ? "Learner" : "Tutor"}: ${m.content}`)
+        .join("\n");
     const result = await (0, ai_1.generateText)({
         model: (0, ai_2.getModel)(),
-        prompt,
-        maxOutputTokens: 256,
-        temperature: ai_2.GENERATION_CONFIG.temperature,
+        prompt: (0, prompts_1.getSubjectFromConversationPrompt)(conversationText),
+        maxOutputTokens: 64,
+        temperature: 0.7,
+    });
+    return result.text.trim().replace(/^["']|["']$/g, "");
+}
+// ── Extract Onboarding Data from Conversation ─────────────────────────────
+async function extractOnboardingDataFromConversation(messages) {
+    const conversationText = messages
+        .map((m) => `${m.role === "user" ? "Learner" : "Tutor"}: ${m.content}`)
+        .join("\n");
+    const result = await (0, ai_1.generateText)({
+        model: (0, ai_2.getModel)(),
+        prompt: (0, prompts_1.getOnboardingDataExtractionPrompt)(conversationText),
+        maxOutputTokens: 128,
+        temperature: 0.3,
     });
     try {
-        // Extract JSON from the response
-        const jsonMatch = result.text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-            return JSON.parse(jsonMatch[0]);
-        }
-        return {};
+        const match = result.text.match(/\{[\s\S]*\}/);
+        if (match)
+            return JSON.parse(match[0]);
     }
     catch {
-        console.error("Failed to parse extraction result:", result.text);
-        return {};
+        console.error("Failed to parse onboarding data extraction:", result.text);
     }
+    return { level: "beginner", hoursPerWeek: 5, goal: "build practical skills" };
 }
 // ── Filter Books ──────────────────────────────────────────────────────────
 async function filterBooks(topic, level, books) {
@@ -84,8 +96,7 @@ async function* streamCourseWithMCPTools(onboardingData, courseId, userId) {
         stopWhen: (0, ai_1.stepCountIs)(10), // Max 10 tool call rounds
         maxOutputTokens: ai_2.STREAMING_CONFIG.maxOutputTokens,
         onFinish: async () => {
-            // Close MCP client when done (optional for long-running)
-            // await closeMCPClient();
+            await (0, mcpClient_1.closeMCPClient)();
         },
     });
     for await (const chunk of result.fullStream) {
@@ -158,10 +169,10 @@ The subject name should be:
 Respond with ONLY the subject name, nothing else.
 
 Examples:
-- "Introduction to Python Programming"
-- "Advanced Machine Learning Techniques"
-- "Web Development with React for Beginners"
-- "Data Analysis with Python"`;
+- "Classical Guitar for Absolute Beginners"
+- "The History of the Roman Empire"
+- "Home Cooking: From Basics to Bold Flavours"
+- "Mastering Personal Finance"`;
     const result = await (0, ai_1.generateText)({
         model: (0, ai_2.getModel)(),
         prompt,

@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { parseCourseContent } from "./generator";
+import {
+  parseCourseContent,
+  createStreamMilestoneState,
+  consumeCourseStreamChunk,
+  flushCourseStreamMilestones,
+} from "./generator";
 
 describe("parseCourseContent", () => {
   it("should parse course content including interactive elements", () => {
@@ -119,5 +124,54 @@ This is basic content.
     expect(lesson.quizzes).toEqual([]);
     expect(lesson.interactiveElements).toEqual([]);
     expect(lesson.content).toBe("This is basic content.");
+  });
+});
+
+describe("stream milestone parser", () => {
+  it("detects title and module boundaries in order", () => {
+    const state = createStreamMilestoneState();
+
+    const firstEvents = consumeCourseStreamChunk(
+      "# Course: Test-Driven Development\n## Module 1: Foundations\n",
+      state
+    );
+    expect(firstEvents).toEqual([
+      { type: "course_title", data: { title: "Test-Driven Development" } },
+      { type: "module_started", data: { index: 0, title: "Foundations" } },
+    ]);
+
+    const secondEvents = consumeCourseStreamChunk(
+      "### Lesson 1.1: Intro\n## Module 2: Mocking\n",
+      state
+    );
+    expect(secondEvents).toEqual([
+      { type: "module_complete", data: { index: 0, title: "Foundations" } },
+      { type: "module_started", data: { index: 1, title: "Mocking" } },
+    ]);
+
+    const finalEvents = flushCourseStreamMilestones(state);
+    expect(finalEvents).toEqual([
+      { type: "module_complete", data: { index: 1, title: "Mocking" } },
+    ]);
+  });
+
+  it("flushes trailing buffered line before final module completion", () => {
+    const state = createStreamMilestoneState();
+
+    const chunkEvents = consumeCourseStreamChunk(
+      "# Course: Data Analysis\n## Module 1: Setup\n## Module 2: Statistics",
+      state
+    );
+    expect(chunkEvents).toEqual([
+      { type: "course_title", data: { title: "Data Analysis" } },
+      { type: "module_started", data: { index: 0, title: "Setup" } },
+    ]);
+
+    const flushEvents = flushCourseStreamMilestones(state);
+    expect(flushEvents).toEqual([
+      { type: "module_complete", data: { index: 0, title: "Setup" } },
+      { type: "module_started", data: { index: 1, title: "Statistics" } },
+      { type: "module_complete", data: { index: 1, title: "Statistics" } },
+    ]);
   });
 });

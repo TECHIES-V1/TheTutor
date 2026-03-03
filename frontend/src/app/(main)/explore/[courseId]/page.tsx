@@ -1,48 +1,28 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { CoursePreviewResponse } from "@/types/course";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle2, BookCopy } from "lucide-react";
+import { useCoursePreview } from "@/hooks/useCoursePreview";
+import { CourseWorkspaceSidebar } from "@/components/course/CourseWorkspaceSidebar";
+import { useCoursePanelState } from "@/hooks/useCoursePanelState";
 
 export default function ExploreCourseDetailPage() {
   const params = useParams<{ courseId: string }>();
   const router = useRouter();
   const courseId = params.courseId;
 
-  const [data, setData] = useState<CoursePreviewResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [enrolling, setEnrolling] = useState(false);
-
-  const loadPreview = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await api.get(`/courses/${courseId}/preview`);
-      if (!response.ok) {
-        throw new Error("Failed to load course preview");
-      }
-
-      const payload = (await response.json()) as CoursePreviewResponse;
-      setData(payload);
-    } catch {
-      setError("Could not load this course preview.");
-    } finally {
-      setLoading(false);
-    }
-  }, [courseId]);
-
-  useEffect(() => {
-    loadPreview();
-  }, [loadPreview]);
+  const { data, loading, error } = useCoursePreview(courseId);
+  const [enrollError, setEnrollError] = useState<string | null>(null);
+  const { isOpen: isCoursePanelOpen, toggle: toggleCoursePanel } = useCoursePanelState();
 
   const handleEnroll = async () => {
     setEnrolling(true);
+    setEnrollError(null);
     try {
       const response = await api.post(`/courses/${courseId}/enroll`, {});
       if (!response.ok) {
@@ -55,7 +35,7 @@ export default function ExploreCourseDetailPage() {
 
       router.push(`/learn/${courseId}/lessons/${payload.enrollment.currentLessonId}`);
     } catch {
-      setError("Enrollment failed. Please try again.");
+      setEnrollError("Enrollment failed. Please try again.");
     } finally {
       setEnrolling(false);
     }
@@ -85,87 +65,121 @@ export default function ExploreCourseDetailPage() {
     <div className="relative px-6 py-8">
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_15%_8%,rgba(212,175,55,0.08),transparent_28%),radial-gradient(circle_at_84%_16%,rgba(212,175,55,0.05),transparent_24%)]" />
 
-      <div className="relative z-10 mx-auto w-full max-w-5xl space-y-6">
-        <div className="neo-surface rounded-3xl p-6">
-          <p className="text-xs uppercase tracking-wide text-primary/80">Course Preview</p>
-          <h1 className="mt-2 font-playfair text-3xl font-bold text-foreground">{data.course.title}</h1>
-          <p className="mt-2 max-w-3xl text-sm text-muted-foreground">{data.course.description}</p>
-
-          <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
-            <span className="rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-primary capitalize">
-              {data.course.level}
-            </span>
-            <span className="rounded-full border border-border px-2 py-0.5 text-muted-foreground">
-              {data.course.moduleCount} modules
-            </span>
-            <span className="rounded-full border border-border px-2 py-0.5 text-muted-foreground">
-              {data.course.lessonCount} lessons
-            </span>
-            <span className="rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-green-700">
-              Free (Hackathon)
-            </span>
-          </div>
-
-          {error && (
-            <div className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {error}
-            </div>
-          )}
-
-          <div className="mt-5 flex flex-wrap gap-2">
-            {currentLessonId ? (
-              <Button asChild className="skeuo-gold rounded-full hover:!opacity-100">
-                <Link href={`/learn/${data.course.id}/lessons/${currentLessonId}`}>
-                  Continue Course
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-            ) : data.access.canEnroll ? (
-              <Button
-                onClick={handleEnroll}
-                disabled={enrolling}
-                className="skeuo-gold rounded-full hover:!opacity-100"
-              >
-                {enrolling ? "Enrolling..." : "Enroll for Free"}
-              </Button>
-            ) : (
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-2 text-xs text-primary">
-                <CheckCircle2 className="h-4 w-4" />
-                Access already available
-              </div>
-            )}
-
-            <Button asChild variant="ghost" className="rounded-full border border-border">
-              <Link href="/explore">Back to Explore</Link>
-            </Button>
-          </div>
+      <div className="relative z-10 mx-auto w-full max-w-7xl space-y-4">
+        <div className="flex justify-end">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={toggleCoursePanel}
+            className="rounded-full border border-border"
+          >
+            {isCoursePanelOpen ? "Hide Course Sidebar" : "Show Course Sidebar"}
+          </Button>
         </div>
 
-        <section className="neo-surface rounded-3xl p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <BookCopy className="h-5 w-5 text-primary" />
-            <h2 className="font-playfair text-2xl font-bold text-foreground">Curriculum Outline</h2>
+        <div className={`grid w-full gap-6 ${isCoursePanelOpen ? "lg:grid-cols-[1fr_21.5rem]" : "lg:grid-cols-1"}`}>
+          <div className="space-y-6">
+            <section id="course-overview" className="neo-surface rounded-3xl p-6">
+              <p className="text-xs uppercase tracking-wide text-primary/80">Course Preview</p>
+              <h1 className="mt-2 text-3xl font-bold text-foreground">{data.course.title}</h1>
+              <p className="mt-2 max-w-3xl text-sm text-muted-foreground">{data.course.description}</p>
+
+              <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
+                <span className="rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-primary capitalize">
+                  {data.course.level}
+                </span>
+                <span className="rounded-full border border-border px-2 py-0.5 text-muted-foreground">
+                  {data.course.moduleCount} modules
+                </span>
+                <span className="rounded-full border border-border px-2 py-0.5 text-muted-foreground">
+                  {data.course.lessonCount} lessons
+                </span>
+                <span className="rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-green-700">
+                  Free (Hackathon)
+                </span>
+              </div>
+
+              {(error || enrollError) && (
+                <div className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                  {error ?? enrollError}
+                </div>
+              )}
+
+              <div className="mt-5 flex flex-wrap gap-2">
+                {currentLessonId ? (
+                  <Button asChild className="skeuo-gold rounded-full hover:!opacity-100">
+                    <Link href={`/learn/${data.course.id}/lessons/${currentLessonId}`}>
+                      Continue Course
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                ) : data.access.canEnroll ? (
+                  <Button
+                    onClick={handleEnroll}
+                    disabled={enrolling}
+                    className="skeuo-gold rounded-full hover:!opacity-100"
+                  >
+                    {enrolling ? "Enrolling..." : "Enroll for Free"}
+                  </Button>
+                ) : (
+                  <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-2 text-xs text-primary">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Access already available
+                  </div>
+                )}
+
+                <Button asChild variant="ghost" className="rounded-full border border-border">
+                  <Link href="/explore">Back to Explore</Link>
+                </Button>
+              </div>
+            </section>
+
+            <section id="course-curriculum" className="neo-surface rounded-3xl p-6">
+              <div className="mb-4 flex items-center gap-2">
+                <BookCopy className="h-5 w-5 text-primary" />
+                <h2 className="text-2xl font-bold text-foreground">Curriculum Outline</h2>
+              </div>
+
+              <div className="space-y-4">
+                {data.curriculumOutline.map((module) => (
+                  <div key={module.moduleId} className="rounded-2xl border border-primary/15 bg-card/60 p-4">
+                    <p className="text-xs uppercase tracking-wide text-primary/80">Module {module.order}</p>
+                    <h3 className="mt-1 text-lg font-semibold text-foreground">{module.title}</h3>
+                    <ul className="mt-3 space-y-2">
+                      {module.lessons.map((lesson) => (
+                        <li
+                          id={`lesson-${lesson.lessonId}`}
+                          key={lesson.lessonId}
+                          className="rounded-xl border border-border/80 bg-background/40 p-3"
+                        >
+                          <p className="text-sm font-medium text-foreground">
+                            Lesson {lesson.order}: {lesson.title}
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">{lesson.summary}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </section>
           </div>
 
-          <div className="space-y-4">
-            {data.curriculumOutline.map((module) => (
-              <div key={module.moduleId} className="rounded-2xl border border-primary/15 bg-card/60 p-4">
-                <p className="text-xs uppercase tracking-wide text-primary/80">Module {module.order}</p>
-                <h3 className="mt-1 text-lg font-semibold text-foreground">{module.title}</h3>
-                <ul className="mt-3 space-y-2">
-                  {module.lessons.map((lesson) => (
-                    <li key={lesson.lessonId} className="rounded-xl border border-border/80 bg-background/40 p-3">
-                      <p className="text-sm font-medium text-foreground">
-                        Lesson {lesson.order}: {lesson.title}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">{lesson.summary}</p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </section>
+          <CourseWorkspaceSidebar
+            courseId={data.course.id}
+            title={data.course.title}
+            level={data.course.level}
+            moduleCount={data.course.moduleCount}
+            lessonCount={data.course.lessonCount}
+            curriculum={data.curriculumOutline}
+            activeView="preview"
+            currentLessonId={currentLessonId}
+            progressPercent={data.course.enrollment?.progressPercent ?? null}
+            canOpenLessons={Boolean(data.access.isOwner || data.access.isEnrolled)}
+            isOpen={isCoursePanelOpen}
+            onToggle={toggleCoursePanel}
+          />
+        </div>
       </div>
     </div>
   );

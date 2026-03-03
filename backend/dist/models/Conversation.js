@@ -41,18 +41,8 @@ const MessageSchema = new mongoose_1.Schema({
     content: { type: String, required: true },
     timestamp: { type: Date, default: Date.now },
     metadata: {
-        phase: {
-            type: String,
-            enum: ["topic", "level", "time", "goal", "confirmation"],
-        },
-        extractedData: {
-            topic: String,
-            level: { type: String, enum: ["beginner", "intermediate", "advanced"] },
-            hoursPerWeek: Number,
-            goal: String,
-            confirmedSubject: String,
-            suggestedSubject: String,
-        },
+        isConfirmation: { type: Boolean },
+        suggestedSubject: { type: String },
     },
 }, { _id: false });
 const ConversationSchema = new mongoose_1.Schema({
@@ -70,6 +60,7 @@ const ConversationSchema = new mongoose_1.Schema({
         goal: String,
         confirmedSubject: String,
     },
+    confirmationAttempts: { type: Number, default: 0 },
     status: {
         type: String,
         enum: ["active", "completed", "abandoned"],
@@ -77,6 +68,5 @@ const ConversationSchema = new mongoose_1.Schema({
     },
     courseId: { type: mongoose_1.Schema.Types.ObjectId, ref: "Course" },
 }, { timestamps: true });
-// Index for finding active conversations by user
 ConversationSchema.index({ userId: 1, status: 1 });
 exports.Conversation = mongoose_1.default.model("Conversation", ConversationSchema);

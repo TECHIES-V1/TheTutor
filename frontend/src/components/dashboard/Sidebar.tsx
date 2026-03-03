@@ -2,14 +2,63 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Compass, Settings, LogOut, Plus, X } from "lucide-react";
+import {
+  BookOpenCheck,
+  Compass,
+  LayoutDashboard,
+  LogOut,
+  Plus,
+  Settings,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
 
-const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Explore Courses", href: "/explore", icon: Compass },
-  { label: "Settings", href: "/settings", icon: Settings },
+interface NavChildItem {
+  label: string;
+  href: string;
+  matchPrefix?: string;
+}
+
+interface NavItem {
+  label: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+  children: NavChildItem[];
+}
+
+const navItems: NavItem[] = [
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+    icon: LayoutDashboard,
+    children: [
+      { label: "Overview", href: "/dashboard" },
+      { label: "Created Courses", href: "/dashboard/courses", matchPrefix: "/dashboard/courses" },
+      { label: "Enrollments", href: "/dashboard/enrollments", matchPrefix: "/dashboard/enrollments" },
+    ],
+  },
+  {
+    label: "Courses",
+    href: "/explore",
+    icon: Compass,
+    children: [
+      { label: "Explore Library", href: "/explore", matchPrefix: "/explore" },
+      { label: "Create Course", href: "/create-course", matchPrefix: "/create-course" },
+      { label: "My Learning", href: "/dashboard/enrollments", matchPrefix: "/learn" },
+    ],
+  },
+  {
+    label: "Settings",
+    href: "/settings",
+    icon: Settings,
+    children: [
+      { label: "Profile", href: "/settings/personal-info", matchPrefix: "/settings/personal-info" },
+      { label: "Notifications", href: "/settings/notifications", matchPrefix: "/settings/notifications" },
+      { label: "Security", href: "/settings/security", matchPrefix: "/settings/security" },
+    ],
+  },
 ];
 
 interface SidebarProps {
@@ -17,9 +66,33 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
+function isChildActive(pathname: string, child: NavChildItem) {
+  if (child.matchPrefix) {
+    return pathname === child.href || pathname.startsWith(`${child.matchPrefix}/`);
+  }
+  return pathname === child.href;
+}
+
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const isCourseWorkspace = pathname.startsWith("/learn/") || /^\/explore\/[^/]+$/.test(pathname);
+  const lessonRouteMatch = pathname.match(/^\/learn\/([^/]+)\/lessons\/([^/]+)(?:\/quiz)?$/);
+  const completeRouteMatch = pathname.match(/^\/learn\/([^/]+)\/complete$/);
+  const previewRouteMatch = pathname.match(/^\/explore\/([^/]+)$/);
+
+  const activeCourseId =
+    lessonRouteMatch?.[1] ?? completeRouteMatch?.[1] ?? previewRouteMatch?.[1] ?? null;
+  const activeLessonId = lessonRouteMatch?.[2] ?? null;
+  const currentLessonHref =
+    activeCourseId && activeLessonId
+      ? `/learn/${activeCourseId}/lessons/${activeLessonId}`
+      : "/dashboard";
+  const currentQuizHref =
+    activeCourseId && activeLessonId
+      ? `/learn/${activeCourseId}/lessons/${activeLessonId}/quiz`
+      : "/dashboard";
+  const completionHref = activeCourseId ? `/learn/${activeCourseId}/complete` : "/dashboard";
 
   return (
     <>
@@ -74,24 +147,86 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
 
         {/* Nav */}
-        <nav className="flex flex-col gap-1 px-3 pt-5 flex-1">
+        <nav className="flex flex-col gap-4 px-3 pt-5 flex-1 overflow-y-auto">
           {navItems.map(({ label, href, icon: Icon }) => {
-            const active = pathname === href;
+            const item = navItems.find((entry) => entry.href === href);
+            const active =
+              pathname === href ||
+              pathname.startsWith(`${href}/`) ||
+              item?.children.some((child) => isChildActive(pathname, child));
+
             return (
-              <Link
-                key={href}
-                href={href}
-                onClick={onClose}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${active
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              <div key={href} className="group/navitem space-y-1">
+                <Link
+                  href={href}
+                  onClick={onClose}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
+                    active
+                      ? "border border-primary/25 bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
-              >
-                <Icon className={`h-4 w-4 ${active ? "text-primary" : ""}`} />
-                {label}
-              </Link>
+                >
+                  <Icon className={`h-4 w-4 ${active ? "text-primary" : ""}`} />
+                  {label}
+                </Link>
+
+                {item?.children.length ? (
+                  <div className="ml-6 max-h-40 overflow-hidden border-l border-primary/15 pl-3 opacity-100 transition-all duration-200 lg:max-h-0 lg:opacity-0 lg:group-hover/navitem:max-h-40 lg:group-hover/navitem:opacity-100 lg:group-focus-within/navitem:max-h-40 lg:group-focus-within/navitem:opacity-100">
+                    {item.children.map((child) => {
+                      const childActive = isChildActive(pathname, child);
+
+                      return (
+                        <Link
+                          key={child.label}
+                          href={child.href}
+                          onClick={onClose}
+                          className={`motion-link block rounded-lg px-2 py-1.5 text-xs ${
+                            childActive
+                              ? "bg-primary/12 text-primary"
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                          }`}
+                        >
+                          {child.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
             );
           })}
+
+          {isCourseWorkspace && (
+            <div className="space-y-2 rounded-2xl border border-primary/20 bg-primary/8 p-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary/70">
+                Course Shortcuts
+              </p>
+              <Link
+                href={currentLessonHref}
+                onClick={onClose}
+                className="motion-link flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-foreground hover:bg-primary/10"
+              >
+                <BookOpenCheck className="h-3.5 w-3.5 text-primary/80" />
+                Current Lesson
+              </Link>
+              <Link
+                href={currentQuizHref}
+                onClick={onClose}
+                className="motion-link flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-foreground hover:bg-primary/10"
+              >
+                <Sparkles className="h-3.5 w-3.5 text-primary/80" />
+                Quiz + Feedback
+              </Link>
+              <Link
+                href={completionHref}
+                onClick={onClose}
+                className="motion-link flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-foreground hover:bg-primary/10"
+              >
+                <LayoutDashboard className="h-3.5 w-3.5 text-primary/80" />
+                Completion
+              </Link>
+            </div>
+          )}
         </nav>
 
         {/* User + Logout */}

@@ -27,11 +27,13 @@ router.post("/generate", auth_1.requireAuth, sse_1.sseHeaders, async (req, res) 
             return;
         }
         // Verify conversation exists and is in correct phase
+        console.log("[course/generate] Received conversationId:", conversationId, "userId:", userId);
         const conversation = await Conversation_1.Conversation.findOne({
             _id: conversationId,
             userId: new mongoose_1.Types.ObjectId(userId),
         });
         if (!conversation) {
+            console.log("[course/generate] Conversation not found");
             (0, sse_1.sendSSE)(res, "error", {
                 code: "NOT_FOUND",
                 message: "Conversation not found",
@@ -42,7 +44,9 @@ router.post("/generate", auth_1.requireAuth, sse_1.sseHeaders, async (req, res) 
             (0, sse_1.endSSE)(res);
             return;
         }
+        console.log("[course/generate] Conversation found. Phase:", conversation.phase, "Status:", conversation.status);
         if (conversation.phase !== "resource_retrieval") {
+            console.log("[course/generate] PHASE MISMATCH — expected resource_retrieval, got:", conversation.phase);
             (0, sse_1.sendSSE)(res, "error", {
                 code: "INVALID_PHASE",
                 message: `Conversation must be in resource_retrieval phase. Current: ${conversation.phase}`,

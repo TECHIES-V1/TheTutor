@@ -2,9 +2,14 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+export interface YouTubeVideoReference {
+    url: string;
+    title: string;
+    channelName: string;
+    queryUsed: string;
+}
 
-
-export async function searchYouTubeVideo(query: string): Promise<string | null> {
+export async function searchYouTubeVideo(query: string): Promise<YouTubeVideoReference | null> {
     const apiKey = process.env.YOUTUBE_API_KEY;
 
     if (!apiKey) {
@@ -30,9 +35,15 @@ export async function searchYouTubeVideo(query: string): Promise<string | null> 
         const data = (await response.json()) as any;
 
         if (data.items && data.items.length > 0) {
-            const videoId = data.items[0].id.videoId;
+            const item = data.items[0];
+            const videoId = item?.id?.videoId;
             if (videoId) {
-                return `https://www.youtube.com/watch?v=${videoId}`;
+                return {
+                    url: `https://www.youtube.com/watch?v=${videoId}`,
+                    title: String(item?.snippet?.title ?? ""),
+                    channelName: String(item?.snippet?.channelTitle ?? ""),
+                    queryUsed: query,
+                };
             }
         }
     } catch (error) {
@@ -43,14 +54,21 @@ export async function searchYouTubeVideo(query: string): Promise<string | null> 
 }
 
 export async function fetchVideoLinksForQueries(queries: string[]): Promise<string[]> {
-    const links: string[] = [];
+    const refs = await fetchVideoReferencesForQueries(queries);
+    return refs.map((ref) => ref.url);
+}
+
+export async function fetchVideoReferencesForQueries(
+    queries: string[]
+): Promise<YouTubeVideoReference[]> {
+    const references: YouTubeVideoReference[] = [];
 
     for (const query of queries) {
-        const link = await searchYouTubeVideo(query);
-        if (link) {
-            links.push(link);
+        const ref = await searchYouTubeVideo(query);
+        if (ref) {
+            references.push(ref);
         }
     }
 
-    return links;
+    return references;
 }

@@ -4,62 +4,22 @@ exports.getOnboardingSystemPrompt = getOnboardingSystemPrompt;
 exports.getBookFilteringPrompt = getBookFilteringPrompt;
 exports.getCourseGenerationPrompt = getCourseGenerationPrompt;
 exports.getToolAwareGenerationPrompt = getToolAwareGenerationPrompt;
-exports.getDataExtractionPrompt = getDataExtractionPrompt;
+exports.getSubjectFromConversationPrompt = getSubjectFromConversationPrompt;
+exports.getOnboardingDataExtractionPrompt = getOnboardingDataExtractionPrompt;
 // ── Onboarding System Prompt ──────────────────────────────────────────────
-function getOnboardingSystemPrompt(currentPhase, collectedData) {
-    const basePrompt = `You are an expert educational advisor helping users create personalized learning courses. Your role is to understand what they want to learn and gather information to create the perfect course for them.
+function getOnboardingSystemPrompt(messagesLeft) {
+    const urgencyNote = messagesLeft <= 0
+        ? "This is your LAST message. Tell the user you have enough to suggest a great course for them."
+        : messagesLeft === 1
+            ? "You have 1 message left. Start wrapping up — you'll be suggesting a course subject next."
+            : messagesLeft <= 2
+                ? "You're almost out of messages. Start steering toward a conclusion."
+                : "";
+    return `You are a friendly AI tutor having a conversation to understand what someone wants to learn. Your only job right now is to ask questions — NOT to suggest a course name or subject. The system will handle that automatically.
 
-Be warm, encouraging, and conversational. Keep responses concise (2-3 sentences max for questions). Show genuine interest in their learning goals.
+Ask one or two questions at a time, naturally. You want to understand: what they want to learn, their current level, how much time they have per week, and what they hope to achieve.
 
-Current information collected:
-${collectedData.topic ? `- Topic: ${collectedData.topic}` : "- Topic: Not yet specified"}
-${collectedData.level ? `- Experience Level: ${collectedData.level}` : "- Experience Level: Not yet specified"}
-${collectedData.hoursPerWeek ? `- Weekly Time Commitment: ${collectedData.hoursPerWeek} hours` : "- Weekly Time Commitment: Not yet specified"}
-${collectedData.goal ? `- Learning Goal: ${collectedData.goal}` : "- Learning Goal: Not yet specified"}`;
-    const phaseInstructions = {
-        topic: `
-Your current task: Understand what topic or subject they want to learn.
-- If they mention a topic, acknowledge it enthusiastically and ask about their experience level
-- Extract the core topic from their message
-- Be ready to ask clarifying questions if the topic is too broad or vague`,
-        level: `
-Your current task: Determine their current experience level with ${collectedData.topic || "the topic"}.
-- Ask about their background with this subject
-- Determine if they are: beginner (no experience), intermediate (some knowledge), or advanced (experienced, looking to deepen)
-- Be encouraging regardless of their level`,
-        time: `
-Your current task: Understand how much time they can dedicate weekly.
-- Ask how many hours per week they can commit to learning
-- Be realistic - suggest that even 2-3 hours per week can lead to progress
-- Help them think about realistic commitments`,
-        goal: `
-Your current task: Understand their specific learning goals.
-- Ask what they hope to achieve or build with this knowledge
-- Understand their motivation (career, hobby, specific project)
-- This helps personalize the course content`,
-        confirmation: `
-Your current task: Summarize and confirm the course subject.
-Based on the information gathered, you need to:
-1. Summarize what you've learned about their learning goals
-2. Generate a clear, specific subject name for their course (e.g., "Python Programming for Data Analysis", "Introduction to Machine Learning", "Web Development with React")
-3. Present this subject name for their confirmation
-
-Format your response like this:
-"Based on our conversation, I understand you want to learn [topic] at a [level] level, with [X] hours per week to achieve [goal].
-
-I'd like to create a course called: **[Generated Subject Name]**
-
-Does this sound right for what you're looking for?"`,
-    };
-    return `${basePrompt}
-
-${phaseInstructions[currentPhase]}
-
-IMPORTANT:
-- Keep responses brief and focused on the current phase
-- Don't ask multiple questions at once
-- Be conversational but efficient
-- If extracting data, be confident in your interpretation`;
+${urgencyNote ? urgencyNote + "\n" : ""}Keep each response to 2-3 sentences. Be warm and encouraging. Do NOT name a course, suggest a subject title, or say anything like "I'd create a course called...". Just gather information through conversation.`;
 }
 // ── Book Filtering Prompt ─────────────────────────────────────────────────
 function getBookFilteringPrompt(topic, level, books) {
@@ -226,30 +186,27 @@ Generate the course in Markdown with:
 
 Be autonomous - use tools as needed without asking. If a parse fails, try another book.`;
 }
-// ── Data Extraction Prompt ────────────────────────────────────────────────
-function getDataExtractionPrompt(userMessage, currentPhase, existingData) {
-    return `Analyze the following user message and extract relevant onboarding information.
+// ── Subject Generation from Conversation ─────────────────────────────────
+function getSubjectFromConversationPrompt(conversationText) {
+    return `Based on the following conversation between an AI tutor and a learner, generate a specific course subject name (3-7 words).
 
-User message: "${userMessage}"
+Conversation:
+${conversationText}
 
-Current phase: ${currentPhase}
-Already collected: ${JSON.stringify(existingData)}
+Generate ONLY the course subject name. Make it specific and descriptive.
+Examples: "Classical Guitar for Absolute Beginners", "The History of the Roman Empire", "Home Cooking: From Basics to Bold Flavours"
 
-Based on the current phase, extract the relevant information:
-- topic phase: Extract the learning topic/subject
-- level phase: Extract experience level (beginner/intermediate/advanced)
-- time phase: Extract hours per week (number)
-- goal phase: Extract their learning goal
-- confirmation phase: Check if they confirmed (yes/no) or requested changes
+Course subject name:`;
+}
+// ── Onboarding Data Extraction from Conversation ──────────────────────────
+function getOnboardingDataExtractionPrompt(conversationText) {
+    return `Extract learning preferences from this conversation. Return ONLY a JSON object, nothing else.
 
-Respond with ONLY a JSON object with extracted data. Include only fields you can confidently extract.
-Example responses:
-- {"topic": "Python programming"}
-- {"level": "beginner"}
-- {"hoursPerWeek": 5}
-- {"goal": "build web applications"}
-- {"confirmed": true}
-- {"confirmed": false, "feedback": "user wants to adjust the topic"}
+Conversation:
+${conversationText}
 
-If no relevant information can be extracted, respond with: {}`;
+Return exactly this shape:
+{"level": "beginner" | "intermediate" | "advanced", "hoursPerWeek": <number>, "goal": "<string>"}
+
+Use these defaults if unclear: level="beginner", hoursPerWeek=5, goal="build practical skills"`;
 }

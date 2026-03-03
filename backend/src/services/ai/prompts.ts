@@ -1,70 +1,22 @@
-import type { OnboardingData, OnboardingPhase, BookContext } from "../../types";
+import type { OnboardingData, BookContext } from "../../types";
 
 // ── Onboarding System Prompt ──────────────────────────────────────────────
 
-export function getOnboardingSystemPrompt(
-  currentPhase: OnboardingPhase,
-  collectedData: Partial<OnboardingData>
-): string {
-  const basePrompt = `You are an expert educational advisor helping users create personalized learning courses. Your role is to understand what they want to learn and gather information to create the perfect course for them.
+export function getOnboardingSystemPrompt(messagesLeft: number): string {
+  const urgencyNote =
+    messagesLeft <= 0
+      ? "This is your LAST message. Tell the user you have enough to suggest a great course for them."
+      : messagesLeft === 1
+      ? "You have 1 message left. Start wrapping up — you'll be suggesting a course subject next."
+      : messagesLeft <= 2
+      ? "You're almost out of messages. Start steering toward a conclusion."
+      : "";
 
-Be warm, encouraging, and conversational. Keep responses concise (2-3 sentences max for questions). Show genuine interest in their learning goals.
+  return `You are a friendly AI tutor having a conversation to understand what someone wants to learn. Your only job right now is to ask questions — NOT to suggest a course name or subject. The system will handle that automatically.
 
-Current information collected:
-${collectedData.topic ? `- Topic: ${collectedData.topic}` : "- Topic: Not yet specified"}
-${collectedData.level ? `- Experience Level: ${collectedData.level}` : "- Experience Level: Not yet specified"}
-${collectedData.hoursPerWeek ? `- Weekly Time Commitment: ${collectedData.hoursPerWeek} hours` : "- Weekly Time Commitment: Not yet specified"}
-${collectedData.goal ? `- Learning Goal: ${collectedData.goal}` : "- Learning Goal: Not yet specified"}`;
+Ask one or two questions at a time, naturally. You want to understand: what they want to learn, their current level, how much time they have per week, and what they hope to achieve.
 
-  const phaseInstructions: Record<OnboardingPhase, string> = {
-    topic: `
-Your current task: Understand what topic or subject they want to learn.
-- If they mention a topic, acknowledge it enthusiastically and ask about their experience level
-- Extract the core topic from their message
-- Be ready to ask clarifying questions if the topic is too broad or vague`,
-
-    level: `
-Your current task: Determine their current experience level with ${collectedData.topic || "the topic"}.
-- Ask about their background with this subject
-- Determine if they are: beginner (no experience), intermediate (some knowledge), or advanced (experienced, looking to deepen)
-- Be encouraging regardless of their level`,
-
-    time: `
-Your current task: Understand how much time they can dedicate weekly.
-- Ask how many hours per week they can commit to learning
-- Be realistic - suggest that even 2-3 hours per week can lead to progress
-- Help them think about realistic commitments`,
-
-    goal: `
-Your current task: Understand their specific learning goals.
-- Ask what they hope to achieve or build with this knowledge
-- Understand their motivation (career, hobby, specific project)
-- This helps personalize the course content`,
-
-    confirmation: `
-Your current task: Summarize and confirm the course subject.
-Based on the information gathered, you need to:
-1. Summarize what you've learned about their learning goals
-2. Generate a clear, specific subject name for their course (e.g., "Python Programming for Data Analysis", "Introduction to Machine Learning", "Web Development with React")
-3. Present this subject name for their confirmation
-
-Format your response like this:
-"Based on our conversation, I understand you want to learn [topic] at a [level] level, with [X] hours per week to achieve [goal].
-
-I'd like to create a course called: **[Generated Subject Name]**
-
-Does this sound right for what you're looking for?"`,
-  };
-
-  return `${basePrompt}
-
-${phaseInstructions[currentPhase]}
-
-IMPORTANT:
-- Keep responses brief and focused on the current phase
-- Don't ask multiple questions at once
-- Be conversational but efficient
-- If extracting data, be confident in your interpretation`;
+${urgencyNote ? urgencyNote + "\n" : ""}Keep each response to 2-3 sentences. Be warm and encouraging. Do NOT name a course, suggest a subject title, or say anything like "I'd create a course called...". Just gather information through conversation.`;
 }
 
 // ── Book Filtering Prompt ─────────────────────────────────────────────────
@@ -161,6 +113,10 @@ Generate the course in this exact Markdown structure:
 [Search: "Specific YouTube search query related to this lesson"]
 [Search: "Another specific YouTube search query"]
 
+**Citations**:
+- [Source: "Exact textbook title from source materials"] Author, A. A. (Year). *Book title*. Publisher.
+- [Source: "Exact textbook title from source materials"] Author, B. B. (Year). *Book title*. Publisher.
+
 **Quiz**:
 \`\`\`json
 [
@@ -194,14 +150,19 @@ Generate the course in this exact Markdown structure:
 
 ## Important Guidelines
 - Draw directly from the source materials for accuracy
+- Include in-text attribution where relevant and keep APA references in each lesson
 - Include practical examples and applications
 - Make each lesson self-contained but building on previous ones
 - Ensure lessons are achievable in the stated time
 - Use clear, encouraging language appropriate for the learner level
 - Include "Key Takeaways" for each lesson
 - **Must include Videos section** with 1-2 specific YouTube search queries formatted exactly as \`[Search: "query"]\`
+- **Must include Citations section** in every lesson with 1-3 APA citations, and each citation must include \`[Source: "Exact textbook title"]\`
 - **Must include Quiz section** with a valid JSON array of questions, containing a mix of multiple_choice and open_ended types
 - **Must include Exercises section** with practical tasks
+- **Must include module checkpoint quiz** after each module as:
+  - \`### Module X Quiz\`
+  - \`**Module Quiz**:\` followed by JSON array of questions with questionId/prompt/expectedConcepts/remediationTip
 - Total course should be achievable in 4-8 weeks given the weekly time commitment`;
 }
 
@@ -236,7 +197,7 @@ export function getToolAwareGenerationPrompt(data: OnboardingData): string {
    - Appropriate for ${data.level} level
    - Availability (has downloadUrl)
 
-3. **Generate Course**: Using the parsed content, create a structured course.
+3. **Generate Course**: Using parsed content, create a structured course with strict quality gates.
 
 ## Output Format
 
@@ -245,39 +206,48 @@ Generate the course in Markdown with:
 - 2-5 lessons per module (15-45 min each based on ${data.hoursPerWeek}hrs/week)
 - Content drawn directly from parsed textbook material
 - Clear learning objectives for each lesson
+- A **Videos** section for each lesson with at least one query in this exact format:
+  - \`[Search: "specific YouTube query"]\`
+- A **Citations** section for each lesson with 1-3 APA references in this exact format:
+  - \`- [Source: "Exact textbook title"] Author, A. A. (Year). *Book title*. Publisher.\`
+- A **Module Quiz** for each module in this exact structure:
+  - \`### Module N Quiz\`
+  - \`**Module Quiz**:\`
+  - fenced JSON array with objects: \`questionId\`, \`prompt\`, \`expectedConcepts\` (array of arrays), \`remediationTip\`
+
+## Hard Requirements
+- Every lesson must include substantial teaching content (not outline-only bullets)
+- Every lesson must include at least one YouTube search query
+- Every lesson must include at least one APA citation mapped to a source book title from parsed tools
+- Every module must include a module quiz
 
 Be autonomous - use tools as needed without asking. If a parse fails, try another book.`;
 }
 
-// ── Data Extraction Prompt ────────────────────────────────────────────────
+// ── Subject Generation from Conversation ─────────────────────────────────
 
-export function getDataExtractionPrompt(
-  userMessage: string,
-  currentPhase: OnboardingPhase,
-  existingData: Partial<OnboardingData>
-): string {
-  return `Analyze the following user message and extract relevant onboarding information.
+export function getSubjectFromConversationPrompt(conversationText: string): string {
+  return `Based on the following conversation between an AI tutor and a learner, generate a specific course subject name (3-7 words).
 
-User message: "${userMessage}"
+Conversation:
+${conversationText}
 
-Current phase: ${currentPhase}
-Already collected: ${JSON.stringify(existingData)}
+Generate ONLY the course subject name. Make it specific and descriptive.
+Examples: "Classical Guitar for Absolute Beginners", "The History of the Roman Empire", "Home Cooking: From Basics to Bold Flavours"
 
-Based on the current phase, extract the relevant information:
-- topic phase: Extract the learning topic/subject
-- level phase: Extract experience level (beginner/intermediate/advanced)
-- time phase: Extract hours per week (number)
-- goal phase: Extract their learning goal
-- confirmation phase: Check if they confirmed (yes/no) or requested changes
+Course subject name:`;
+}
 
-Respond with ONLY a JSON object with extracted data. Include only fields you can confidently extract.
-Example responses:
-- {"topic": "Python programming"}
-- {"level": "beginner"}
-- {"hoursPerWeek": 5}
-- {"goal": "build web applications"}
-- {"confirmed": true}
-- {"confirmed": false, "feedback": "user wants to adjust the topic"}
+// ── Onboarding Data Extraction from Conversation ──────────────────────────
 
-If no relevant information can be extracted, respond with: {}`;
+export function getOnboardingDataExtractionPrompt(conversationText: string): string {
+  return `Extract learning preferences from this conversation. Return ONLY a JSON object, nothing else.
+
+Conversation:
+${conversationText}
+
+Return exactly this shape:
+{"level": "beginner" | "intermediate" | "advanced", "hoursPerWeek": <number>, "goal": "<string>"}
+
+Use these defaults if unclear: level="beginner", hoursPerWeek=5, goal="build practical skills"`;
 }

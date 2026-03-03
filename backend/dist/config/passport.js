@@ -11,7 +11,7 @@ function configurePassport() {
     passport_1.default.use(new passport_google_oauth20_1.Strategy({
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: "/auth/google/callback",
+        callbackURL: `${process.env.BACKEND_URL ?? "http://localhost:5000"}/auth/google/callback`,
     }, async (_accessToken, _refreshToken, profile, done) => {
         try {
             const email = profile.emails?.[0]?.value ?? "";

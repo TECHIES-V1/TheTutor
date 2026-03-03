@@ -8,6 +8,60 @@ import type {
   InteractiveElement,
 } from "../types";
 
+export interface IVideoReference {
+  url: string;
+  title: string;
+  channelName: string;
+  queryUsed: string;
+}
+
+export interface ILessonCitation {
+  citationText: string;
+  sourceTitle: string;
+  authors: string[];
+  source: string;
+  citationKey: string;
+}
+
+export interface IModuleQuizQuestion {
+  questionId: string;
+  prompt: string;
+  expectedConcepts: string[][];
+  remediationTip: string;
+}
+
+export interface IModuleQuiz {
+  quizId: string;
+  title: string;
+  questions: IModuleQuizQuestion[];
+}
+
+export interface ISourceReference {
+  title: string;
+  authors: string[];
+  source: string;
+}
+
+export interface IGeneratedLesson {
+  lessonId: string;
+  order: number;
+  title: string;
+  summary: string;
+  videoUrl: string;
+  videoReferences: IVideoReference[];
+  contentMarkdown: string;
+  citations: ILessonCitation[];
+  quiz: IModuleQuizQuestion[];
+}
+
+export interface IGeneratedModule {
+  moduleId: string;
+  order: number;
+  title: string;
+  moduleQuiz?: IModuleQuiz;
+  lessons: IGeneratedLesson[];
+}
+
 export interface ILesson {
   id: string;
   title: string;
@@ -16,6 +70,8 @@ export interface ILesson {
   estimatedMinutes: number;
   videoLinks?: string[];
   videoSearchQueries?: string[];
+  videoReferences?: IVideoReference[];
+  citations?: ILessonCitation[];
   resources?: LessonResource[];
   quizzes?: Quiz[];
   interactiveElements?: InteractiveElement[];
@@ -29,15 +85,26 @@ export interface IModule {
   description: string;
   order: number;
   completed: boolean;
+  moduleQuiz?: IModuleQuiz;
   lessons: ILesson[];
 }
 
 export interface ICourse extends Document {
   userId: Types.ObjectId;
-  conversationId: Types.ObjectId;
+  ownerId?: Types.ObjectId;
+  ownerName?: string;
+  conversationId?: Types.ObjectId;
   title: string;
   description: string;
   subject: string;
+  topic?: string;
+  goal?: string;
+  visibility?: "draft" | "published";
+  accessModel?: string;
+  generationStatus?: "pending" | "ready" | "failed";
+  createdBy?: string;
+  curriculum?: IGeneratedModule[];
+  sourceReferences?: ISourceReference[];
   level: ExperienceLevel;
   status: CourseStatus;
   modules: IModule[];
@@ -102,6 +169,81 @@ const InteractiveElementSchema = new Schema<InteractiveElement>(
   { _id: false }
 );
 
+const GeneratedQuizQuestionSchema = new Schema<IModuleQuizQuestion>(
+  {
+    questionId: { type: String, required: true },
+    prompt: { type: String, required: true },
+    expectedConcepts: { type: [[String]], default: [] },
+    remediationTip: { type: String, required: true },
+  },
+  { _id: false }
+);
+
+const VideoReferenceSchema = new Schema<IVideoReference>(
+  {
+    url: { type: String, required: true },
+    title: { type: String, default: "" },
+    channelName: { type: String, default: "" },
+    queryUsed: { type: String, default: "" },
+  },
+  { _id: false }
+);
+
+const LessonCitationSchema = new Schema<ILessonCitation>(
+  {
+    citationText: { type: String, required: true },
+    sourceTitle: { type: String, required: true },
+    authors: { type: [String], default: [] },
+    source: { type: String, default: "" },
+    citationKey: { type: String, required: true },
+  },
+  { _id: false }
+);
+
+const ModuleQuizSchema = new Schema<IModuleQuiz>(
+  {
+    quizId: { type: String, required: true },
+    title: { type: String, required: true },
+    questions: { type: [GeneratedQuizQuestionSchema], default: [] },
+  },
+  { _id: false }
+);
+
+const SourceReferenceSchema = new Schema<ISourceReference>(
+  {
+    title: { type: String, required: true },
+    authors: { type: [String], default: [] },
+    source: { type: String, default: "" },
+  },
+  { _id: false }
+);
+
+const GeneratedLessonSchema = new Schema<IGeneratedLesson>(
+  {
+    lessonId: { type: String, required: true },
+    order: { type: Number, required: true },
+    title: { type: String, required: true },
+    summary: { type: String, default: "" },
+    videoUrl: { type: String, default: "" },
+    videoReferences: { type: [VideoReferenceSchema], default: [] },
+    contentMarkdown: { type: String, default: "" },
+    citations: { type: [LessonCitationSchema], default: [] },
+    quiz: { type: [GeneratedQuizQuestionSchema], default: [] },
+  },
+  { _id: false }
+);
+
+const GeneratedModuleSchema = new Schema<IGeneratedModule>(
+  {
+    moduleId: { type: String, required: true },
+    order: { type: Number, required: true },
+    title: { type: String, required: true },
+    moduleQuiz: { type: ModuleQuizSchema, required: false },
+    lessons: { type: [GeneratedLessonSchema], default: [] },
+  },
+  { _id: false }
+);
+
 const LessonSchema = new Schema<ILesson>(
   {
     id: { type: String, required: true },
@@ -111,6 +253,8 @@ const LessonSchema = new Schema<ILesson>(
     estimatedMinutes: { type: Number, default: 15 },
     videoLinks: { type: [String], default: [] },
     videoSearchQueries: { type: [String], default: [] },
+    videoReferences: { type: [VideoReferenceSchema], default: [] },
+    citations: { type: [LessonCitationSchema], default: [] },
     resources: { type: [LessonResourceSchema], default: [] },
     quizzes: { type: [QuizSchema], default: [] },
     interactiveElements: { type: [InteractiveElementSchema], default: [] },
@@ -127,6 +271,7 @@ const ModuleSchema = new Schema<IModule>(
     description: { type: String, default: "" },
     order: { type: Number, required: true },
     completed: { type: Boolean, default: false },
+    moduleQuiz: { type: ModuleQuizSchema, required: false },
     lessons: { type: [LessonSchema], default: [] },
   },
   { _id: false }
@@ -135,14 +280,28 @@ const ModuleSchema = new Schema<IModule>(
 const CourseSchema = new Schema<ICourse>(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    ownerId: { type: Schema.Types.ObjectId, ref: "User", required: false },
+    ownerName: { type: String, default: "" },
     conversationId: {
       type: Schema.Types.ObjectId,
       ref: "Conversation",
-      required: true,
+      required: false,
     },
     title: { type: String, required: true },
     description: { type: String, default: "" },
     subject: { type: String, required: true },
+    topic: { type: String, default: "" },
+    goal: { type: String, default: "" },
+    visibility: { type: String, enum: ["draft", "published"], default: "draft" },
+    accessModel: { type: String, default: "free_hackathon" },
+    generationStatus: {
+      type: String,
+      enum: ["pending", "ready", "failed"],
+      default: "pending",
+    },
+    createdBy: { type: String, default: "generator" },
+    curriculum: { type: [GeneratedModuleSchema], default: [] },
+    sourceReferences: { type: [SourceReferenceSchema], default: [] },
     level: {
       type: String,
       enum: ["beginner", "intermediate", "advanced"],
@@ -169,6 +328,7 @@ const CourseSchema = new Schema<ICourse>(
 
 // Index for finding courses by user
 CourseSchema.index({ userId: 1, status: 1 });
+CourseSchema.index({ ownerId: 1, visibility: 1 });
 CourseSchema.index({ conversationId: 1 });
 
 export const Course = mongoose.model<ICourse>("Course", CourseSchema);
