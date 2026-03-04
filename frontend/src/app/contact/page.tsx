@@ -1,5 +1,14 @@
 import { NavBar } from "@/components/landing/navbar";
 import { Footer } from "@/components/landing/footer";
+import { Metadata } from "next";
+import { generateMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = generateMetadata({
+  title: "Contact Us",
+  description:
+    "Get in touch with TheTutor for support, partnerships, or product questions. We typically respond within 1-2 business days.",
+  keywords: ["contact", "support", "help", "customer service"],
+});
 
 export default function ContactPage() {
   return (

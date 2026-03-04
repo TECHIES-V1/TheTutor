@@ -1,5 +1,14 @@
 import { Sparkles, Target, Zap, Award, Info } from "lucide-react";
+import { Metadata } from "next";
+import { generateMetadata } from "@/lib/seo";
 
+export const metadata: Metadata = generateMetadata({
+  title: "Sign In",
+  description:
+    "Sign in to TheTutor with Google to access AI-powered personalized learning, custom courses, and verified certificates.",
+  keywords: ["sign in", "login", "google auth", "student login"],
+  noIndex: true,
+});
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:5000";
 
