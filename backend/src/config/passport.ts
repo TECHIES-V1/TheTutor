@@ -1,10 +1,10 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { User } from "../models/User";
+import { getGoogleCallbackUrl } from "./publicUrls";
 
 export function configurePassport(): void {
-  const backendBaseUrl = (process.env.BACKEND_URL ?? "http://localhost:5000").replace(/\/+$/, "");
-  const callbackURL = process.env.GOOGLE_CALLBACK_URL ?? `${backendBaseUrl}/auth/google/callback`;
+  const callbackURL = getGoogleCallbackUrl();
 
   passport.use(
     new GoogleStrategy(

@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { LessonDetailResponse, QuizAttemptResult } from "@/types/course";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, RotateCcw, Trophy } from "lucide-react";
+import { ArrowLeft, ArrowRight, PanelRightClose, PanelRightOpen, RotateCcw, Trophy } from "lucide-react";
 import { useCoursePreview } from "@/hooks/useCoursePreview";
 import { CourseWorkspaceSidebar } from "@/components/course/CourseWorkspaceSidebar";
 import { useCoursePanelState } from "@/hooks/useCoursePanelState";
@@ -112,22 +112,22 @@ export default function LessonQuizPage() {
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_15%_8%,rgba(212,175,55,0.08),transparent_28%),radial-gradient(circle_at_84%_16%,rgba(212,175,55,0.05),transparent_24%)]" />
 
       <div className="relative z-10 mx-auto w-full max-w-7xl space-y-4">
-        <div className="flex justify-end">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={toggleCoursePanel}
-            className="rounded-full border border-border"
-          >
-            {isCoursePanelOpen ? "Hide Course Sidebar" : "Show Course Sidebar"}
-          </Button>
-        </div>
-
         <div className={`grid w-full gap-6 ${isCoursePanelOpen ? "lg:grid-cols-[1fr_21.5rem]" : "lg:grid-cols-1"}`}>
           <div className="space-y-6">
-            <section className="neo-surface rounded-3xl p-6">
-              <p className="text-xs uppercase tracking-wide text-primary/80">Lesson Quiz</p>
-              <h1 className="mt-2 text-3xl font-bold text-foreground">{lessonData.lesson.title}</h1>
+            <section className="neo-surface rounded-3xl p-6 border-0 sm:border">
+              <div className="flex items-start gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs uppercase tracking-wide text-primary/80">Lesson Quiz</p>
+                  <h1 className="mt-2 text-2xl font-bold text-foreground sm:text-3xl">{lessonData.lesson.title}</h1>
+                </div>
+                <button
+                  onClick={toggleCoursePanel}
+                  className="mt-1 shrink-0 rounded-lg p-1.5 text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+                  title={isCoursePanelOpen ? "Hide course panel" : "Show course panel"}
+                >
+                  {isCoursePanelOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+                </button>
+              </div>
               <p className="mt-1 text-sm text-muted-foreground">
                 Short-answer assessment. Pass score: {Math.round((result?.passThreshold ?? 0.7) * 100)}%.
               </p>
@@ -177,7 +177,7 @@ export default function LessonQuizPage() {
             </section>
 
             {result && (
-              <section className="neo-surface rounded-3xl p-6">
+              <section className="neo-surface rounded-3xl p-6 border-0 sm:border">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <h2 className="text-2xl font-bold text-foreground">Assessment Feedback</h2>
                   <span

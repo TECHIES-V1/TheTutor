@@ -1,10 +1,9 @@
 import { generateText, streamText, stepCountIs } from "ai";
 import type { ModelMessage } from "ai";
-import { getModel, GENERATION_CONFIG, STREAMING_CONFIG } from "../../config/ai";
+import { getModel, GENERATION_CONFIG, STREAMING_CONFIG, MCP_DISCOVERY_CONFIG } from "../../config/ai";
 import {
   getOnboardingSystemPrompt,
   getBookFilteringPrompt,
-  getCourseGenerationPrompt,
   getSubjectFromConversationPrompt,
   getOnboardingDataExtractionPrompt,
   getToolAwareGenerationPrompt,
@@ -12,7 +11,6 @@ import {
 import type {
   OnboardingData,
   ExperienceLevel,
-  BookContext,
   DiscoveredBook,
   SSEEvent,
 } from "../../types";
@@ -170,6 +168,47 @@ export async function* streamCourseWithMCPTools(
   }
 }
 
+// ── Discover Source References (job-based generation) ────────────────────
+// Plain async version of streamCourseWithMCPTools — returns refs, no SSE events.
+
+export async function discoverSourceReferences(
+  onboardingData: OnboardingData
+): Promise<Array<{ title: string; authors: string[]; source: string }>> {
+  const mcpTools = await getMCPTools();
+
+  const result = await generateText({
+    model: getModel(),
+    system: getToolAwareGenerationPrompt(onboardingData),
+    prompt: `Use the available tools to discover and parse 3-5 relevant books for a course on "${onboardingData.confirmedSubject || onboardingData.topic}". Stop after collecting references — do not generate course content.`,
+    tools: mcpTools,
+    stopWhen: stepCountIs(8),
+    maxOutputTokens: MCP_DISCOVERY_CONFIG.maxOutputTokens,
+    onFinish: async () => {
+      await closeMCPClient();
+    },
+  });
+
+  const refs: Array<{ title: string; authors: string[]; source: string }> = [];
+
+  for (const step of result.steps ?? []) {
+    for (const toolResult of step.toolResults ?? []) {
+      const extracted = extractResourceRefs(
+        "result" in toolResult ? toolResult.result : toolResult
+      );
+      refs.push(...extracted);
+    }
+  }
+
+  // Deduplicate by title
+  const seen = new Set<string>();
+  return refs.filter((ref) => {
+    const key = ref.title.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function summarizeToolResult(result: unknown): string {
   if (Array.isArray(result)) {
     return `Found ${result.length} items`;
@@ -230,24 +269,6 @@ function extractResourceRefs(
   return refs;
 }
 
-export async function* streamCourse(
-  onboardingData: OnboardingData,
-  bookContexts: BookContext[]
-): AsyncGenerator<string> {
-  const prompt = getCourseGenerationPrompt(onboardingData, bookContexts);
-
-  const result = streamText({
-    model: getModel(),
-    prompt,
-    maxOutputTokens: STREAMING_CONFIG.maxOutputTokens,
-    temperature: STREAMING_CONFIG.temperature,
-  });
-
-  for await (const chunk of result.textStream) {
-    yield chunk;
-  }
-}
-
 // ── Generate Subject Name ─────────────────────────────────────────────────
 
 export async function generateSubjectName(
@@ -284,67 +305,3 @@ Examples:
   return result.text.trim().replace(/^["']|["']$/g, "");
 }
 
-export async function repairGeneratedCourseMarkdown(params: {
-  markdown: string;
-  issues: string[];
-  sourceRefs: Array<{ title: string; authors: string[]; source: string }>;
-  onboardingData: OnboardingData;
-}): Promise<string> {
-  const sourceBlock =
-    params.sourceRefs.length > 0
-      ? params.sourceRefs
-        .map(
-          (ref, index) =>
-            `${index + 1}. ${ref.title} | Authors: ${ref.authors.length > 0 ? ref.authors.join(", ") : "Unknown"
-            } | Source: ${ref.source || "unknown"}`
-        )
-        .join("\n")
-      : "No source references available.";
-
-  const prompt = `Repair the provided course markdown to satisfy strict validation.
-
-Validation issues:
-${params.issues.map((issue, index) => `${index + 1}. ${issue}`).join("\n")}
-
-Allowed source references (for citations):
-${sourceBlock}
-
-Student profile:
-- Topic: ${params.onboardingData.confirmedSubject || params.onboardingData.topic || ""}
-- Level: ${params.onboardingData.level || "beginner"}
-- Weekly Time: ${params.onboardingData.hoursPerWeek || 5}
-- Goal: ${params.onboardingData.goal || ""}
-
-Rules:
-- Keep the same high-level structure and module ordering when possible.
-- Every lesson must include:
-  - substantial **Content** (at least 2 full paragraphs, not just bullet points — aim for 200+ characters),
-  - **Key Takeaways** with 2-3 bullet points,
-  - **Videos** section with at least one [Search: "query"],
-  - **Citations** section with at least one APA citation line:
-    - [Source: "Exact textbook title"] Author, A. A. (Year). *Book title*. Publisher.
-  - **Quiz** section containing a fenced JSON code block DIRECTLY after the heading, like:
-    **Quiz**:
-    \`\`\`json
-    [{"id":"q1","type":"multiple_choice","question":"...","options":["A","B","C","D"],"correctAnswerIndex":0,"explanation":"..."}]
-    \`\`\`
-- Every module must include a module checkpoint quiz in this EXACT format immediately after the last lesson of that module:
-  ### Module N Quiz
-  \`\`\`json
-  [{"questionId":"mq-N-1","prompt":"Question text?","expectedConcepts":[["concept1","concept2"]],"remediationTip":"Review tip."}]
-  \`\`\`
-
-Return ONLY corrected markdown. Do not wrap in code fences.
-
-Original markdown:
-${params.markdown}`;
-
-  const result = await generateText({
-    model: getModel(),
-    prompt,
-    maxOutputTokens: GENERATION_CONFIG.maxOutputTokens,
-    temperature: 0.2,
-  });
-
-  return result.text.trim();
-}

@@ -39,6 +39,7 @@ export interface IConversation extends Document {
   confirmationAttempts: number;
   status: "active" | "completed" | "abandoned";
   courseId?: Types.ObjectId;
+  activeJobId?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -94,6 +95,7 @@ const ConversationSchema = new Schema<IConversation>(
       default: "active",
     },
     courseId: { type: Schema.Types.ObjectId, ref: "Course" },
+    activeJobId: { type: Schema.Types.ObjectId, ref: "GenerationJob" },
   },
   { timestamps: true }
 );

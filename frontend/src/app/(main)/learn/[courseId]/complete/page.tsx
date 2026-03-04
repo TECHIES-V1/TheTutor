@@ -6,10 +6,11 @@ import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { CertificateSummary } from "@/types/course";
 import { Button } from "@/components/ui/button";
-import { Award, ArrowLeft, Download } from "lucide-react";
+import { Award, ArrowLeft, Download, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { useCoursePreview } from "@/hooks/useCoursePreview";
 import { CourseWorkspaceSidebar } from "@/components/course/CourseWorkspaceSidebar";
 import { useCoursePanelState } from "@/hooks/useCoursePanelState";
+import { BACKEND_URL } from "@/lib/backendUrl";
 
 interface CompletionResponse {
   completedAt: string;
@@ -79,19 +80,17 @@ export default function CourseCompletePage() {
     <div className="relative px-6 py-8">
 
       <div className="relative z-10 mx-auto w-full max-w-7xl space-y-4">
-        <div className="flex justify-end">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={toggleCoursePanel}
-            className="rounded-full border border-border"
-          >
-            {isCoursePanelOpen ? "Hide Course Sidebar" : "Show Course Sidebar"}
-          </Button>
-        </div>
-
         <div className={`grid w-full gap-6 ${isCoursePanelOpen ? "lg:grid-cols-[1fr_21.5rem]" : "lg:grid-cols-1"}`}>
-          <div className="neo-surface rounded-3xl p-6">
+          <div className="neo-surface rounded-3xl p-6 border-0 sm:border">
+            <div className="flex justify-end">
+              <button
+                onClick={toggleCoursePanel}
+                className="rounded-lg p-1.5 text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+                title={isCoursePanelOpen ? "Hide course panel" : "Show course panel"}
+              >
+                {isCoursePanelOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+              </button>
+            </div>
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/30 bg-primary/10">
               <Award className="h-7 w-7 text-primary" />
             </div>
@@ -126,8 +125,7 @@ export default function CourseCompletePage() {
                 <div className="flex flex-wrap gap-2">
                   <Button
                     onClick={() => {
-                      const backend = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:5000";
-                      window.location.href = `${backend}/courses/${courseId}/certificate/download`;
+                      window.location.href = `${BACKEND_URL}/courses/${courseId}/certificate/download`;
                     }}
                     className="skeuo-gold rounded-full hover:!opacity-100"
                   >

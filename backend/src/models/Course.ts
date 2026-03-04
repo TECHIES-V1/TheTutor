@@ -47,17 +47,26 @@ export interface IGeneratedLesson {
   order: number;
   title: string;
   summary: string;
+  status: "pending" | "ready";
+  bloomsLevel?: number;
+  bloomsVerb?: string;
+  estimatedMinutes: number;
   videoUrl: string;
   videoReferences: IVideoReference[];
+  videoSearchQueries?: string[];
   contentMarkdown: string;
+  keyTakeaways: string[];
   citations: ILessonCitation[];
   quiz: IModuleQuizQuestion[];
+  exercises: string[];
 }
 
 export interface IGeneratedModule {
   moduleId: string;
   order: number;
   title: string;
+  description: string;
+  bloomsRange?: [number, number];
   moduleQuiz?: IModuleQuiz;
   lessons: IGeneratedLesson[];
 }
@@ -94,6 +103,7 @@ export interface ICourse extends Document {
   ownerId?: Types.ObjectId;
   ownerName?: string;
   conversationId?: Types.ObjectId;
+  generationJobId?: Types.ObjectId;
   title: string;
   description: string;
   subject: string;
@@ -224,11 +234,18 @@ const GeneratedLessonSchema = new Schema<IGeneratedLesson>(
     order: { type: Number, required: true },
     title: { type: String, required: true },
     summary: { type: String, default: "" },
+    status: { type: String, enum: ["pending", "ready"], default: "pending" },
+    bloomsLevel: { type: Number, min: 1, max: 6 },
+    bloomsVerb: { type: String, default: "" },
+    estimatedMinutes: { type: Number, default: 20 },
     videoUrl: { type: String, default: "" },
     videoReferences: { type: [VideoReferenceSchema], default: [] },
+    videoSearchQueries: { type: [String], default: [] },
     contentMarkdown: { type: String, default: "" },
+    keyTakeaways: { type: [String], default: [] },
     citations: { type: [LessonCitationSchema], default: [] },
     quiz: { type: [GeneratedQuizQuestionSchema], default: [] },
+    exercises: { type: [String], default: [] },
   },
   { _id: false }
 );
@@ -238,6 +255,8 @@ const GeneratedModuleSchema = new Schema<IGeneratedModule>(
     moduleId: { type: String, required: true },
     order: { type: Number, required: true },
     title: { type: String, required: true },
+    description: { type: String, default: "" },
+    bloomsRange: { type: [Number], default: undefined },
     moduleQuiz: { type: ModuleQuizSchema, required: false },
     lessons: { type: [GeneratedLessonSchema], default: [] },
   },
@@ -285,6 +304,11 @@ const CourseSchema = new Schema<ICourse>(
     conversationId: {
       type: Schema.Types.ObjectId,
       ref: "Conversation",
+      required: false,
+    },
+    generationJobId: {
+      type: Schema.Types.ObjectId,
+      ref: "GenerationJob",
       required: false,
     },
     title: { type: String, required: true },

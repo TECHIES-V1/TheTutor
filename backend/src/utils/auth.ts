@@ -1,18 +1,19 @@
 import jwt from "jsonwebtoken";
 import { IUser } from "../models/User";
+import { getBackendBaseUrl, getFrontendBaseUrl } from "../config/publicUrls";
 
 function parseHostname(rawUrl: string | undefined): string | null {
   if (!rawUrl) return null;
   try {
-    return new URL(rawUrl).hostname;
+    return new URL(rawUrl).hostname.toLowerCase();
   } catch {
     return null;
   }
 }
 
 const isProduction = process.env.NODE_ENV === "production";
-const frontendHost = parseHostname(process.env.FRONTEND_URL);
-const backendHost = parseHostname(process.env.BACKEND_URL);
+const frontendHost = parseHostname(getFrontendBaseUrl());
+const backendHost = parseHostname(getBackendBaseUrl());
 const isCrossSite = Boolean(frontendHost && backendHost && frontendHost !== backendHost);
 const sameSite = isProduction && isCrossSite ? ("none" as const) : ("lax" as const);
 const secure = isProduction;
