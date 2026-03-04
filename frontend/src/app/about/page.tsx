@@ -1,6 +1,15 @@
 import { NavBar } from "@/components/landing/navbar";
 import { Footer } from "@/components/landing/footer";
 import Link from "next/link";
+import { Metadata } from "next";
+import { generateMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = generateMetadata({
+  title: "About Us",
+  description:
+    "Learn about TheTutor - AI-powered learning platform helping adults learn with structured curricula, practical exercises, and progress tracking.",
+  keywords: ["about thetutor", "AI education platform", "learning platform"],
+});
 
 export default function AboutPage() {
   return (

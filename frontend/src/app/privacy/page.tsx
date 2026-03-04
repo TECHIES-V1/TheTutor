@@ -1,5 +1,14 @@
 import { NavBar } from "@/components/landing/navbar";
 import { Footer } from "@/components/landing/footer";
+import { Metadata } from "next";
+import { generateMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = generateMetadata({
+  title: "Privacy Policy",
+  description:
+    "TheTutor privacy policy - Learn how we collect, use, and protect your personal data and learning information.",
+  keywords: ["privacy policy", "data protection", "user privacy"],
+});
 
 export default function PrivacyPage() {
   return (

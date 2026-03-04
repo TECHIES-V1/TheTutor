@@ -1,5 +1,14 @@
 import { NavBar } from "@/components/landing/navbar";
 import { Footer } from "@/components/landing/footer";
+import { Metadata } from "next";
+import { generateMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = generateMetadata({
+  title: "Terms of Service",
+  description:
+    "TheTutor terms of service - Understand your rights and responsibilities when using our AI-powered learning platform.",
+  keywords: ["terms of service", "terms and conditions", "user agreement"],
+});
 
 export default function TermsPage() {
   return (
