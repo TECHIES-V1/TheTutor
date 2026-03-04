@@ -22,7 +22,16 @@ const FRONTEND_URL = getFrontendBaseUrl();
 // ── Middleware ──────────────────────────────────────────────────────────────
 app.use(
   cors({
-    origin: FRONTEND_URL,
+    origin: (origin, callback) => {
+      // Strip trailing slashes before comparing to handle misconfigured env vars
+      const allowed = FRONTEND_URL.replace(/\/+$/, "");
+      const req = (origin ?? "").replace(/\/+$/, "");
+      if (!origin || req === allowed) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS: origin "${origin}" not allowed`));
+      }
+    },
     credentials: true,
   })
 );
