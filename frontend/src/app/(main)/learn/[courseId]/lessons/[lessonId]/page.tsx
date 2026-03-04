@@ -253,7 +253,12 @@ export default function LessonPage() {
 
         </div>
 
-        <AiAssistantButton courseId={courseId} lessonId={lessonId} />
+        <AiAssistantButton
+          courseId={courseId}
+          lessonId={lessonId}
+          lessonTitle={data.lesson.title}
+          lessonContent={data.lesson.summary ?? String(data.lesson.contentMarkdown ?? "").slice(0, 2000)}
+        />
 
         {preview && isCoursePanelOpen && (
           <CourseWorkspaceSidebar

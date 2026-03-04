@@ -12,10 +12,11 @@ import chatRoutes from "./routes/chat";
 import courseRoutes from "./routes/course";
 import coursesRoutes from "./routes/courses";
 import dashboardRoutes from "./routes/dashboard";
+import { getFrontendBaseUrl } from "./config/publicUrls";
 
 const app = express();
 const PORT = process.env.PORT ?? 5000;
-const FRONTEND_URL = process.env.FRONTEND_URL ?? "http://localhost:3000";
+const FRONTEND_URL = getFrontendBaseUrl();
 
 // ── Middleware ──────────────────────────────────────────────────────────────
 app.use(

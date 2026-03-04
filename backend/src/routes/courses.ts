@@ -7,8 +7,10 @@ import { QuizAttempt } from "../models/QuizAttempt";
 import { Certificate } from "../models/Certificate";
 import { User } from "../models/User";
 import { generateCourse } from "../services/generationAdapter";
-import { generateLessonAssistantReply } from "../services/assistantService";
 import { gradeQuiz, PASS_THRESHOLD } from "../services/gradingService";
+import { streamText } from "ai";
+import type { ModelMessage } from "ai";
+import { getModel } from "../config/ai";
 import { generateCertificateFile } from "../services/certificateService";
 import {
   flattenLessons,
@@ -640,12 +642,57 @@ router.post("/:courseId/lessons/:lessonId/assistant", requireAuth, async (req: R
       return;
     }
 
-    const question = String(req.body?.question ?? "");
-    const answer = generateLessonAssistantReply(lessonRecord.lesson, question);
-    res.json(answer);
+    const rawMessages = Array.isArray(req.body?.messages) ? req.body.messages : [];
+    const lessonContext = String(req.body?.lessonContext ?? "");
+
+    const lastMessage = rawMessages[rawMessages.length - 1];
+    if (!String(lastMessage?.content ?? "").trim()) {
+      res.status(400).json({ error: "Message required" });
+      return;
+    }
+
+    const lesson = lessonRecord.lesson;
+    const systemPrompt = `You are TheTutor AI — an encouraging, expert tutor helping a student understand a specific lesson.
+
+Current lesson: "${lesson.title}"
+${lessonContext || lesson.summary || ""}
+
+Be concise, focused on this specific lesson content, and encourage the student. Answer follow-up questions naturally.`;
+
+    const aiMessages: ModelMessage[] = rawMessages.map((m: { role: string; content: string }) => ({
+      role: (m.role === "user" ? "user" : "assistant") as "user" | "assistant",
+      content: String(m.content ?? ""),
+    }));
+
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+
+    try {
+      const result = streamText({
+        model: getModel(),
+        system: systemPrompt,
+        messages: aiMessages,
+        maxOutputTokens: 512,
+        temperature: 0.7,
+      });
+
+      for await (const chunk of result.textStream) {
+        res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
+      }
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+    } catch {
+      res.write(`data: ${JSON.stringify({ error: "Assistant unavailable" })}\n\n`);
+    } finally {
+      res.end();
+    }
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Internal server error" });
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Internal server error" });
+    } else {
+      res.end();
+    }
   }
 });
 

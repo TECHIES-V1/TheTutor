@@ -47,11 +47,17 @@ export interface IGeneratedLesson {
   order: number;
   title: string;
   summary: string;
+  status: "pending" | "ready";
+  bloomsLevel?: number;
+  bloomsVerb?: string;
+  estimatedMinutes: number;
   videoUrl: string;
   videoReferences: IVideoReference[];
   contentMarkdown: string;
+  keyTakeaways: string[];
   citations: ILessonCitation[];
   quiz: IModuleQuizQuestion[];
+  exercises: string[];
 }
 
 export interface IGeneratedModule {

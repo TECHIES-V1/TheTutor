@@ -10,6 +10,7 @@ import { Award, ArrowLeft, Download } from "lucide-react";
 import { useCoursePreview } from "@/hooks/useCoursePreview";
 import { CourseWorkspaceSidebar } from "@/components/course/CourseWorkspaceSidebar";
 import { useCoursePanelState } from "@/hooks/useCoursePanelState";
+import { BACKEND_URL } from "@/lib/backendUrl";
 
 interface CompletionResponse {
   completedAt: string;
@@ -126,8 +127,7 @@ export default function CourseCompletePage() {
                 <div className="flex flex-wrap gap-2">
                   <Button
                     onClick={() => {
-                      const backend = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:5000";
-                      window.location.href = `${backend}/courses/${courseId}/certificate/download`;
+                      window.location.href = `${BACKEND_URL}/courses/${courseId}/certificate/download`;
                     }}
                     className="skeuo-gold rounded-full hover:!opacity-100"
                   >

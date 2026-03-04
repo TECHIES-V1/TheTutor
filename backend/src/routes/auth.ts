@@ -3,9 +3,10 @@ import passport from "passport";
 import { IUser } from "../models/User";
 import { requireAuth } from "../middleware/auth";
 import { CLEAR_COOKIE_OPTIONS, COOKIE_OPTIONS, signTokenForUser } from "../utils/auth";
+import { getFrontendBaseUrl } from "../config/publicUrls";
 
 const router = Router();
-const FRONTEND_URL = (process.env.FRONTEND_URL ?? "http://localhost:3000").replace(/\/+$/, "");
+const FRONTEND_URL = getFrontendBaseUrl();
 
 // GET /auth/google - initiate Google OAuth
 router.get(
@@ -30,7 +31,7 @@ router.get(
     const token = signTokenForUser(user);
     res.cookie("token", token, COOKIE_OPTIONS);
     const onboardingCompleted = user.onboardingCompleted ? "1" : "0";
-    res.redirect(`${FRONTEND_URL}/api/auth/callback?onboardingCompleted=${onboardingCompleted}`);
+    res.redirect(`${FRONTEND_URL}/api/auth/callback?onboardingCompleted=${onboardingCompleted}&token=${encodeURIComponent(token)}&userId=${user._id}`);
   }
 );
 

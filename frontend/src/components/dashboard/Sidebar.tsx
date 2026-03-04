@@ -166,7 +166,12 @@ export function Sidebar({
             <button
               type="button"
               onClick={onToggleCollapse}
-              className="hidden rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:inline-flex"
+              className={cx(
+              "hidden rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+              isCollapsed
+                ? "lg:group-hover/sidebar:inline-flex lg:group-focus-within/sidebar:inline-flex"
+                : "lg:inline-flex"
+            )}
               aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
               title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >

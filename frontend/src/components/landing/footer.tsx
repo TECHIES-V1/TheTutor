@@ -4,8 +4,19 @@ import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer id="footer" className="border-t border-[#d4af37]/25 bg-white py-14">
-      <div className="container">
+    <footer id="footer" className="border-t border-[#d4af37]/25 bg-white">
+      {/* Mobile: compact centered layout */}
+      <div className="container flex flex-col items-center gap-3 py-8 text-center md:hidden">
+        <div className="flex items-center gap-2.5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="TheTutor" className="h-8 w-8 rounded-lg object-contain" />
+          <p className="font-playfair text-lg font-bold text-[#111111]">TheTutor</p>
+        </div>
+        <p className="text-xs text-[#575757]">&copy; 2026 TheTutor. All rights reserved.</p>
+      </div>
+
+      {/* Desktop: full grid layout */}
+      <div className="container hidden py-14 md:block">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3">
@@ -42,7 +53,7 @@ export function Footer() {
         </div>
 
         <div className="mt-10 border-t border-[#d4af37]/25 pt-6 text-sm text-[#575757]">
-          <p>(c) 2026 TheTutor. All rights reserved.</p>
+          <p>&copy; 2026 TheTutor. All rights reserved.</p>
         </div>
       </div>
     </footer>

@@ -59,7 +59,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [setTheme]);
 
   const logout = useCallback(async () => {
-    await api.post("/auth/logout", {});
+    await Promise.all([
+      api.post("/auth/logout", {}),
+      fetch("/api/auth/logout", { method: "POST" }),
+    ]);
     setUser(null);
     window.location.href = "/auth/signin";
   }, []);

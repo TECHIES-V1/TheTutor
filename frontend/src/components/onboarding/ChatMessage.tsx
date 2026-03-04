@@ -3,19 +3,17 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, RotateCcw, History } from "lucide-react";
+import { AlertTriangle, ArrowRight, RotateCcw } from "lucide-react";
 import { ChatInput } from "./ChatInput";
 import { MessageField } from "./MessageField";
-import { Button } from "@/components/ui/button";
 import { Message, RelatedCoursePreview } from "@/types";
 import { api } from "@/lib/api";
+import { BACKEND_URL } from "@/lib/backendUrl";
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:5000";
 const TRACKED_GENERATIONS_KEY = "thetutor-tracked-generations";
 
 interface ChatMessageProps {
   initialConversationId?: string | null;
-  onShowMobileHistory?: () => void;
 }
 
 function getGreeting() {
@@ -52,7 +50,7 @@ type ConversationPhase =
   | "course_generation"
   | "completed";
 
-export function ChatMessage({ initialConversationId, onShowMobileHistory }: ChatMessageProps) {
+export function ChatMessage({ initialConversationId }: ChatMessageProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -386,7 +384,7 @@ export function ChatMessage({ initialConversationId, onShowMobileHistory }: Chat
       setLiveTitle(null);
       setCurriculumModules([]);
 
-      const res = await fetch(`${BACKEND}/course/generate`, {
+      const res = await fetch(`${BACKEND_URL}/course/generate`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -509,94 +507,175 @@ export function ChatMessage({ initialConversationId, onShowMobileHistory }: Chat
 
   // ── Generation Screen ───────────────────────────────────────────────────
   if (isGenerating) {
+    const genPhases = [
+      { label: "Discovering",  minProgress: 5  },
+      { label: "Processing",   minProgress: 28 },
+      { label: "Crafting",     minProgress: 45 },
+      { label: "Finalizing",   minProgress: 85 },
+    ];
+    const activePhase = genPhases.filter(p => generationProgress >= p.minProgress).length - 1;
+    const circumference = 2 * Math.PI * 52;
+    const courseTitle = liveTitle || suggestedSubject || null;
+
     return (
-      <div className="relative z-10 mx-auto flex h-full w-full max-w-2xl flex-col items-center justify-center gap-6 px-4">
-        <div className="w-full animate-in fade-in duration-500">
-          <div className="flex flex-col items-center gap-3 text-center">
-            <div className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
-              <span className="h-2 w-2 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
-              <span className="h-2 w-2 rounded-full bg-primary animate-bounce" />
-            </div>
-            <h2 className="text-xl font-medium text-foreground">
-              {liveTitle
-                ? `Building "${liveTitle}"`
-                : suggestedSubject
-                  ? `Creating "${suggestedSubject}"`
-                  : "Building your course"}
-            </h2>
-            <p className="max-w-md text-sm text-muted-foreground">{generationStatus}</p>
-          </div>
+      <div className="relative flex h-full w-full overflow-hidden bg-background">
+        {/* Subtle ambient glow */}
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_30%_50%,rgba(212,175,55,0.07),transparent)]" />
 
-          <div className="mx-auto mt-4 w-full max-w-lg">
-            <div className="h-2 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-primary transition-all duration-500"
-                style={{ width: `${Math.min(Math.max(generationProgress, 0), 100)}%` }}
+        {/* Left — main progress */}
+        <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-7 px-8 py-10">
+
+          {/* SVG circular progress */}
+          <div className="relative flex h-28 w-28 shrink-0 items-center justify-center animate-in fade-in duration-700">
+            <svg viewBox="0 0 120 120" className="h-28 w-28 -rotate-90" aria-hidden="true">
+              <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(212,175,55,0.12)" strokeWidth="8" />
+              <circle
+                cx="60" cy="60" r="52" fill="none"
+                stroke="url(#goldGrad)" strokeWidth="8" strokeLinecap="round"
+                strokeDasharray={circumference}
+                strokeDashoffset={circumference * (1 - Math.min(Math.max(generationProgress, 0), 100) / 100)}
+                style={{ transition: "stroke-dashoffset 0.7s ease-out" }}
               />
+              <defs>
+                <linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="#d4af37" />
+                  <stop offset="100%" stopColor="#f5d060" />
+                </linearGradient>
+              </defs>
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-2xl font-bold text-primary">{Math.round(generationProgress)}%</span>
+              <span className="text-[9px] uppercase tracking-widest text-muted-foreground/50">building</span>
             </div>
-            <p className="mt-2 text-center text-xs text-muted-foreground">
-              {Math.round(generationProgress)}% complete
-            </p>
           </div>
 
-          {curriculumModules.length > 0 && (
-            <div className="mt-6 w-full rounded-2xl border border-border bg-card/40 p-4">
-              <p className="mb-3 text-xs uppercase tracking-wider text-muted-foreground">
-                Course Outline
-              </p>
-              <div className="space-y-2">
-                {curriculumModules.map((mod) => (
-                  <div
-                    key={mod.index}
-                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors ${mod.status === "building"
-                      ? "border border-primary/20 bg-primary/10"
-                      : "bg-muted/30"
-                      }`}
+          {/* Course title + status */}
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-center space-y-1.5">
+            {courseTitle ? (
+              <h2 className="text-xl font-semibold text-foreground">
+                &ldquo;{courseTitle}&rdquo;
+              </h2>
+            ) : (
+              <h2 className="text-xl font-semibold text-foreground">Building your course</h2>
+            )}
+            <p className="text-sm text-muted-foreground">{generationStatus}</p>
+          </div>
+
+          {/* Phase tracker */}
+          <div className="flex items-center gap-0 animate-in fade-in duration-700 delay-200">
+            {genPhases.map((phase, i) => (
+              <div key={phase.label} className="flex items-center">
+                <div
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition-all duration-500 ${
+                    i < activePhase
+                      ? "bg-primary/15 text-primary border border-primary/25"
+                      : i === activePhase
+                        ? "bg-primary/20 text-primary border border-primary/35 shadow-[0_0_8px_rgba(212,175,55,0.2)]"
+                        : "bg-muted/20 text-muted-foreground/40 border border-border/20"
+                  }`}
+                >
+                  {i < activePhase && <span className="mr-1">✓</span>}
+                  {phase.label}
+                </div>
+                {i < genPhases.length - 1 && (
+                  <div className={`h-px w-4 shrink-0 transition-colors duration-500 ${i < activePhase ? "bg-primary/30" : "bg-border/20"}`} />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Error state */}
+          {submitError && (
+            <div className="w-full max-w-sm space-y-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-center">
+              <div className="flex items-center justify-center gap-2 text-destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <p className="text-sm font-medium">{submitError}</p>
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                {createdCourseId && (
+                  <Link
+                    href={`/explore/${createdCourseId}`}
+                    className="skeuo-gold inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-medium"
                   >
-                    {mod.status === "building" ? (
-                      <span className="h-4 w-4 flex-shrink-0 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                    ) : (
-                      <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-primary/20 text-[10px] text-primary">
-                        OK
-                      </span>
-                    )}
-                    <span
-                      className={`truncate text-sm ${mod.status === "building"
-                        ? "font-medium text-foreground"
-                        : "text-muted-foreground"
-                        }`}
-                    >
-                      Module {mod.index + 1}: {mod.title}
-                    </span>
-                  </div>
-                ))}
+                    Go to Course <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                )}
+                <button
+                  onClick={handleRestart}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-border px-4 py-2 text-xs font-medium text-muted-foreground transition hover:text-foreground"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" /> Try Again
+                </button>
               </div>
             </div>
           )}
         </div>
 
-        {submitError && (
-          <div className="w-full space-y-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-5 text-center">
-            <div className="flex items-center justify-center gap-2 text-destructive">
-              <AlertTriangle className="h-5 w-5" />
-              <p className="text-sm font-medium">{submitError}</p>
-            </div>
-            <div className="flex items-center justify-center gap-3">
-              {createdCourseId && (
-                <Link
-                  href={`/explore/${createdCourseId}`}
-                  className="skeuo-gold inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition hover:opacity-90"
+        {/* Right — curriculum panel */}
+        <div className="relative z-10 hidden w-72 shrink-0 flex-col border-l border-border/40 bg-card/50 backdrop-blur-sm lg:flex">
+          <div className="flex-shrink-0 border-b border-border/40 px-5 py-4">
+            <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-muted-foreground/50">Course Outline</p>
+          </div>
+          <div className="flex-1 overflow-y-auto px-3 py-3">
+            {curriculumModules.length === 0 ? (
+              <div className="flex h-full items-center justify-center px-4 text-center">
+                <p className="text-xs text-muted-foreground/40">Modules will appear as your course is built…</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {curriculumModules.map((mod, i) => (
+                  <div
+                    key={mod.index}
+                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-300 animate-in fade-in slide-in-from-bottom-1 ${
+                      mod.status === "building"
+                        ? "border border-primary/20 bg-primary/10"
+                        : "border border-transparent bg-primary/5"
+                    }`}
+                    style={{ animationDelay: `${i * 40}ms` }}
+                  >
+                    {mod.status === "building" ? (
+                      <span className="relative flex h-4 w-4 shrink-0 items-center justify-center">
+                        <span className="absolute h-4 w-4 rounded-full border border-primary/50 animate-ping" />
+                        <span className="h-2 w-2 rounded-full bg-primary" />
+                      </span>
+                    ) : (
+                      <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[9px] font-bold text-primary">✓</span>
+                    )}
+                    <span className={`flex-1 truncate text-xs ${mod.status === "building" ? "font-medium text-foreground" : "text-muted-foreground"}`}>
+                      {mod.index + 1}. {mod.title}
+                    </span>
+                    {mod.status === "building" && (
+                      <span className="shrink-0 text-[9px] text-primary/50 animate-pulse">…</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile curriculum (below main content) */}
+        {curriculumModules.length > 0 && (
+          <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-border/40 bg-card/80 backdrop-blur-sm px-4 py-3 lg:hidden">
+            <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground/50">Course Outline</p>
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+              {curriculumModules.map((mod) => (
+                <div
+                  key={mod.index}
+                  className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs ${
+                    mod.status === "building"
+                      ? "border border-primary/25 bg-primary/10 text-foreground font-medium"
+                      : "border border-border/30 bg-muted/30 text-muted-foreground"
+                  }`}
                 >
-                  Go to Course <ArrowRight className="h-4 w-4" />
-                </Link>
-              )}
-              <button
-                onClick={handleRestart}
-                className="inline-flex items-center gap-2 rounded-xl border border-border px-5 py-2.5 text-sm font-medium text-muted-foreground transition hover:border-foreground/30 hover:text-foreground"
-              >
-                <RotateCcw className="h-4 w-4" /> Try Again
-              </button>
+                  {mod.status === "building" ? (
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                  ) : (
+                    <span className="text-[8px] text-primary">✓</span>
+                  )}
+                  {mod.index + 1}. {mod.title}
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -607,20 +686,6 @@ export function ChatMessage({ initialConversationId, onShowMobileHistory }: Chat
   // ── Chat Screen ─────────────────────────────────────────────────────────
   return (
     <div className="relative z-10 mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col">
-      {/* Mobile header with history button */}
-      <div className="lg:hidden border-b border-border px-4 py-3 flex items-center justify-between">
-        <Button
-          onClick={onShowMobileHistory}
-          variant="ghost"
-          size="sm"
-          className="gap-2 text-muted-foreground hover:text-foreground"
-          title="View chat history"
-        >
-          <History className="h-4 w-4" />
-          <span className="text-xs font-medium">History</span>
-        </Button>
-        <span className="text-xs text-muted-foreground">AI Chat</span>
-      </div>
       <div ref={scrollRef} className="mt-4 flex-1 min-h-0 overflow-y-auto px-4 no-scrollbar md:mt-6">
         <div className="flex flex-col pb-6 max-w-2xl mx-auto w-full">
           {messages.length === 0 ? (
