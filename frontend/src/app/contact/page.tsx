@@ -6,23 +6,49 @@ export default function ContactPage() {
     <div className="min-h-screen bg-white text-[#101010]">
       <NavBar />
       <main className="container pt-36 pb-20">
-        <section className="landing-surface max-w-3xl rounded-3xl p-8 md:p-10">
+        <section className="landing-surface max-w-4xl rounded-3xl p-6 sm:p-8 md:p-10">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#b48b1d]">Contact</p>
           <h1 className="mt-3 font-playfair text-4xl font-bold text-[#111111] md:text-5xl">
             Get In Touch
           </h1>
           <p className="mt-5 text-base leading-relaxed text-[#4c4c4c]">
-            For support, partnerships, or product questions, email:
+            We welcome questions, feedback, and partnership conversations. If you need help with your
+            account, courses, or platform behavior, our team is available by email.
           </p>
-          <a
-            href="mailto:support@thetutor.ai"
-            className="mt-4 inline-flex rounded-full border border-[#d4af37]/35 bg-[#f9f4e0] px-4 py-2 text-sm font-semibold text-[#8a6a09]"
-          >
-            support@thetutor.ai
-          </a>
-          <p className="mt-6 text-sm text-[#5f5f5f]">
-            We typically respond within 1-2 business days.
-          </p>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-2xl border border-[#d4af37]/25 bg-[#fffaf0] p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8a6a09]">General Support</p>
+              <a
+                href="mailto:support@thetutor.ai"
+                className="mt-2 inline-flex text-sm font-semibold text-[#8a6a09] underline-offset-4 hover:underline"
+              >
+                support@thetutor.ai
+              </a>
+              <p className="mt-2 text-xs text-[#5f5f5f]">Account, course, and product support.</p>
+            </div>
+            <div className="rounded-2xl border border-[#d4af37]/25 bg-[#fffaf0] p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8a6a09]">Partnerships</p>
+              <a
+                href="mailto:partnerships@thetutor.ai"
+                className="mt-2 inline-flex text-sm font-semibold text-[#8a6a09] underline-offset-4 hover:underline"
+              >
+                partnerships@thetutor.ai
+              </a>
+              <p className="mt-2 text-xs text-[#5f5f5f]">Collaboration, institutional, and strategic inquiries.</p>
+            </div>
+          </div>
+
+          <div className="mt-6 space-y-3 text-sm leading-relaxed text-[#4c4c4c]">
+            <p>
+              <span className="font-semibold text-[#111111]">Response Time:</span> We typically respond within
+              1-2 business days.
+            </p>
+            <p>
+              <span className="font-semibold text-[#111111]">Security Reports:</span> If you discover a potential
+              security issue, please email <a href="mailto:security@thetutor.ai" className="text-[#8a6a09] underline-offset-4 hover:underline">security@thetutor.ai</a> with details.
+            </p>
+          </div>
         </section>
       </main>
       <Footer />
