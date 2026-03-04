@@ -11,7 +11,6 @@ import {
   LayoutDashboard,
   LogOut,
   PanelLeftClose,
-  PanelLeftOpen,
   Plus,
   Sparkles,
   UserCircle2,
@@ -75,18 +74,23 @@ export function Sidebar({
   const completionHref = activeCourseId
     ? `/learn/${activeCourseId}/complete`
     : "/dashboard";
+  const handleLogoClick = () => {
+    if (isCollapsed) {
+      onToggleCollapse?.();
+    }
+  };
 
   const textReveal = cx(
     "overflow-hidden whitespace-nowrap transition-all duration-300",
     isCollapsed
-      ? "lg:max-w-0 lg:opacity-0 lg:group-hover/sidebar:max-w-[10rem] lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:max-w-[10rem] lg:group-focus-within/sidebar:opacity-100"
+      ? "lg:max-w-0 lg:opacity-0"
       : "max-w-[10rem] opacity-100"
   );
 
   const linkBase = cx(
     "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200",
     isCollapsed
-      ? "lg:justify-center lg:px-0 lg:group-hover/sidebar:justify-start lg:group-hover/sidebar:px-3 lg:group-focus-within/sidebar:justify-start lg:group-focus-within/sidebar:px-3"
+      ? "lg:justify-center lg:px-0"
       : ""
   );
 
@@ -102,23 +106,26 @@ export function Sidebar({
       <aside
         className={cx(
           "group/sidebar neo-surface fixed bottom-0 left-0 top-0 z-50 flex flex-col border-r border-primary/10 transition-[transform,width] duration-300 ease-in-out lg:translate-x-0",
-          isCollapsed ? "w-72 lg:w-16 lg:hover:w-72 lg:focus-within:w-72" : "w-72",
+          isCollapsed ? "w-72 lg:w-16" : "w-72",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Header */}
         <div className="flex items-center gap-3 px-3 pt-5 pb-4">
-          <div
+          <button
+            type="button"
+            onClick={handleLogoClick}
             className={cx(
               "flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-primary/15 bg-primary/5 transition-all duration-300",
               isCollapsed
-                ? "h-10 w-10 lg:group-hover/sidebar:h-9 lg:group-hover/sidebar:w-9 lg:group-focus-within/sidebar:h-9 lg:group-focus-within/sidebar:w-9"
-                : "h-9 w-9"
+                ? "h-10 w-10 cursor-pointer lg:h-9 lg:w-9"
+                : "h-9 w-9 cursor-default"
             )}
+            aria-label={isCollapsed ? "Expand sidebar" : "Sidebar logo"}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="TheTutor" className="h-full w-full object-contain p-1.5" />
-          </div>
+          </button>
           <span className={cx("font-playfair text-base font-bold text-primary", textReveal)}>
             TheTutor
           </span>
@@ -128,17 +135,11 @@ export function Sidebar({
               onClick={onToggleCollapse}
               className={cx(
                 "hidden rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-                isCollapsed
-                  ? "lg:group-hover/sidebar:inline-flex lg:group-focus-within/sidebar:inline-flex"
-                  : "lg:inline-flex"
+                isCollapsed ? "lg:hidden" : "lg:inline-flex"
               )}
-              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-label="Collapse sidebar"
             >
-              {isCollapsed ? (
-                <PanelLeftOpen className="h-4 w-4" />
-              ) : (
-                <PanelLeftClose className="h-4 w-4" />
-              )}
+              <PanelLeftClose className="h-4 w-4" />
             </button>
             <button
               type="button"
@@ -206,7 +207,7 @@ export function Sidebar({
               className={cx(
                 "mt-3 space-y-0.5 rounded-xl border border-primary/20 bg-primary/8 p-2",
                 isCollapsed
-                  ? "lg:hidden lg:group-hover/sidebar:block lg:group-focus-within/sidebar:block"
+                  ? "lg:hidden"
                   : ""
               )}
             >
@@ -249,7 +250,7 @@ export function Sidebar({
               className={cx(
                 "flex w-full items-center gap-2.5 rounded-xl px-2 py-2 transition-colors hover:bg-primary/5",
                 isCollapsed
-                  ? "lg:justify-center lg:px-0 lg:group-hover/sidebar:justify-start lg:group-hover/sidebar:px-2 lg:group-focus-within/sidebar:justify-start lg:group-focus-within/sidebar:px-2"
+                  ? "lg:justify-center lg:px-0"
                   : ""
               )}
             >
