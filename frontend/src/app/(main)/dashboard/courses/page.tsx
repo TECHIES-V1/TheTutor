@@ -40,7 +40,7 @@ export default function DashboardCoursesPage() {
     <div className="relative px-4 py-6 sm:px-6 sm:py-8">
 
       <div className="relative z-10 mx-auto w-full max-w-7xl space-y-6">
-        <section className="neo-surface rounded-3xl p-4 sm:p-6">
+        <section className="neo-surface rounded-3xl border-0 p-4 sm:border sm:p-6">
           <div className="flex flex-col gap-4">
             <div>
               <p className="text-xs uppercase tracking-[0.12em] text-primary/75">Dashboard</p>
@@ -67,7 +67,7 @@ export default function DashboardCoursesPage() {
         )}
 
         {overview?.ownedCourses.length ? (
-          <div className="grid gap-4">
+          <div className="grid gap-4 lg:grid-cols-2">
             {overview.ownedCourses.map((course) => (
               <DashboardCourseCard
                 key={course.id}

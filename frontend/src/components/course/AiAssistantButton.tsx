@@ -107,10 +107,10 @@ export function AiAssistantButton({ courseId, lessonId, lessonTitle, lessonConte
   };
 
   return (
-    <div className="fixed bottom-6 left-6 z-[60]">
+    <div className="fixed bottom-6 right-6 z-[60]">
       {open && (
         <div
-          className="absolute bottom-16 left-0 flex flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-2xl"
+          className="absolute bottom-16 right-0 flex flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-2xl"
           style={{ width: "min(380px, calc(100vw - 3rem))", maxHeight: "70vh" }}
         >
           {/* Header */}

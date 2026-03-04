@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  BookMarked,
   BookOpenCheck,
+  ChevronUp,
   Compass,
+  GraduationCap,
   LayoutDashboard,
   LogOut,
   PanelLeftClose,
@@ -15,49 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { Button } from "@/components/ui/button";
-
-
-interface NavChildItem {
-  label: string;
-  href: string;
-  matchPrefix?: string;
-}
-
-interface NavItem {
-  label: string;
-  href: string;
-  icon: typeof LayoutDashboard;
-  children: NavChildItem[];
-}
-
-const navItems: NavItem[] = [
-  {
-    label: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-    children: [
-      { label: "Overview", href: "/dashboard" },
-      { label: "Created Courses", href: "/dashboard/courses", matchPrefix: "/dashboard/courses" },
-      { label: "Enrollments", href: "/dashboard/enrollments", matchPrefix: "/dashboard/enrollments" },
-    ],
-  },
-  {
-    label: "Discover",
-    href: "/explore",
-    icon: Compass,
-    children: [
-      { label: "Explore Library", href: "/explore", matchPrefix: "/explore" },
-      { label: "Create Course", href: "/create-course", matchPrefix: "/create-course" },
-    ],
-  },
-  {
-    label: "Profile",
-    href: "/profile",
-    icon: UserCircle2,
-    children: [{ label: "Account Center", href: "/profile", matchPrefix: "/profile" }],
-  },
-];
+import { useState } from "react";
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -70,11 +31,16 @@ function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-function isChildActive(pathname: string, child: NavChildItem) {
-  if (child.matchPrefix) {
-    return pathname === child.href || pathname.startsWith(`${child.matchPrefix}/`);
-  }
-  return pathname === child.href;
+const navItems = [
+  { label: "Overview",    href: "/dashboard",             icon: LayoutDashboard, exact: true },
+  { label: "My Courses",  href: "/dashboard/courses",     icon: BookMarked },
+  { label: "Enrollments", href: "/dashboard/enrollments", icon: GraduationCap },
+  { label: "Explore",     href: "/explore",               icon: Compass },
+];
+
+function isActive(pathname: string, href: string, exact?: boolean) {
+  if (exact) return pathname === href;
+  return pathname === href || pathname.startsWith(href + "/");
 }
 
 export function Sidebar({
@@ -85,6 +51,8 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const [profileOpen, setProfileOpen] = useState(false);
+
   const isCourseWorkspace =
     pathname.startsWith("/learn/") || /^\/explore\/[^/]+$/.test(pathname);
   const lessonRouteMatch = pathname.match(
@@ -108,74 +76,69 @@ export function Sidebar({
     ? `/learn/${activeCourseId}/complete`
     : "/dashboard";
 
-  const textRevealClass = cx(
+  const textReveal = cx(
     "overflow-hidden whitespace-nowrap transition-all duration-300",
     isCollapsed
-      ? "lg:max-w-0 lg:translate-x-1 lg:opacity-0 lg:group-hover/sidebar:max-w-[11rem] lg:group-hover/sidebar:translate-x-0 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:max-w-[11rem] lg:group-focus-within/sidebar:translate-x-0 lg:group-focus-within/sidebar:opacity-100"
-      : "max-w-[11rem] translate-x-0 opacity-100"
+      ? "lg:max-w-0 lg:opacity-0 lg:group-hover/sidebar:max-w-[10rem] lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:max-w-[10rem] lg:group-focus-within/sidebar:opacity-100"
+      : "max-w-[10rem] opacity-100"
   );
-  const desktopDetailsClass = cx(
-    "transition-all duration-300",
+
+  const linkBase = cx(
+    "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200",
     isCollapsed
-      ? "lg:max-h-0 lg:overflow-hidden lg:opacity-0 lg:group-hover/sidebar:max-h-96 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:max-h-96 lg:group-focus-within/sidebar:opacity-100"
-      : "max-h-96 opacity-100"
+      ? "lg:justify-center lg:px-0 lg:group-hover/sidebar:justify-start lg:group-hover/sidebar:px-3 lg:group-focus-within/sidebar:justify-start lg:group-focus-within/sidebar:px-3"
+      : ""
   );
-  const buttonJustifyClass = isCollapsed
-    ? "lg:justify-center lg:px-0 lg:group-hover/sidebar:justify-start lg:group-hover/sidebar:px-3 lg:group-focus-within/sidebar:justify-start lg:group-focus-within/sidebar:px-3"
-    : "";
 
   return (
     <>
       <div
-        className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${isOpen ? "opacity-100" : "pointer-events-none opacity-0"
-          }`}
+        className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
+          isOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
         onClick={onClose}
       />
 
       <aside
         className={cx(
-          "group/sidebar neo-surface fixed bottom-0 left-0 top-0 z-50 flex flex-col border-r border-primary/20 transition-[transform,width] duration-300 ease-in-out lg:translate-x-0",
-          isCollapsed ? "w-72 lg:w-20 lg:hover:w-72 lg:focus-within:w-72" : "w-72",
+          "group/sidebar neo-surface fixed bottom-0 left-0 top-0 z-50 flex flex-col border-r border-primary/10 transition-[transform,width] duration-300 ease-in-out lg:translate-x-0",
+          isCollapsed ? "w-72 lg:w-16 lg:hover:w-72 lg:focus-within:w-72" : "w-72",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className={cx(
-          "flex items-center gap-2 border-b border-primary/10 py-5 px-3",
-          isCollapsed
-            ? "lg:justify-center lg:group-hover/sidebar:justify-start lg:group-focus-within/sidebar:justify-start"
-            : "justify-start"
-        )}>
-          <div className="flex items-center gap-3">
-            <div className={cx(
-              "flex items-center justify-center overflow-hidden rounded-full border border-primary/10 bg-primary/5 shrink-0 transition-all duration-300",
+        {/* Header */}
+        <div className="flex items-center gap-3 px-3 pt-5 pb-4">
+          <div
+            className={cx(
+              "flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-primary/15 bg-primary/5 transition-all duration-300",
               isCollapsed
-                ? "h-12 w-12 lg:group-hover/sidebar:h-10 lg:group-hover/sidebar:w-10 lg:group-focus-within/sidebar:h-10 lg:group-focus-within/sidebar:w-10"
-                : "h-10 w-10"
-            )}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.png" alt="TheTutor" className="h-full w-full object-contain p-1.5" />
-            </div>
-            <div className={textRevealClass}>
-              <p className="font-playfair text-lg font-bold leading-none text-primary">TheTutor</p>
-              <p className="mt-0.5 text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-                AI Learning Coach
-              </p>
-            </div>
+                ? "h-10 w-10 lg:group-hover/sidebar:h-9 lg:group-hover/sidebar:w-9 lg:group-focus-within/sidebar:h-9 lg:group-focus-within/sidebar:w-9"
+                : "h-9 w-9"
+            )}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="TheTutor" className="h-full w-full object-contain p-1.5" />
           </div>
+          <span className={cx("font-playfair text-base font-bold text-primary", textReveal)}>
+            TheTutor
+          </span>
           <div className="ml-auto flex items-center gap-1">
             <button
               type="button"
               onClick={onToggleCollapse}
               className={cx(
-              "hidden rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-              isCollapsed
-                ? "lg:group-hover/sidebar:inline-flex lg:group-focus-within/sidebar:inline-flex"
-                : "lg:inline-flex"
-            )}
+                "hidden rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                isCollapsed
+                  ? "lg:group-hover/sidebar:inline-flex lg:group-focus-within/sidebar:inline-flex"
+                  : "lg:inline-flex"
+              )}
               aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
-              {isCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+              {isCollapsed ? (
+                <PanelLeftOpen className="h-4 w-4" />
+              ) : (
+                <PanelLeftClose className="h-4 w-4" />
+              )}
             </button>
             <button
               type="button"
@@ -188,172 +151,164 @@ export function Sidebar({
           </div>
         </div>
 
-        <div className="px-5 pt-5">
-          <Button
-            asChild
-            size="sm"
-            onClick={onClose}
-            className={cx(
-              "skeuo-gold w-full rounded-full hover:!opacity-100",
-              buttonJustifyClass
-            )}
-          >
-            <Link href="/create-course" title={isCollapsed ? "New Course" : undefined}>
-              <Plus className="h-4 w-4" />
-              <span className={textRevealClass}>New Course</span>
-            </Link>
-          </Button>
-        </div>
-
-        <nav className={cx(
-          "flex flex-1 flex-col gap-4 overflow-y-auto pt-5 transition-all duration-300 px-3",
-          isCollapsed
-            ? "lg:px-1 lg:group-hover/sidebar:px-0 lg:group-focus-within/sidebar:px-0"
-            : ""
-        )}>
+        {/* Nav */}
+        <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2 py-2">
           {navItems.map((item) => {
-            const active =
-              pathname === item.href ||
-              pathname.startsWith(`${item.href}/`) ||
-              item.children.some((child) => isChildActive(pathname, child));
-
+            const active = isActive(pathname, item.href, item.exact);
             return (
-              <div key={item.href} className="group/navitem space-y-1">
-                <Link
-                  href={item.href}
-                  onClick={onClose}
-                  title={isCollapsed ? item.label : undefined}
-                  className={cx(
-                    "relative flex items-center rounded-xl py-2.5 text-sm font-semibold transition-all duration-300 px-3",
-                    isCollapsed
-                      ? "lg:justify-center lg:px-0 lg:group-hover/sidebar:justify-start lg:group-hover/sidebar:px-3 lg:group-focus-within/sidebar:justify-start lg:group-focus-within/sidebar:px-3"
-                      : "",
-                    active
-                      ? "bg-primary/8 text-primary"
-                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                  )}
-                >
-                  {active && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-primary" />
-                  )}
-                  <item.icon className={cx(
-                    "shrink-0 transition-all duration-300",
-                    active && "text-primary",
-                    isCollapsed
-                      ? "h-6 w-6 lg:group-hover/sidebar:h-4 lg:group-hover/sidebar:w-4 lg:group-focus-within/sidebar:h-4 lg:group-focus-within/sidebar:w-4"
-                      : "h-4 w-4"
-                  )} />
-                  <span className={textRevealClass}>{item.label}</span>
-                </Link>
-
-                {item.children.length > 0 && (
-                  <div className={cx("ml-6 overflow-hidden border-l border-primary/15 pl-3", desktopDetailsClass)}>
-                    {item.children.map((child) => {
-                      const childActive = isChildActive(pathname, child);
-                      return (
-                        <Link
-                          key={child.label}
-                          href={child.href}
-                          onClick={onClose}
-                          className={cx(
-                            "motion-link block rounded-lg px-2 py-1.5 text-xs",
-                            childActive
-                              ? "bg-primary/12 text-primary"
-                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                          )}
-                        >
-                          <span className="whitespace-nowrap">{child.label}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onClose}
+                title={isCollapsed ? item.label : undefined}
+                className={cx(
+                  linkBase,
+                  active
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-primary/5 hover:text-foreground"
                 )}
-              </div>
+              >
+                {active && (
+                  <div className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />
+                )}
+                <item.icon className="h-4 w-4 shrink-0" />
+                <span className={textReveal}>{item.label}</span>
+              </Link>
             );
           })}
 
+          {/* Separator */}
+          <div className="my-2 h-px bg-border/40" />
+
+          {/* Create Course */}
+          <Link
+            href="/create-course"
+            onClick={onClose}
+            title={isCollapsed ? "Create Course" : undefined}
+            className={cx(
+              linkBase,
+              "font-medium",
+              pathname.startsWith("/create-course")
+                ? "bg-primary/15 text-primary"
+                : "text-primary/70 hover:bg-primary/8 hover:text-primary"
+            )}
+          >
+            {pathname.startsWith("/create-course") && (
+              <div className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />
+            )}
+            <Plus className="h-4 w-4 shrink-0 text-primary" />
+            <span className={textReveal}>Create Course</span>
+          </Link>
+
+          {/* Course workspace shortcuts */}
           {isCourseWorkspace && (
-            <div className={cx("space-y-2 rounded-2xl border border-primary/20 bg-primary/10 p-3", desktopDetailsClass)}>
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary/70">
-                Course Shortcuts
+            <div
+              className={cx(
+                "mt-3 space-y-0.5 rounded-xl border border-primary/20 bg-primary/8 p-2",
+                isCollapsed
+                  ? "lg:hidden lg:group-hover/sidebar:block lg:group-focus-within/sidebar:block"
+                  : ""
+              )}
+            >
+              <p className={cx("mb-1 px-2 text-[10px] font-semibold uppercase tracking-widest text-primary/60", textReveal)}>
+                Course
               </p>
               <Link
                 href={currentLessonHref}
                 onClick={onClose}
-                className="motion-link flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-foreground hover:bg-primary/10"
+                className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-foreground transition-colors hover:bg-primary/10"
               >
-                <BookOpenCheck className="h-3.5 w-3.5 text-primary/80" />
-                Current Lesson
+                <BookOpenCheck className="h-3.5 w-3.5 shrink-0 text-primary/80" />
+                <span className={textReveal}>Current Lesson</span>
               </Link>
               <Link
                 href={currentQuizHref}
                 onClick={onClose}
-                className="motion-link flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-foreground hover:bg-primary/10"
+                className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-foreground transition-colors hover:bg-primary/10"
               >
-                <Sparkles className="h-3.5 w-3.5 text-primary/80" />
-                Quiz + Feedback
+                <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary/80" />
+                <span className={textReveal}>Quiz + Feedback</span>
               </Link>
               <Link
                 href={completionHref}
                 onClick={onClose}
-                className="motion-link flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-foreground hover:bg-primary/10"
+                className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-foreground transition-colors hover:bg-primary/10"
               >
-                <LayoutDashboard className="h-3.5 w-3.5 text-primary/80" />
-                Completion
+                <LayoutDashboard className="h-3.5 w-3.5 shrink-0 text-primary/80" />
+                <span className={textReveal}>Completion</span>
               </Link>
             </div>
           )}
         </nav>
 
+        {/* Footer */}
         {user && (
-          <div className="border-t border-primary/10 px-4 py-4">
-            <Link
-              href="/profile"
-              onClick={onClose}
-              title={isCollapsed ? "Profile" : undefined}
+          <div className="relative px-2 pb-3">
+            <button
+              onClick={() => setProfileOpen((p) => !p)}
               className={cx(
-                "mb-3 flex items-center rounded-xl py-1 transition hover:bg-muted/60",
+                "flex w-full items-center gap-2.5 rounded-xl px-2 py-2 transition-colors hover:bg-primary/5",
                 isCollapsed
-                  ? "lg:justify-center lg:px-0 lg:group-hover/sidebar:justify-start lg:group-hover/sidebar:px-1 lg:group-focus-within/sidebar:justify-start lg:group-focus-within/sidebar:px-1"
+                  ? "lg:justify-center lg:px-0 lg:group-hover/sidebar:justify-start lg:group-hover/sidebar:px-2 lg:group-focus-within/sidebar:justify-start lg:group-focus-within/sidebar:px-2"
                   : ""
               )}
             >
               {user.image ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={user.image}
                   alt={user.name}
-                  className="h-9 w-9 rounded-full border border-primary/20 object-cover"
+                  className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-primary/25"
                 />
               ) : (
-                <div className="skeuo-gold flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold">
+                <div className="skeuo-gold flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold">
                   {user.name?.[0] ?? "U"}
                 </div>
               )}
-              <div className={cx("min-w-0", textRevealClass)}>
-                <p className="truncate text-sm font-semibold text-foreground">{user.name}</p>
-                <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+              <div className={cx("min-w-0 flex-1 text-left", textReveal)}>
+                <p className="truncate text-sm font-semibold leading-none text-foreground">
+                  {user.name}
+                </p>
+                <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                  {user.email}
+                </p>
               </div>
-              <UserCircle2 className={cx("ml-auto h-4 w-4 text-muted-foreground", textRevealClass)} />
-            </Link>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                logout();
-                onClose?.();
-              }}
-              className={cx(
-                "w-full justify-start gap-2 text-muted-foreground hover:bg-muted hover:text-foreground px-3",
-                buttonJustifyClass
-              )}
-            >
-              <LogOut className="h-4 w-4" />
-              <span className={textRevealClass}>Sign Out</span>
-            </Button>
+              <ChevronUp
+                className={cx(
+                  "h-3.5 w-3.5 shrink-0 text-muted-foreground/50 transition-transform duration-200",
+                  textReveal,
+                  !profileOpen && "rotate-180"
+                )}
+              />
+            </button>
+
+            {profileOpen && (
+              <div className="absolute bottom-full left-2 right-2 mb-2 rounded-xl border border-primary/15 bg-card p-1 shadow-xl">
+                <Link
+                  href="/profile"
+                  onClick={() => {
+                    setProfileOpen(false);
+                    onClose?.();
+                  }}
+                  className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-primary/5"
+                >
+                  <UserCircle2 className="h-4 w-4 text-muted-foreground" />
+                  Profile
+                </Link>
+                <button
+                  onClick={() => {
+                    logout();
+                    onClose?.();
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign Out
+                </button>
+              </div>
+            )}
           </div>
-        )
-        }
+        )}
       </aside>
     </>
   );

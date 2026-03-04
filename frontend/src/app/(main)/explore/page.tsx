@@ -63,7 +63,7 @@ export default function ExplorePage() {
   }, [courses, searchTerm]);
 
   return (
-    <div className="relative min-h-full px-6 py-6 sm:py-8">
+    <div className="relative min-h-full px-4 py-6 sm:px-6 sm:py-8">
 
       <div className="relative z-10 w-full max-w-5xl">
         <div className="mb-8 sm:mb-10">
@@ -120,7 +120,7 @@ export default function ExplorePage() {
                 : `/explore/${course.id}`;
 
               return (
-                <article key={course.id} className="neo-surface flex flex-col rounded-2xl p-5">
+                <article key={course.id} className="neo-surface flex flex-col rounded-2xl border-0 p-5 sm:border">
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-xs text-primary capitalize">
                       {course.level}
@@ -135,11 +135,11 @@ export default function ExplorePage() {
                     {course.moduleCount} modules • {course.lessonCount} lessons • Free
                   </p>
 
-                  <div className="mt-4 flex gap-2">
-                    <Button asChild size="sm" variant="ghost" className="rounded-full border border-border">
+                  <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                    <Button asChild size="sm" variant="ghost" className="w-full rounded-full border border-border sm:w-auto">
                       <Link href={`/explore/${course.id}`}>View Curriculum</Link>
                     </Button>
-                    <Button asChild size="sm" className="skeuo-gold rounded-full hover:!opacity-100">
+                    <Button asChild size="sm" className="skeuo-gold w-full rounded-full hover:!opacity-100 sm:w-auto">
                       <Link href={continueHref}>
                         {course.enrollment ? "Continue" : "Enroll"}
                         <ArrowRight className="h-4 w-4" />

@@ -277,6 +277,7 @@ function buildCourseSummary(
       name: ownerName,
     },
     visibility: getCourseVisibility(course),
+    generationStatus: getCourseGenerationStatus(course) || "ready",
     accessModel: String(readCourseField(course, "accessModel") ?? "free_hackathon"),
     moduleCount: outline.length,
     lessonCount: totalLessons,

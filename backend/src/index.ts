@@ -6,6 +6,7 @@ import passport from "passport";
 
 import { connectDatabase } from "./config/database";
 import { configurePassport } from "./config/passport";
+import { resumeOrphanedJobs } from "./services/course/jobRunner";
 import authRoutes from "./routes/auth";
 import userRoutes from "./routes/user";
 import chatRoutes from "./routes/chat";
@@ -44,10 +45,12 @@ app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
 // ── Start ───────────────────────────────────────────────────────────────────
 connectDatabase()
-  .then(() => {
+  .then(async () => {
     app.listen(PORT, () => {
       console.log(`🚀 Backend running on http://localhost:${PORT}`);
     });
+    // Resume any generation jobs that were interrupted by a server restart
+    await resumeOrphanedJobs();
   })
   .catch((err) => {
     console.error("❌ MongoDB connection failed:", err.message);
