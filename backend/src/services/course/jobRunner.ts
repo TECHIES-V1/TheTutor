@@ -51,37 +51,15 @@ export async function startGenerationJob(
   const ownerName = owner?.name ?? "Course Creator";
 
   // Phase 1: Discover source references via MCP
-  console.log("[jobRunner] Discovering source references...");
+  // Uses confirmedSubject (e.g. "British History") as a single focused search term
+  const mcpKeyword = onboardingData.confirmedSubject || onboardingData.topic || "";
+  console.log(`[jobRunner] Discovering source references with keyword: "${mcpKeyword}"`);
   let sourceReferences: Array<{ title: string; authors: string[]; source: string }> = [];
   try {
     sourceReferences = await discoverSourceReferences(onboardingData);
     console.log(`[jobRunner] Found ${sourceReferences.length} source references`);
   } catch (err) {
     console.warn("[jobRunner] MCP discovery failed, continuing without sources:", err);
-  }
-
-  // If primary keyword found nothing, retry with alternate keywords
-  if (sourceReferences.length === 0) {
-    const primaryKeyword = onboardingData.confirmedSubject || onboardingData.topic;
-    const retryKeywords = [
-      onboardingData.goal,
-      onboardingData.topic?.split(" ").slice(0, 2).join(" "),
-    ].filter((kw): kw is string => Boolean(kw) && kw !== primaryKeyword);
-
-    for (const keyword of retryKeywords) {
-      if (sourceReferences.length > 0) break;
-      try {
-        console.log(`[jobRunner] Retrying MCP discovery with keyword: "${keyword}"`);
-        sourceReferences = await discoverSourceReferences({
-          ...onboardingData,
-          confirmedSubject: keyword,
-          topic: keyword,
-        });
-        if (sourceReferences.length > 0) {
-          console.log(`[jobRunner] Found ${sourceReferences.length} source references on retry`);
-        }
-      } catch { /* non-fatal, continue */ }
-    }
   }
 
   // Phase 2: Generate course outline (fast, structured JSON — retry up to 2×)

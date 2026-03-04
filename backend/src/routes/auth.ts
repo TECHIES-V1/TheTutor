@@ -11,16 +11,19 @@ const FRONTEND_URL = getFrontendBaseUrl();
 // GET /auth/google - initiate Google OAuth
 router.get(
   "/google",
-  passport.authenticate("google", { scope: ["profile", "email"], session: false })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  passport.authenticate("google", { scope: ["profile", "email"], session: false, state: false } as any)
 );
 
 // GET /auth/google/callback - OAuth callback, set JWT cookie, redirect to frontend
 router.get(
   "/google/callback",
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   passport.authenticate("google", {
     session: false,
+    state: false,
     failureRedirect: `${FRONTEND_URL}/auth/signin?error=oauth_failed`,
-  }),
+  } as any),
   (req: Request, res: Response) => {
     const user = req.user as IUser | undefined;
     if (!user) {
