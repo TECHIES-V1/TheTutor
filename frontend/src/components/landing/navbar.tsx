@@ -22,6 +22,14 @@ export function NavBar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsSidebarOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   return (
     <>
       <nav
@@ -87,7 +95,7 @@ export function NavBar() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-              className="landing-surface fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-sm flex-col border-l border-[#d4af37]/35 p-6 lg:hidden"
+              className="landing-surface fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-[85vw] flex-col border-l border-[#d4af37]/35 p-6 sm:max-w-sm lg:hidden"
             >
               <div className="mb-10 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">

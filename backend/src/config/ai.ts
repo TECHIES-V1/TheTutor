@@ -25,3 +25,19 @@ export const STREAMING_CONFIG = {
   maxOutputTokens: 8192,
   temperature: 0.7,
 };
+
+// Phase-specific configs for job-based generation
+export const OUTLINE_CONFIG = {
+  maxOutputTokens: 4096,
+  temperature: 0.5,
+};
+
+export const LESSON_CONFIG = {
+  maxOutputTokens: 8192,
+  temperature: 0.7,
+};
+
+export const MCP_DISCOVERY_CONFIG = {
+  maxOutputTokens: 4096,
+  temperature: 0.3,
+};

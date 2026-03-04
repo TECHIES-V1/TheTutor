@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle2, BookCopy } from "lucide-react";
+import { ArrowRight, CheckCircle2, BookCopy, PanelRightClose, PanelRightOpen, Clock, AlertTriangle } from "lucide-react";
 import { useCoursePreview } from "@/hooks/useCoursePreview";
 import { CourseWorkspaceSidebar } from "@/components/course/CourseWorkspaceSidebar";
 import { useCoursePanelState } from "@/hooks/useCoursePanelState";
@@ -45,7 +45,7 @@ export default function ExploreCourseDetailPage() {
 
   if (loading) {
     return (
-      <div className="px-6 py-8">
+      <div className="px-4 py-6 sm:px-6 sm:py-8">
         <PageLoader
           title="Loading course preview..."
           subtitle="Preparing curriculum, access, and enrollment details."
@@ -56,7 +56,7 @@ export default function ExploreCourseDetailPage() {
 
   if (!data) {
     return (
-      <div className="px-6 py-8">
+      <div className="px-4 py-6 sm:px-6 sm:py-8">
         <div className="neo-surface rounded-2xl p-6 text-sm text-muted-foreground">
           {error ?? "Course not found."}
         </div>
@@ -65,27 +65,45 @@ export default function ExploreCourseDetailPage() {
   }
 
   const currentLessonId = data.course.enrollment?.currentLessonId ?? null;
+  const generationStatus = (data.course as { generationStatus?: string }).generationStatus ?? "ready";
+  const isGenerating = generationStatus === "pending";
+  const isFailed = generationStatus === "failed";
 
   return (
-    <div className="relative px-6 py-8">
+    <div className="relative px-4 py-6 sm:px-6 sm:py-8">
 
       <div className="relative z-10 mx-auto w-full max-w-7xl space-y-4">
-        <div className="flex justify-end">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={toggleCoursePanel}
-            className="rounded-full border border-border"
-          >
-            {isCoursePanelOpen ? "Hide Course Sidebar" : "Show Course Sidebar"}
-          </Button>
-        </div>
+
+        {isGenerating && (
+          <div className="flex items-center gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
+            <Clock className="h-4 w-4 shrink-0" />
+            This course is still being generated. Lessons will be available shortly — check back soon.
+          </div>
+        )}
+
+        {isFailed && (
+          <div className="flex items-center gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            Course generation failed. The creator may retry generating this course.
+          </div>
+        )}
 
         <div className={`grid w-full gap-6 ${isCoursePanelOpen ? "lg:grid-cols-[1fr_21.5rem]" : "lg:grid-cols-1"}`}>
           <div className="space-y-6">
-            <section id="course-overview" className="neo-surface rounded-3xl p-6">
-              <p className="text-xs uppercase tracking-wide text-primary/80">Course Preview</p>
-              <h1 className="mt-2 text-3xl font-bold text-foreground">{data.course.title}</h1>
+            <section id="course-overview" className="neo-surface rounded-3xl p-6 border-0 sm:border">
+              <div className="flex items-start gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs uppercase tracking-wide text-primary/80">Course Preview</p>
+                  <h1 className="mt-2 text-3xl font-bold text-foreground">{data.course.title}</h1>
+                </div>
+                <button
+                  onClick={toggleCoursePanel}
+                  className="mt-1 shrink-0 rounded-lg p-1.5 text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+                  title={isCoursePanelOpen ? "Hide course panel" : "Show course panel"}
+                >
+                  {isCoursePanelOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+                </button>
+              </div>
               <p className="mt-2 max-w-3xl text-sm text-muted-foreground">{data.course.description}</p>
               <p className="mt-2 text-xs text-muted-foreground">
                 Created by {data.course.author?.name || data.course.ownerName}
@@ -130,10 +148,10 @@ export default function ExploreCourseDetailPage() {
                 ) : data.access.canEnroll ? (
                   <Button
                     onClick={handleEnroll}
-                    disabled={enrolling}
+                    disabled={enrolling || isGenerating || isFailed}
                     className="skeuo-gold rounded-full hover:!opacity-100"
                   >
-                    {enrolling ? "Enrolling..." : "Enroll for Free"}
+                    {enrolling ? "Enrolling..." : isGenerating ? "Generating..." : "Enroll for Free"}
                   </Button>
                 ) : (
                   <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-2 text-xs text-primary">
@@ -142,13 +160,13 @@ export default function ExploreCourseDetailPage() {
                   </div>
                 )}
 
-                <Button asChild variant="ghost" className="hidden sm:inline-flex rounded-full border border-border">
+                <Button asChild variant="ghost" className="rounded-full border border-border">
                   <Link href="/explore">Back to Explore</Link>
                 </Button>
               </div>
             </section>
 
-            <section id="course-curriculum" className="neo-surface rounded-3xl p-6">
+            <section id="course-curriculum" className="neo-surface rounded-3xl p-6 border-0 sm:border">
               <div className="mb-4 flex items-center gap-2">
                 <BookCopy className="h-5 w-5 text-primary" />
                 <h2 className="text-2xl font-bold text-foreground">Curriculum Outline</h2>
@@ -184,7 +202,7 @@ export default function ExploreCourseDetailPage() {
             </section>
 
             {data.course.sourceAttribution.length > 0 && (
-              <section id="course-sources" className="neo-surface rounded-3xl p-6">
+              <section id="course-sources" className="neo-surface rounded-3xl p-6 border-0 sm:border">
                 <h2 className="text-xl font-bold text-foreground">Textbook Sources</h2>
                 <ul className="mt-3 space-y-2">
                   {data.course.sourceAttribution.map((source) => (

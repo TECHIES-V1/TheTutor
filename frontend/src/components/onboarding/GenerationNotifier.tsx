@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Bell, X } from "lucide-react";
 import { api } from "@/lib/api";
@@ -19,30 +19,6 @@ type CompletionNotice = {
   courseId: string;
   subject: string | null;
 };
-
-const TRACKED_GENERATIONS_KEY = "thetutor-tracked-generations";
-
-function readTrackedGenerations(): Set<string> {
-  if (typeof window === "undefined") return new Set();
-  try {
-    const raw = window.localStorage.getItem(TRACKED_GENERATIONS_KEY);
-    if (!raw) return new Set();
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return new Set();
-    return new Set(parsed.map((value) => String(value)));
-  } catch {
-    return new Set();
-  }
-}
-
-function writeTrackedGenerations(set: Set<string>): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(TRACKED_GENERATIONS_KEY, JSON.stringify([...set]));
-  } catch {
-    // Ignore storage issues.
-  }
-}
 
 function tryBrowserNotification(notice: CompletionNotice): void {
   if (typeof window === "undefined" || typeof Notification === "undefined") return;
@@ -77,6 +53,8 @@ function tryBrowserNotification(notice: CompletionNotice): void {
 export function GenerationNotifier() {
   const { user, isLoading } = useAuth();
   const [notice, setNotice] = useState<CompletionNotice | null>(null);
+  // In-memory set of conversation IDs being tracked (no localStorage)
+  const trackedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (isLoading || !user) return;
@@ -91,14 +69,13 @@ export function GenerationNotifier() {
         const data = await res.json() as { conversations?: ConversationSummary[] };
         const conversations = Array.isArray(data.conversations) ? data.conversations : [];
 
-        const tracked = readTrackedGenerations();
         for (const conv of conversations) {
           if (conv.status === "active" && conv.phase === "course_generation") {
-            tracked.add(conv.id);
+            trackedRef.current.add(conv.id);
           }
         }
 
-        for (const trackedId of [...tracked]) {
+        for (const trackedId of [...trackedRef.current]) {
           const conv = conversations.find((entry) => entry.id === trackedId);
           if (!conv) continue;
 
@@ -110,16 +87,14 @@ export function GenerationNotifier() {
             };
             setNotice(completion);
             tryBrowserNotification(completion);
-            tracked.delete(trackedId);
+            trackedRef.current.delete(trackedId);
             continue;
           }
 
           if (conv.status === "abandoned") {
-            tracked.delete(trackedId);
+            trackedRef.current.delete(trackedId);
           }
         }
-
-        writeTrackedGenerations(tracked);
       } catch {
         // Keep polling quietly; this should never block navigation.
       }

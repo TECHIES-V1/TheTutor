@@ -37,11 +37,12 @@ export function CTA() {
               </Link>
             </Button>
             <Button
+              asChild
               variant="outline"
               size="lg"
               className="landing-outline rounded-full bg-transparent px-8"
             >
-              Explore Features
+              <a href="#features">Explore Features</a>
             </Button>
           </div>
         </motion.div>

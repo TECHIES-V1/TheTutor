@@ -11,7 +11,6 @@ import {
 import { Enrollment } from "../../models/Enrollment";
 import { User } from "../../models/User";
 import {
-  repairGeneratedCourseMarkdown,
   streamCourseWithMCPTools,
 } from "../ai/nova";
 import type {
@@ -316,6 +315,7 @@ function toCurriculum(modules: IModule[]) {
     moduleId: module.id,
     order: module.order,
     title: module.title,
+    description: module.description || "",
     moduleQuiz: module.moduleQuiz
       ? {
         quizId: module.moduleQuiz.quizId,
@@ -354,11 +354,15 @@ function toCurriculum(modules: IModule[]) {
         order: lesson.order,
         title: lesson.title,
         summary: lesson.description,
+        status: "ready" as const,
+        estimatedMinutes: lesson.estimatedMinutes ?? 25,
         videoUrl: lesson.videoLinks?.[0] ?? "",
         videoReferences,
         contentMarkdown: lesson.content,
+        keyTakeaways: [],
         citations: lesson.citations ?? [],
         quiz: quizQuestions,
+        exercises: [],
       };
     }),
   }));
@@ -671,12 +675,9 @@ export async function* generate(
         },
       };
 
-      workingMarkdown = await repairGeneratedCourseMarkdown({
-        markdown: workingMarkdown,
-        issues: allIssues,
-        sourceRefs: sourceLedger,
-        onboardingData,
-      });
+      // Repair no longer available — accept current result and stop retrying
+      parsedCourse = candidate;
+      break;
     }
 
     if (!parsedCourse) {

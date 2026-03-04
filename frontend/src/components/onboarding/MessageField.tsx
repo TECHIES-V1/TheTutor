@@ -24,10 +24,10 @@ export function MessageField({ role, content, relatedCourses = [] }: MessageProp
                         <img
                             src={user.image}
                             alt={user.name ?? "You"}
-                            className="h-8 w-8 rounded-full object-cover ring-2 ring-primary/15"
+                            className="h-9 w-9 rounded-full object-cover ring-1 ring-primary/20 shadow-sm"
                         />
                     ) : (
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary ring-2 ring-primary/10">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary ring-1 ring-primary/20 shadow-sm">
                             {user?.name?.[0]?.toUpperCase() ?? "U"}
                         </div>
                     )
@@ -36,7 +36,7 @@ export function MessageField({ role, content, relatedCourses = [] }: MessageProp
                     <img
                         src="/logo.png"
                         alt="TheTutor"
-                        className="h-8 w-8 rounded-full object-contain ring-2 ring-primary/15"
+                        className="h-9 w-9 rounded-full object-contain ring-1 ring-primary/20 shadow-sm"
                     />
                 )}
             </div>
@@ -50,8 +50,8 @@ export function MessageField({ role, content, relatedCourses = [] }: MessageProp
                     className={cn(
                         "inline-block max-w-[85%] whitespace-pre-wrap text-[15px] leading-relaxed md:max-w-[75%]",
                         isUser
-                            ? "skeuo-gold rounded-2xl rounded-tr-sm px-4 py-3 text-left"
-                            : "rounded-2xl rounded-tl-sm border border-border/40 bg-card/60 px-4 py-3 text-foreground backdrop-blur-sm"
+                            ? "skeuo-gold rounded-2xl rounded-tr-sm px-4 py-3 text-left shadow-md"
+                            : "rounded-2xl rounded-tl-sm border border-primary/15 bg-gradient-to-br from-card/80 to-card/40 px-4 py-3 text-foreground shadow-sm backdrop-blur-sm"
                     )}
                 >
                     {content}
@@ -61,7 +61,7 @@ export function MessageField({ role, content, relatedCourses = [] }: MessageProp
                                 <Link
                                     key={course.id}
                                     href={`/explore/${course.id}`}
-                                    className="block rounded-xl border border-border/70 bg-background/70 p-3 transition hover:border-primary/40 hover:bg-background"
+                                    className="block rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 transition-all hover:border-primary/30 hover:bg-primary/10"
                                 >
                                     <p className="line-clamp-1 text-sm font-semibold text-foreground">{course.title}</p>
                                     <p className="mt-0.5 text-xs text-muted-foreground">

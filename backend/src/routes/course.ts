@@ -4,98 +4,203 @@ import { requireAuth } from "../middleware/auth";
 import { sseHeaders, sendSSE, endSSE, startKeepAlive, stopKeepAlive } from "../middleware/sse";
 import { Conversation } from "../models/Conversation";
 import { Course } from "../models/Course";
+import { GenerationJob } from "../models/GenerationJob";
 import "../models/Resource"; // Ensure it is registered for population
-import { generate } from "../services/course/generator";
+import { startGenerationJob } from "../services/course/jobRunner";
+import { registerClient, unregisterClient, getBroadcaster } from "../services/sse/broadcaster";
 import { gradeOpenEndedAnswer } from "../services/ai/grader";
 import type { GenerateCourseRequest, UpdateProgressRequest } from "../types";
 
 const router = Router();
 
 // ── POST /course/generate ─────────────────────────────────────────────────
+// Returns { jobId } — client then connects to GET /course/jobs/:jobId/events
 
 router.post(
   "/generate",
   requireAuth,
-  sseHeaders,
   async (req: Request, res: Response) => {
-    const keepAlive = startKeepAlive(res);
-
     try {
       const { conversationId } = req.body as GenerateCourseRequest;
       const userId = req.jwtUser!.userId;
 
       if (!conversationId) {
-        sendSSE(res, "error", {
-          code: "INVALID_PHASE",
-          message: "conversationId is required",
-          retryable: false,
-          phase: "resource_retrieval",
-        });
-        stopKeepAlive(keepAlive);
-        endSSE(res);
+        res.status(400).json({ error: "conversationId is required", code: "INVALID_PHASE" });
         return;
       }
 
-      // Verify conversation exists and is in correct phase
-      console.log("[course/generate] Received conversationId:", conversationId, "userId:", userId);
-      const conversation = await Conversation.findOne({
-        _id: conversationId,
-        userId: new Types.ObjectId(userId),
-      });
+      console.log("[course/generate] conversationId:", conversationId, "userId:", userId);
 
-      if (!conversation) {
-        console.log("[course/generate] Conversation not found");
-        sendSSE(res, "error", {
-          code: "NOT_FOUND",
-          message: "Conversation not found",
-          retryable: false,
-          phase: "resource_retrieval",
-        });
-        stopKeepAlive(keepAlive);
-        endSSE(res);
-        return;
-      }
-
-      console.log("[course/generate] Conversation found. Phase:", conversation.phase, "Status:", conversation.status);
-
-      if (conversation.phase !== "resource_retrieval") {
-        console.log("[course/generate] PHASE MISMATCH — expected resource_retrieval, got:", conversation.phase);
-        sendSSE(res, "error", {
-          code: "INVALID_PHASE",
-          message: `Conversation must be in resource_retrieval phase. Current: ${conversation.phase}`,
-          retryable: false,
-          phase: conversation.phase,
-        });
-        stopKeepAlive(keepAlive);
-        endSSE(res);
-        return;
-      }
-
-      // Stream course generation events
-      for await (const event of generate(conversationId, userId)) {
-        sendSSE(res, event.type, event.data as unknown as Record<string, unknown>);
-
-        // Stop on error or completion
-        if (event.type === "error" || event.type === "complete") {
-          break;
-        }
-      }
+      const jobId = await startGenerationJob(conversationId, userId);
+      res.json({ jobId });
     } catch (error) {
-      console.error("Course generation error:", error);
-      sendSSE(res, "error", {
-        code: "AI_ERROR",
-        message: error instanceof Error ? error.message : "Course generation failed",
-        retryable: true,
-        phase: "course_generation",
-      });
-    } finally {
-      stopKeepAlive(keepAlive);
-      endSSE(res);
+      console.error("[course/generate] Error:", error);
+      const message = error instanceof Error ? error.message : "Failed to start generation";
+      const status = message.includes("not found") ? 404 : message.includes("phase") ? 400 : 500;
+      res.status(status).json({ error: message, code: "AI_ERROR" });
     }
   }
 );
 
-// ── GET /course/generation-status/:conversationId ─────────────────────────
+// ── GET /course/jobs/:jobId ───────────────────────────────────────────────
+// JSON polling fallback for job status
+
+router.get(
+  "/jobs/:jobId",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const { jobId } = req.params;
+      const userId = req.jwtUser!.userId;
+
+      if (!Types.ObjectId.isValid(jobId)) {
+        res.status(400).json({ error: "Invalid job ID" });
+        return;
+      }
+
+      const job = await GenerationJob.findOne({
+        _id: jobId,
+        userId: new Types.ObjectId(userId),
+      });
+
+      if (!job) {
+        res.status(404).json({ error: "Job not found", code: "NOT_FOUND" });
+        return;
+      }
+
+      const progressPercent =
+        job.totalLessonCount > 0
+          ? Math.round((job.completedLessonCount / job.totalLessonCount) * 90) + 10
+          : 10;
+
+      res.json({
+        jobId: job._id.toString(),
+        courseId: job.courseId.toString(),
+        status: job.status,
+        currentPhase: job.currentPhase,
+        completedLessonCount: job.completedLessonCount,
+        totalLessonCount: job.totalLessonCount,
+        progressPercent: Math.min(progressPercent, job.status === "completed" ? 100 : 95),
+        lessonSlots: job.lessonSlots.map((slot) => ({
+          lessonId: slot.lessonId,
+          title: slot.title,
+          bloomsLevel: slot.bloomsLevel,
+          status: slot.status,
+        })),
+        errorMessage: job.errorMessage,
+      });
+    } catch (error) {
+      console.error("[jobs/status] Error:", error);
+      res.status(500).json({ error: "Failed to get job status", code: "DB_ERROR" });
+    }
+  }
+);
+
+// ── GET /course/jobs/:jobId/events ────────────────────────────────────────
+// SSE stream with Last-Event-ID reconnection support
+
+router.get(
+  "/jobs/:jobId/events",
+  requireAuth,
+  sseHeaders,
+  async (req: Request, res: Response) => {
+    const { jobId } = req.params;
+    const userId = req.jwtUser!.userId;
+
+    if (!Types.ObjectId.isValid(jobId)) {
+      sendSSE(res, "error", { message: "Invalid job ID" });
+      endSSE(res);
+      return;
+    }
+
+    const job = await GenerationJob.findOne({
+      _id: jobId,
+      userId: new Types.ObjectId(userId),
+    });
+
+    if (!job) {
+      sendSSE(res, "error", { message: "Job not found" });
+      endSSE(res);
+      return;
+    }
+
+    const keepAlive = startKeepAlive(res);
+
+    // Register this client for live events
+    registerClient(jobId, res);
+
+    // Load course curriculum for module titles (needed for catch-up reconstruction)
+    const catchUpCourse = await Course.findById(job.courseId).select("curriculum");
+    const modules = (catchUpCourse?.curriculum ?? []).map((mod, idx) => ({
+      index: idx,
+      title: mod.title,
+      lessonCount: mod.lessons.length,
+    }));
+
+    // Send current job state for catch-up (handles reconnects)
+    const progressPercent =
+      job.totalLessonCount > 0
+        ? Math.round((job.completedLessonCount / job.totalLessonCount) * 90) + 10
+        : 10;
+
+    sendSSE(res, "job_state", {
+      jobId: job._id.toString(),
+      courseId: job.courseId.toString(),
+      status: job.status,
+      currentPhase: job.currentPhase,
+      completedLessonCount: job.completedLessonCount,
+      totalLessonCount: job.totalLessonCount,
+      progressPercent: Math.min(progressPercent, job.status === "completed" ? 100 : 95),
+      modules,
+      lessonSlots: job.lessonSlots.map((slot) => ({
+        lessonId: slot.lessonId,
+        title: slot.title,
+        bloomsLevel: slot.bloomsLevel,
+        moduleIndex: slot.moduleIndex,
+        status: slot.status,
+      })),
+    });
+
+    // If already completed/failed, send final event and close
+    if (job.status === "completed") {
+      const course = await Course.findById(job.courseId).select("title description estimatedHours curriculum");
+      const lessonCount = job.completedLessonCount;
+      const moduleCount = course?.curriculum?.length ?? 0;
+      sendSSE(res, "complete", {
+        courseId: job.courseId.toString(),
+        title: course?.title ?? "",
+        description: course?.description ?? "",
+        moduleCount,
+        lessonCount,
+        estimatedHours: course?.estimatedHours ?? 0,
+      });
+      stopKeepAlive(keepAlive);
+      unregisterClient(jobId, res);
+      endSSE(res);
+      return;
+    }
+
+    if (job.status === "failed") {
+      sendSSE(res, "error", {
+        message: job.errorMessage ?? "Generation failed",
+        retryable: true,
+        courseId: job.courseId.toString(),
+      });
+      stopKeepAlive(keepAlive);
+      unregisterClient(jobId, res);
+      endSSE(res);
+      return;
+    }
+
+    // Client disconnects
+    req.on("close", () => {
+      stopKeepAlive(keepAlive);
+      unregisterClient(jobId, res);
+    });
+  }
+);
+
+// ── GET /course/generation-status/:conversationId (legacy compat) ─────────
 
 router.get(
   "/generation-status/:conversationId",
@@ -116,25 +221,21 @@ router.get(
       });
 
       if (!conversation) {
-        res.status(404).json({
-          error: "Conversation not found",
-          code: "NOT_FOUND",
-        });
+        res.status(404).json({ error: "Conversation not found", code: "NOT_FOUND" });
         return;
       }
 
       let status: "pending" | "in_progress" | "completed" | "failed";
-      let phase: string | undefined;
       let courseId: string | undefined;
+      let jobId: string | undefined;
 
       switch (conversation.phase) {
         case "resource_retrieval":
           status = "pending";
-          phase = "resource_retrieval";
           break;
         case "course_generation":
           status = "in_progress";
-          phase = "course_generation";
+          jobId = conversation.activeJobId?.toString();
           break;
         case "completed":
           status = "completed";
@@ -142,15 +243,9 @@ router.get(
           break;
         default:
           status = "pending";
-          phase = conversation.phase;
       }
 
-      res.json({
-        conversationId,
-        status,
-        phase,
-        courseId,
-      });
+      res.json({ conversationId, status, phase: conversation.phase, courseId, jobId });
     } catch (error) {
       console.error("Generation status error:", error);
       res.status(500).json({ error: "Failed to get status", code: "DB_ERROR" });

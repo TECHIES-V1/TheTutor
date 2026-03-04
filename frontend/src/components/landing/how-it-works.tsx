@@ -2,7 +2,8 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { BookOpen, Brain, CheckCircle2, Award } from "lucide-react";
+import { BookOpen, Brain, CheckCircle2, Award, ChevronDown, ChevronRight } from "lucide-react";
+import React from "react";
 
 const phases = [
   {
@@ -49,30 +50,38 @@ export function HowItWorks() {
           </p>
         </motion.div>
 
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <div className="flex flex-col items-stretch xl:flex-row xl:items-start">
           {phases.map((phase, index) => {
             const Icon = phase.icon;
             return (
-              <motion.article
-                key={phase.title}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-70px" }}
-              transition={{ duration: 0.45, delay: index * 0.08 }}
-              className="landing-surface rounded-3xl p-6"
-            >
-              <div className="flex items-center justify-between">
-                <div className="landing-gold flex h-12 w-12 items-center justify-center rounded-xl">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <span className="text-3xl font-bold text-[#b48b1d]/70">{phase.step}</span>
-              </div>
-              <h3 className="mt-5 font-playfair text-2xl font-bold text-[#111111]">{phase.title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-[#505050]">{phase.description}</p>
-            </motion.article>
-          );
-        })}
-      </div>
+              <React.Fragment key={phase.title}>
+                <motion.article
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-70px" }}
+                  transition={{ duration: 0.45, delay: index * 0.08 }}
+                  className="landing-surface rounded-3xl p-6 xl:flex-1"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="landing-gold flex h-12 w-12 items-center justify-center rounded-xl">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <span className="text-3xl font-bold text-[#b48b1d]/70">{phase.step}</span>
+                  </div>
+                  <h3 className="mt-5 font-playfair text-2xl font-bold text-[#111111]">{phase.title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-[#505050]">{phase.description}</p>
+                </motion.article>
+
+                {index < phases.length - 1 && (
+                  <div className="flex shrink-0 items-center justify-center py-3 xl:self-center xl:px-3 xl:py-0">
+                    <ChevronDown className="h-6 w-6 text-[#d4af37]/50 xl:hidden" />
+                    <ChevronRight className="hidden h-6 w-6 text-[#d4af37]/50 xl:block" />
+                  </div>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
