@@ -61,7 +61,7 @@ export function Hero() {
             </Button>
           </div>
 
-          <div className="mt-9 grid grid-cols-3 gap-3 text-sm text-[#1E3A7A]">
+          <div className="mt-9 grid grid-cols-1 gap-3 text-sm text-[#525252] sm:grid-cols-3">
             {["Adaptive paths", "Live feedback", "Course certificates"].map((item) => (
               <div key={item} className="landing-inset motion-card flex items-center justify-center gap-2 rounded-xl px-3 py-2 lg:justify-start">
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-[#d4af37]" />

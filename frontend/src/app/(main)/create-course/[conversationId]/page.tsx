@@ -69,7 +69,10 @@ export default function ConversationPage() {
                 />
             </div>
 
-            <div className="hidden lg:flex">
+            <div
+                className={`relative hidden shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out lg:flex ${showHistorySidebar ? "w-72" : "w-11"
+                    }`}
+            >
                 {showHistorySidebar ? (
                     <ConversationHistory
                         activeId={conversationId === "new" ? null : conversationId}
@@ -79,11 +82,15 @@ export default function ConversationPage() {
                     />
                 ) : (
                     <button
-                        className="flex w-5 shrink-0 flex-col items-center justify-center border-l border-border/20 bg-muted/10 transition-colors hover:bg-muted/30"
+                        className="group flex h-full w-full flex-col items-center justify-center gap-2 border-l border-primary/25 bg-primary/10 px-1 text-primary/80 shadow-[-6px_0_16px_-12px_rgba(0,0,0,0.35)] transition-all hover:bg-primary/15 hover:text-primary"
                         onClick={() => setShowHistorySidebar(true)}
-                        title="Show history"
+                        title="Open chat history"
+                        aria-label="Open chat history"
                     >
-                        <History className="h-3.5 w-3.5 text-muted-foreground/40" />
+                        <History className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+                        <span className="[writing-mode:vertical-rl] rotate-180 text-[10px] font-semibold uppercase tracking-[0.18em]">
+                            History
+                        </span>
                     </button>
                 )}
             </div>

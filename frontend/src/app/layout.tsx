@@ -3,36 +3,23 @@ import { Comfortaa, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { generateMetadata as genMeta, jsonLd } from "@/lib/seo";
 
 const comfortaa = Comfortaa({
   subsets: ["latin"],
   variable: "--font-comfortaa",
   weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
 });
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-playfair",
   weight: ["400", "600", "700"],
+  display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "TheTutor - AI-Powered Personalized Learning",
-  description:
-    "Experience AI-powered education that adapts to your pace, learning style, and goals. From curriculum generation to verified certificates, all personalized for you.",
-  keywords: [
-    "AI learning",
-    "personalized education",
-    "online courses",
-    "Amazon Nova",
-  ],
-  openGraph: {
-    title: "TheTutor - AI-Powered Personalized Learning",
-    description:
-      "Experience AI-powered education that adapts to your pace, learning style, and goals.",
-    type: "website",
-  },
-};
+export const metadata: Metadata = genMeta({});
 
 export default function RootLayout({
   children,
@@ -51,6 +38,19 @@ export default function RootLayout({
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1.0, maximum-scale=1"
+        />
+        <link rel="canonical" href={process.env.NEXT_PUBLIC_SITE_URL || "https://thetutor.app"} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd.organization) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd.website) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd.educationalOrganization) }}
         />
       </head>
       <body className={`${comfortaa.variable} ${playfair.variable}`}>
