@@ -78,7 +78,7 @@ export default function DashboardCoursesPage() {
             ))}
           </div>
         ) : (
-          <div className="neo-surface rounded-2xl p-4 sm:p-6 text-sm text-muted-foreground">
+          <div className="card-leather rounded-2xl p-4 sm:p-6 text-sm">
             No created courses yet. Use Create Course to bootstrap your first curriculum.
           </div>
         )}

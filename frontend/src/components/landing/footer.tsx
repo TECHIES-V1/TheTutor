@@ -4,13 +4,13 @@ import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer id="footer" className="border-t border-[#d4af37]/25 bg-white">
+    <footer id="footer" className="border-t border-[#d4af37]/25 bg-[#fbfaf6]">
       {/* Mobile: compact centered layout */}
       <div className="container flex flex-col items-center gap-3 py-8 text-center md:hidden">
         <div className="flex items-center gap-2.5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="TheTutor" className="h-8 w-8 rounded-lg object-contain" />
-          <p className="font-playfair text-lg font-bold text-[#111111]">TheTutor</p>
+          <p className="font-playfair text-lg font-bold text-[#1E3A7A]">TheTutor</p>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-[#575757]">
           <Link href="/about" className="hover:text-[#b48b1d]">About</Link>
@@ -29,11 +29,11 @@ export function Footer() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/logo.png" alt="TheTutor" className="h-10 w-10 rounded-lg object-contain" />
               <div>
-                <p className="font-playfair text-2xl font-bold text-[#111111]">TheTutor</p>
-                <p className="text-sm text-[#575757]">AI-Powered Learning Coach</p>
+                <p className="font-playfair text-2xl font-bold text-[#1E3A7A]">TheTutor</p>
+                <p className="text-sm text-[#4a6490]">AI-Powered Learning Coach</p>
               </div>
             </div>
-            <p className="mt-5 max-w-md text-sm leading-relaxed text-[#575757]">
+            <p className="mt-5 max-w-md text-sm leading-relaxed text-[#4a6490]">
               Personalized tutoring for learners who want clear structure, practical feedback, and steady progress.
             </p>
           </div>
@@ -48,17 +48,17 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-playfair text-lg font-bold text-[#111111]">Company</h4>
-            <ul className="mt-4 space-y-2 text-sm text-[#575757]">
-              <li><Link href="/about" className="hover:text-[#b48b1d]">About</Link></li>
-              <li><Link href="/contact" className="hover:text-[#b48b1d]">Contact</Link></li>
-              <li><Link href="/privacy" className="hover:text-[#b48b1d]">Privacy</Link></li>
-              <li><Link href="/terms" className="hover:text-[#b48b1d]">Terms</Link></li>
+            <h4 className="font-playfair text-lg font-bold text-[#1E3A7A]">Company</h4>
+            <ul className="mt-4 space-y-2 text-sm text-[#4a6490]">
+              <li><Link href="/about" className="hover:text-[#d4af37]">About</Link></li>
+              <li><Link href="/contact" className="hover:text-[#d4af37]">Contact</Link></li>
+              <li><Link href="/privacy" className="hover:text-[#d4af37]">Privacy</Link></li>
+              <li><Link href="/terms" className="hover:text-[#d4af37]">Terms</Link></li>
             </ul>
           </div>
         </div>
 
-        <div className="mt-10 border-t border-[#d4af37]/25 pt-6 text-sm text-[#575757]">
+        <div className="mt-10 border-t border-[#d4af37]/25 pt-6 text-sm text-[#4a6490]">
           <p>&copy; 2026 TheTutor. All rights reserved.</p>
         </div>
       </div>

@@ -163,21 +163,21 @@ export default function ProfilePage() {
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <Link
               href="/settings/personal-info"
-              className="motion-card rounded-2xl border border-border/80 bg-card/70 p-4"
+              className="card-leather motion-card rounded-2xl p-4"
             >
               <UserCircle2 className="h-5 w-5 text-primary" />
               <p className="mt-2 text-sm font-semibold text-foreground">Personal Info</p>
             </Link>
             <Link
               href="/settings/notifications"
-              className="motion-card rounded-2xl border border-border/80 bg-card/70 p-4"
+              className="card-leather motion-card rounded-2xl p-4"
             >
               <Bell className="h-5 w-5 text-primary" />
               <p className="mt-2 text-sm font-semibold text-foreground">Notifications</p>
             </Link>
             <Link
               href="/settings/security"
-              className="motion-card rounded-2xl border border-border/80 bg-card/70 p-4"
+              className="card-leather motion-card rounded-2xl p-4"
             >
               <Shield className="h-5 w-5 text-primary" />
               <p className="mt-2 text-sm font-semibold text-foreground">Security</p>

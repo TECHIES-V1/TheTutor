@@ -77,7 +77,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
                     </button>
 
                     {attachMenuOpen && (
-                        <div className="absolute bottom-full left-0 mb-2 w-44 overflow-hidden rounded-xl border border-border/80 bg-card shadow-xl">
+                        <div className="absolute bottom-full left-0 mb-2 w-44 overflow-hidden rounded-xl border border-border/80 bg-card">
                             <button
                                 type="button"
                                 disabled

@@ -82,7 +82,7 @@ function ConversationList({
   const groups = groupByPeriod(conversations);
 
   return (
-    <div className={isMobile ? "flex flex-col h-full" : "flex flex-col w-72 flex-shrink-0 border-l border-primary/10 bg-background/50 backdrop-blur-sm"}>
+    <div className={isMobile ? "flex flex-col h-full" : "neo-surface flex flex-col w-72 flex-shrink-0 border-l border-primary/10"}>
       {/* Header */}
       <div className="flex flex-shrink-0 items-center gap-2 border-b border-border/40 p-3">
         <span className="flex-1 text-sm font-medium text-muted-foreground">History</span>
@@ -161,7 +161,7 @@ function ConversationList({
                           Course Created
                         </span>
                       ) : conv.status === "active" ? (
-                        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                        <span className="rounded-full border border-border/50 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
                           In Progress
                         </span>
                       ) : null}
