@@ -27,7 +27,7 @@ const features = [
 
 export default function SignInPage() {
   return (
-    <div className="grid min-h-screen bg-background lg:grid-cols-2">
+    <div className="neu-shell grid min-h-screen lg:grid-cols-2">
       {/* Left panel — desktop only */}
       <div className="relative hidden flex-col overflow-hidden border-r border-border lg:flex">
         <div className="relative z-10 flex items-center gap-3 p-10">

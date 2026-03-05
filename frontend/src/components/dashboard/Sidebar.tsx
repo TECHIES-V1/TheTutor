@@ -89,7 +89,8 @@ export function Sidebar({
   );
 
   const linkBase = cx(
-    "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200",
+    "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm",
+    "border transition-all duration-200",
     isCollapsed
       ? "lg:justify-center lg:px-0"
       : ""
@@ -117,7 +118,7 @@ export function Sidebar({
             type="button"
             onClick={handleLogoClick}
             className={cx(
-              "flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-primary/15 bg-primary/5 transition-all duration-300",
+              "flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-primary/15 bg-primary/5 shadow-neo-card transition-all duration-300",
               isCollapsed
                 ? "h-10 w-10 cursor-pointer lg:h-9 lg:w-9"
                 : "h-9 w-9 cursor-default"
@@ -166,8 +167,8 @@ export function Sidebar({
                 className={cx(
                   linkBase,
                   active
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-primary/5 hover:text-foreground"
+                    ? "bg-primary/10 text-primary border-[rgba(212,175,55,0.22)] shadow-neo-inset"
+                    : "text-muted-foreground border-transparent hover:bg-primary/5 hover:text-foreground hover:border-[rgba(212,175,55,0.12)]"
                 )}
               >
                 {active && (
@@ -191,8 +192,8 @@ export function Sidebar({
               linkBase,
               "font-medium",
               pathname.startsWith("/create-course")
-                ? "bg-primary/15 text-primary"
-                : "text-primary/70 hover:bg-primary/8 hover:text-primary"
+                ? "bg-primary/15 text-primary border-[rgba(212,175,55,0.22)] shadow-neo-inset"
+                : "text-primary/70 border-transparent hover:bg-primary/8 hover:text-primary hover:border-[rgba(212,175,55,0.12)]"
             )}
           >
             {pathname.startsWith("/create-course") && (
@@ -206,7 +207,7 @@ export function Sidebar({
           {isCourseWorkspace && (
             <div
               className={cx(
-                "mt-3 space-y-0.5 rounded-xl border border-primary/20 bg-primary/8 p-2",
+                "mt-3 space-y-0.5 rounded-xl border border-primary/20 bg-primary/8 p-2 shadow-neo-inset",
                 isCollapsed
                   ? "lg:hidden"
                   : ""
@@ -249,7 +250,8 @@ export function Sidebar({
             <button
               onClick={() => setProfileOpen((p) => !p)}
               className={cx(
-                "flex w-full items-center gap-2.5 rounded-xl px-2 py-2 transition-colors hover:bg-primary/5",
+                "flex w-full items-center gap-2.5 rounded-xl px-2 py-2 border border-transparent transition-all duration-200",
+                "hover:bg-primary/5 hover:border-[rgba(212,175,55,0.12)]",
                 isCollapsed
                   ? "lg:justify-center lg:px-0"
                   : ""
@@ -285,7 +287,7 @@ export function Sidebar({
             </button>
 
             {profileOpen && (
-              <div className="absolute bottom-full left-2 right-2 mb-2 rounded-xl border border-primary/15 bg-card p-1 shadow-xl">
+              <div className="absolute bottom-full left-2 right-2 mb-2 rounded-xl border border-primary/15 bg-card p-1 shadow-neo-raised">
                 <Link
                   href="/profile"
                   onClick={() => {
