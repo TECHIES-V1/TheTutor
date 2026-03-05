@@ -28,7 +28,7 @@ const features = [
 
 export function Features() {
   return (
-    <section id="features" className="relative overflow-hidden border-y border-[#d4af37]/25 bg-white py-20 md:py-28">
+    <section id="features" className="relative overflow-hidden border-y border-[rgba(212,175,55,0.22)] bg-[#f0f6ff] py-20 md:py-28">
       <div className="container relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -64,8 +64,8 @@ export function Features() {
                 />
               </div>
               <div className="p-6">
-                <h3 className="font-playfair text-2xl font-bold text-[#111111]">{feature.title}</h3>
-                <p className="mt-3 text-base leading-relaxed text-[#505050]">{feature.description}</p>
+                <h3 className="font-playfair text-2xl font-bold text-foreground">{feature.title}</h3>
+                <p className="mt-3 text-base leading-relaxed text-muted-foreground">{feature.description}</p>
               </div>
             </motion.article>
           ))}

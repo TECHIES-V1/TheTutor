@@ -34,7 +34,7 @@ const phases = [
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="relative overflow-hidden bg-white py-20 md:py-28">
+    <section id="how-it-works" className="relative overflow-hidden bg-gradient-to-b from-[#f5f9ff] to-[#ecf4ff] py-20 md:py-28">
       <div className="container relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -66,10 +66,10 @@ export function HowItWorks() {
                     <div className="landing-gold flex h-12 w-12 items-center justify-center rounded-xl">
                       <Icon className="h-5 w-5" />
                     </div>
-                    <span className="text-3xl font-bold text-[#b48b1d]/70">{phase.step}</span>
+                    <span className="text-3xl font-bold text-[#d4af37]/60">{phase.step}</span>
                   </div>
-                  <h3 className="mt-5 font-playfair text-2xl font-bold text-[#111111]">{phase.title}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-[#505050]">{phase.description}</p>
+                  <h3 className="mt-5 font-playfair text-2xl font-bold text-foreground">{phase.title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{phase.description}</p>
                 </motion.article>
 
                 {index < phases.length - 1 && (

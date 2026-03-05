@@ -50,15 +50,22 @@ void main() {
   }
   d += uTime * 0.5 * uSpeed;
 
-  // Keep the iridescent motion but constrain the palette to white/black/gold.
+  // Palette: warm white → gold → royal blue iridescence.
   float wave = cos(uv.x * (1.7 + d * 0.08) + a * 0.22) * 0.5 + 0.5;
   float grain = sin((uv.x + uv.y) * 5.4 + d * 0.35) * 0.5 + 0.5;
   float intensity = clamp(wave * 0.72 + grain * 0.28, 0.0, 1.0);
   float glow = smoothstep(0.58, 0.92, intensity);
 
-  vec3 base = mix(vec3(0.92, 0.9, 0.85), vec3(1.0), intensity);
-  vec3 gold = vec3(0.83, 0.69, 0.23);
-  vec3 col = mix(base, gold, glow * 0.55) * uColor;
+  // Royal blue wave — offset frequency so it drifts out of phase with gold
+  float blueWave = sin(uv.y * (1.4 + d * 0.06) - uv.x * 0.9 + a * 0.18) * 0.5 + 0.5;
+  float blueGlow = smoothstep(0.52, 0.88, blueWave);
+
+  vec3 base  = mix(vec3(0.92, 0.90, 0.85), vec3(1.0), intensity);
+  vec3 gold  = vec3(0.83, 0.69, 0.23);              // #D4AF37
+  vec3 royal = vec3(0.18, 0.42, 0.85);              // royal blue #2E6BD9
+  vec3 col   = mix(base, gold, glow * 0.55);
+  col        = mix(col, royal, blueGlow * 0.38);    // blue at 38% — visible, not dominant
+  col       *= uColor;
 
   gl_FragColor = vec4(col, 1.0);
 }

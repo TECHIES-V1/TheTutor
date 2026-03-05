@@ -42,7 +42,7 @@ export function Hero() {
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           className="text-center lg:text-left"
         >
-          <div className="landing-inset inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#111111]">
+          <div className="landing-inset inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em]">
             AI Tutor
             <span className="rounded-full bg-[#d4af37]/20 px-2 py-0.5 text-[#8a6a09]">Personalized</span>
           </div>
@@ -59,7 +59,7 @@ export function Hero() {
           </p>
 
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center lg:justify-start">
-            <Button asChild size="lg" className="motion-press landing-gold rounded-full px-8 hover:!opacity-100">
+            <Button asChild size="lg" className="motion-press landing-btn-primary rounded-full px-8">
               <Link href="/auth/signin">
                 Start Learning
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -77,7 +77,7 @@ export function Hero() {
             </Button>
           </div>
 
-          <div className="mt-9 grid grid-cols-3 gap-3 text-sm text-[#525252]">
+          <div className="mt-9 grid grid-cols-3 gap-3 text-sm text-[#1E3A7A]">
             {["Adaptive paths", "Live feedback", "Course certificates"].map((item) => (
               <div key={item} className="landing-inset motion-card flex items-center justify-center gap-2 rounded-xl px-3 py-2 lg:justify-start">
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-[#b48b1d]" />

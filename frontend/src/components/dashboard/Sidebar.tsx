@@ -84,7 +84,8 @@ export function Sidebar({
   );
 
   const linkBase = cx(
-    "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200",
+    "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm",
+    "border transition-all duration-200",
     isCollapsed
       ? "lg:justify-center lg:px-0 lg:group-hover/sidebar:justify-start lg:group-hover/sidebar:px-3 lg:group-focus-within/sidebar:justify-start lg:group-focus-within/sidebar:px-3"
       : ""
@@ -101,7 +102,9 @@ export function Sidebar({
 
       <aside
         className={cx(
-          "group/sidebar neo-surface fixed bottom-0 left-0 top-0 z-50 flex flex-col border-r border-primary/10 transition-[transform,width] duration-300 ease-in-out lg:translate-x-0",
+          "group/sidebar neo-surface fixed bottom-0 left-0 top-0 z-50 flex flex-col",
+          "border-r border-primary/10 shadow-neo-modal",
+          "transition-[transform,width] duration-300 ease-in-out lg:translate-x-0",
           isCollapsed ? "w-72 lg:w-16 lg:hover:w-72 lg:focus-within:w-72" : "w-72",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
@@ -110,7 +113,7 @@ export function Sidebar({
         <div className="flex items-center gap-3 px-3 pt-5 pb-4">
           <div
             className={cx(
-              "flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-primary/15 bg-primary/5 transition-all duration-300",
+              "flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-primary/15 bg-primary/5 shadow-neo-card transition-all duration-300",
               isCollapsed
                 ? "h-10 w-10 lg:group-hover/sidebar:h-9 lg:group-hover/sidebar:w-9 lg:group-focus-within/sidebar:h-9 lg:group-focus-within/sidebar:w-9"
                 : "h-9 w-9"
@@ -164,8 +167,8 @@ export function Sidebar({
                 className={cx(
                   linkBase,
                   active
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-primary/5 hover:text-foreground"
+                    ? "bg-primary/10 text-primary border-[rgba(212,175,55,0.22)] shadow-neo-inset"
+                    : "text-muted-foreground border-transparent hover:bg-primary/5 hover:text-foreground hover:border-[rgba(212,175,55,0.12)]"
                 )}
               >
                 {active && (
@@ -189,8 +192,8 @@ export function Sidebar({
               linkBase,
               "font-medium",
               pathname.startsWith("/create-course")
-                ? "bg-primary/15 text-primary"
-                : "text-primary/70 hover:bg-primary/8 hover:text-primary"
+                ? "bg-primary/15 text-primary border-[rgba(212,175,55,0.22)] shadow-neo-inset"
+                : "text-primary/70 border-transparent hover:bg-primary/8 hover:text-primary hover:border-[rgba(212,175,55,0.12)]"
             )}
           >
             {pathname.startsWith("/create-course") && (
@@ -204,7 +207,7 @@ export function Sidebar({
           {isCourseWorkspace && (
             <div
               className={cx(
-                "mt-3 space-y-0.5 rounded-xl border border-primary/20 bg-primary/8 p-2",
+                "mt-3 space-y-0.5 rounded-xl border border-primary/20 bg-primary/8 p-2 shadow-neo-inset",
                 isCollapsed
                   ? "lg:hidden lg:group-hover/sidebar:block lg:group-focus-within/sidebar:block"
                   : ""
@@ -247,7 +250,8 @@ export function Sidebar({
             <button
               onClick={() => setProfileOpen((p) => !p)}
               className={cx(
-                "flex w-full items-center gap-2.5 rounded-xl px-2 py-2 transition-colors hover:bg-primary/5",
+                "flex w-full items-center gap-2.5 rounded-xl px-2 py-2 border border-transparent transition-all duration-200",
+                "hover:bg-primary/5 hover:border-[rgba(212,175,55,0.12)]",
                 isCollapsed
                   ? "lg:justify-center lg:px-0 lg:group-hover/sidebar:justify-start lg:group-hover/sidebar:px-2 lg:group-focus-within/sidebar:justify-start lg:group-focus-within/sidebar:px-2"
                   : ""
@@ -283,7 +287,7 @@ export function Sidebar({
             </button>
 
             {profileOpen && (
-              <div className="absolute bottom-full left-2 right-2 mb-2 rounded-xl border border-primary/15 bg-card p-1 shadow-xl">
+              <div className="absolute bottom-full left-2 right-2 mb-2 rounded-xl border border-primary/15 bg-card p-1 shadow-neo-raised">
                 <Link
                   href="/profile"
                   onClick={() => {
