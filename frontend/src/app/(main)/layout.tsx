@@ -55,7 +55,7 @@ export default function MainLayout({
                 <button
                     type="button"
                     onClick={() => setIsMobileSidebarOpen(true)}
-                    className="p-2 text-muted-foreground hover:text-primary transition-colors"
+                    className=" text-muted-foreground hover:text-primary transition-colors"
                     aria-label="Open sidebar"
                 >
                     <Menu className="h-6 w-6" />

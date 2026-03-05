@@ -47,7 +47,7 @@ export function Hero() {
             <span className="rounded-full bg-[#d4af37]/20 px-2 py-0.5 text-[#8a6a09]">Personalized</span>
           </div>
 
-          <h1 className="mt-6 text-balance font-playfair text-4xl font-bold leading-tight text-[#111111] sm:text-5xl md:text-6xl lg:text-[4.25rem]">
+          <h1 className="mt-6 text-balance font-playfair text-3xl font-bold leading-tight text-[#111111] md:text-6xl lg:text-[3.25rem]">
             Learn Smarter With
             <span className="block text-[#111111]">
               TheTutor
@@ -55,7 +55,7 @@ export function Hero() {
           </h1>
 
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-[#3f3f3f] md:text-xl lg:mx-0">
-            Build a learning plan that fits your pace, your goals, and your schedule. Get tutor guidance, structured modules, and instant feedback in one clean, calm learning workspace.
+            Build a learning plan that fits your pace, your goals, and your schedule. Learn with tutor guidance, structured modules, and instant feedback in one clean, calm learning workspace.
           </p>
 
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center lg:justify-start">

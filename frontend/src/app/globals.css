@@ -96,7 +96,7 @@ h6 {
   font-family: var(--font-comfortaa), sans-serif;
 }
 
-h1 {
+/* h1 {
   @apply text-5xl md:text-6xl;
 }
 
@@ -110,7 +110,7 @@ h3 {
 
 h4 {
   @apply text-2xl md:text-3xl;
-}
+} */
 
 button:not(:disabled),
 [role="button"]:not([aria-disabled="true"]),

@@ -37,9 +37,9 @@ export default function DashboardCoursesPage() {
   }
 
   return (
-    <div className="relative px-4 py-6 sm:px-6 sm:py-8">
+    <div className="relative py-6 sm:py-8">
 
-      <div className="relative z-10 mx-auto w-full max-w-7xl space-y-6">
+      <div className="relative z-10 mx-auto w-full max-w-7xl space-y-6 px-4 sm:px-6">
         <section className="neo-surface rounded-3xl border-0 p-4 sm:border sm:p-6">
           <div className="flex flex-col gap-4">
             <div>

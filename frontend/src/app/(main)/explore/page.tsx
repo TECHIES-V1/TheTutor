@@ -63,9 +63,9 @@ export default function ExplorePage() {
   }, [courses, searchTerm]);
 
   return (
-    <div className="relative min-h-full px-4 py-6 sm:px-6 sm:py-8">
+    <div className="relative min-h-full py-6 sm:py-8">
 
-      <div className="relative z-10 w-full max-w-5xl">
+      <div className="relative z-10 w-full max-w-5xl px-4 sm:px-6">
         <div className="mb-8 sm:mb-10">
           <h3 className="font-playfair text-2xl font-bold text-foreground sm:text-3xl">Explore Courses</h3>
           <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground sm:text-base">

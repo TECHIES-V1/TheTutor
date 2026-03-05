@@ -5,7 +5,7 @@ import Image from "next/image";
 
 const features = [
   {
-    title: "Adaptive Tutor Guidance",
+    title: "Adaptive Tutor Guide",
     description: "The tutor responds based on your level and adjusts the pace as you progress.",
     image: "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=900&q=80",
   },
@@ -16,12 +16,12 @@ const features = [
   },
   {
     title: "Feedback In Seconds",
-    description: "Ask questions, practice, and get immediate explanations without waiting for office hours.",
+    description: "Ask questions, practice, and get immediate explanations without waiting for a long time.",
     image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80",
   },
   {
     title: "Certificate Ready Learning",
-    description: "Build confidence for exams and portfolio outcomes with trackable completion and proof.",
+    description: "Build confidence for exams and portfolio outcomes with, trackable completion and proof.",
     image: "https://images.unsplash.com/photo-1522881193457-37ae97c905bf?auto=format&fit=crop&w=900&q=80",
   },
 ];
@@ -38,8 +38,8 @@ export function Features() {
           className="mx-auto mb-14 max-w-3xl text-center"
         >
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#b48b1d]">What You Get</p>
-          <h2 className="mt-3 text-4xl font-bold text-[#111111] md:text-5xl">A Tutor Experience Built Around You</h2>
-          <p className="mt-4 text-base text-[#505050] md:text-lg">
+          <h2 className="mt-3 text-[35px] font-bold text-[#111111] md:text-5xl text-balance leading-tight">A Tutor Experience Built For & Around You</h2>
+          <p className="mt-4 text-base text-[#505050] md:text-lg text-[14px]">
             TheTutor combines guided conversation, clear structure, and fast response time so learning feels focused, not overwhelming.
           </p>
         </motion.div>
@@ -64,8 +64,8 @@ export function Features() {
                 />
               </div>
               <div className="p-6">
-                <h3 className="font-playfair text-2xl font-bold text-[#111111]">{feature.title}</h3>
-                <p className="mt-3 text-base leading-relaxed text-[#505050]">{feature.description}</p>
+                <h3 className="font-playfair md:text-2xl font-bold text-[#111111] text-[20px]">{feature.title}</h3>
+                <p className="mt-3 text-base leading-relaxed text-[#505050] md:text-[16px] text-[14px]">{feature.description}</p>
               </div>
             </motion.article>
           ))}

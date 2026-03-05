@@ -62,7 +62,7 @@ export function Security() {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="max-w-3xl">
+        <form onSubmit={handleSubmit}>
             <div className="neo-surface rounded-2xl p-6">
                 <h4 className="font-semibold text-foreground">Security</h4>
                 <p className="text-sm text-muted-foreground mt-1">

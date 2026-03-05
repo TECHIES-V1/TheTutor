@@ -1,4 +1,5 @@
-import { Sparkles, Target, Zap, Award, Info } from "lucide-react";
+import { Sparkles, Target, Zap, Award, Info, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 import { BACKEND_URL } from "@/lib/backendUrl";
 
 const features = [
@@ -31,18 +32,30 @@ export default function SignInPage() {
       <div className="relative hidden flex-col overflow-hidden border-r border-border lg:flex">
         <div className="relative z-10 flex items-center gap-3 p-10">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="TheTutor" className="h-10 w-10 rounded-lg object-contain" />
-          <span className="font-playfair text-xl font-bold text-primary">TheTutor</span>
+          <img
+            src="/logo.png"
+            alt="TheTutor"
+            className="h-10 w-10 rounded-xl object-contain"
+          />
+          <div>
+            <p className="font-playfair text-xl font-bold text-[#111111]">
+              TheTutor
+            </p>
+            <p className="text-[11px] uppercase tracking-[0.14em] text-[#595959]">
+              AI-Powered Learning Coach
+            </p>
+          </div>
         </div>
 
         <div className="relative z-10 flex flex-1 flex-col px-10 pb-10">
           <div className="mb-10">
-            <h1 className="mb-4 font-playfair text-4xl font-bold leading-tight lg:text-5xl">
-              Transform How{" "}
+            <h1 className="mb-4 font-playfair text-4xl font-bold leading-tight lg:text-[3.25rem]">
+              Transform How{" "} <br className="md:block hidden"/>
               <span className="text-primary">You Learn</span>
             </h1>
             <p className="max-w-sm text-lg leading-relaxed text-muted-foreground">
-              AI-powered education that adapts to your pace, learning style, and goals in one premium tutoring system.
+              AI-powered education that adapts to your pace, learning style, and
+              goals in one premium tutoring system.
             </p>
           </div>
 
@@ -53,8 +66,12 @@ export default function SignInPage() {
                   <Icon className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-foreground">{title}</p>
-                  <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
+                  <p className="text-sm font-semibold text-foreground">
+                    {title}
+                  </p>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    {description}
+                  </p>
                 </div>
               </div>
             ))}
@@ -64,6 +81,14 @@ export default function SignInPage() {
 
       {/* Right panel — form */}
       <div className="relative flex min-h-screen flex-col items-center justify-center px-6 py-12 sm:px-8 lg:min-h-0 lg:p-16">
+        <Link
+          href="/"
+          className="absolute top-6 left-6 flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:underline"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Home
+        </Link>
+        
         <div className="relative w-full max-w-sm">
 
           {/* Mobile brand header */}
@@ -99,7 +124,9 @@ export default function SignInPage() {
           <div className="neo-inset mb-6 flex items-start gap-2.5 rounded-lg border border-primary/25 p-3">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
             <p className="text-xs leading-relaxed text-muted-foreground">
-              <span className="font-medium text-foreground">New here?</span> Your account is created automatically when you sign in with Google.
+              <span className="font-medium text-foreground">New here?</span>{" "}
+              Your account is created automatically when you sign in with
+              Google.
             </p>
           </div>
 

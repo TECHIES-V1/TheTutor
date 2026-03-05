@@ -6,7 +6,6 @@ import { Menu, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 
-
 const navLinks = [
   { label: "Features", href: "/#features" },
   { label: "How It Works", href: "/#how-it-works" },
@@ -33,18 +32,27 @@ export function NavBar() {
   return (
     <>
       <nav
-        className={`fixed left-0 right-0 top-0 z-50 transition-all duration-300 ${isScrolled
+        className={`fixed left-0 right-0 top-0 z-50 transition-all duration-300 ${
+          isScrolled
             ? "border-b border-[#d4af37]/35 bg-white/95 backdrop-blur-md"
             : "bg-transparent"
-          }`}
+        }`}
       >
         <div className="container flex items-center justify-between py-4">
           <Link href="/" className="flex items-center gap-2.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="TheTutor" className="h-10 w-10 rounded-xl object-contain" />
+            <img
+              src="/logo.png"
+              alt="TheTutor"
+              className="h-10 w-10 rounded-xl object-contain"
+            />
             <div>
-              <p className="font-playfair text-xl font-bold text-[#111111]">TheTutor</p>
-              <p className="text-[11px] uppercase tracking-[0.14em] text-[#595959]">AI Learning Coach</p>
+              <p className="font-playfair text-xl font-bold text-[#111111]">
+                TheTutor
+              </p>
+              <p className="text-[11px] uppercase tracking-[0.14em] text-[#595959]">
+                AI-Powered Learning Coach
+              </p>
             </div>
           </Link>
 
@@ -97,20 +105,32 @@ export function NavBar() {
               transition={{ type: "spring", bounce: 0, duration: 0.4 }}
               className="landing-surface fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-[85vw] flex-col border-l border-[#d4af37]/35 p-6 sm:max-w-sm lg:hidden"
             >
-              <div className="mb-10 flex items-center justify-between">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsSidebarOpen(false)}
+                className="absolute top-2 right-4 text-[#595959] hover:bg-[#d4af37]/15 hover:text-[#8a6a09]"
+              >
+                <X className="h-8 w-6" />
+              </Button>
+              
+              <div className="mb-10 mt-5 flex items-center gap-2.5">
                 <div className="flex items-center gap-2.5">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/logo.png" alt="TheTutor" className="h-9 w-9 rounded-lg object-contain" />
-                  <span className="font-playfair text-lg font-bold text-[#111111]">TheTutor</span>
+                  <img
+                    src="/logo.png"
+                    alt="TheTutor"
+                    className="h-10 w-10 rounded-xl object-contain"
+                  />
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsSidebarOpen(false)}
-                  className="text-[#595959] hover:bg-[#d4af37]/15 hover:text-[#8a6a09]"
-                >
-                  <X className="h-6 w-6" />
-                </Button>
+                <div>
+                  <p className="font-playfair text-xl font-bold text-[#111111]">
+                    TheTutor
+                  </p>
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-[#595959]">
+                    AI-Powered Learning Coach
+                  </p>
+                </div>
               </div>
 
               <div className="flex flex-col gap-5">
@@ -131,7 +151,10 @@ export function NavBar() {
                 size="lg"
                 className="landing-gold mt-8 rounded-full hover:!opacity-100"
               >
-                <Link href="/auth/signin" onClick={() => setIsSidebarOpen(false)}>
+                <Link
+                  href="/auth/signin"
+                  onClick={() => setIsSidebarOpen(false)}
+                >
                   Start Learning
                 </Link>
               </Button>

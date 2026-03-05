@@ -44,9 +44,9 @@ export function HowItWorks() {
           className="mx-auto mb-14 max-w-3xl text-center"
         >
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#b48b1d]">How It Works</p>
-          <h2 className="mt-3 text-4xl font-bold text-[#111111] md:text-5xl">Four Steps, Clear Results</h2>
-          <p className="mt-4 text-base text-[#505050] md:text-lg">
-            The workflow is simple on purpose: less confusion, better consistency, and faster momentum.
+          <h2 className="mt-3 text-[35px] font-bold text-[#111111] md:text-5xl leading-tight">Four Steps, Clear Results</h2>
+          <p className="mt-4 text-base text-[#505050] md:text-[16px] text-[14px]">
+            The workflow is simple on purpose: <b>less confusion, better consistency, and faster momentum.</b>
           </p>
         </motion.div>
 
