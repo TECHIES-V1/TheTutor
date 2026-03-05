@@ -57,7 +57,7 @@ export function PersonalInfo() {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="max-w-5xl">
+        <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_1.2fr] pb-10">
                 {/* Profile Picture Section */}
                 <div className="flex flex-col gap-4">

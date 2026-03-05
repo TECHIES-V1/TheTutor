@@ -61,9 +61,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-6 sm:py-8">
+    <div className="py-6 sm:py-8">
 
-      <div className="relative z-10 mx-auto w-full max-w-7xl space-y-7">
+      <div className="relative z-10 mx-auto w-full max-w-7xl space-y-7 px-4 sm:px-6">
         <section className="neo-surface rounded-3xl p-4 sm:p-6">
           <h3 className="text-xl sm:text-2xl font-bold text-foreground">
             {getTimeGreeting(overview?.greetingName ?? user?.name)}

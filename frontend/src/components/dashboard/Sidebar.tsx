@@ -51,6 +51,7 @@ export function Sidebar({
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const isCourseWorkspace =
     pathname.startsWith("/learn/") || /^\/explore\/[^/]+$/.test(pathname);
@@ -299,10 +300,7 @@ export function Sidebar({
                   Profile
                 </Link>
                 <button
-                  onClick={() => {
-                    logout();
-                    onClose?.();
-                  }}
+                  onClick={() => setShowLogoutConfirm(true)}
                   className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
                   <LogOut className="h-4 w-4" />
@@ -313,6 +311,36 @@ export function Sidebar({
           </div>
         )}
       </aside>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="neo-surface mx-4 w-full max-w-sm rounded-2xl p-6">
+            <h3 className="text-lg font-semibold text-foreground">Sign Out</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Are you sure you want to sign out?
+            </p>
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  logout();
+                  setShowLogoutConfirm(false);
+                  onClose?.();
+                }}
+                className="flex-1 rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground transition-colors hover:bg-destructive/90"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -45,20 +45,24 @@ export default function ExploreCourseDetailPage() {
 
   if (loading) {
     return (
-      <div className="px-4 py-6 sm:px-6 sm:py-8">
-        <PageLoader
-          title="Loading course preview..."
-          subtitle="Preparing curriculum, access, and enrollment details."
-        />
+      <div className="py-6 sm:py-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <PageLoader
+            title="Loading course preview..."
+            subtitle="Preparing curriculum, access, and enrollment details."
+          />
+        </div>
       </div>
     );
   }
 
   if (!data) {
     return (
-      <div className="px-4 py-6 sm:px-6 sm:py-8">
-        <div className="neo-surface rounded-2xl p-6 text-sm text-muted-foreground">
-          {error ?? "Course not found."}
+      <div className="py-6 sm:py-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="neo-surface rounded-2xl p-6 text-sm text-muted-foreground">
+            {error ?? "Course not found."}
+          </div>
         </div>
       </div>
     );
@@ -70,9 +74,9 @@ export default function ExploreCourseDetailPage() {
   const isFailed = generationStatus === "failed";
 
   return (
-    <div className="relative px-4 py-6 sm:px-6 sm:py-8">
+    <div className="relative py-6 sm:py-8">
 
-      <div className="relative z-10 mx-auto w-full max-w-7xl space-y-4">
+      <div className="relative z-10 mx-auto w-full max-w-7xl space-y-4 px-4 sm:px-6">
 
         {isGenerating && (
           <div className="flex items-center gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">

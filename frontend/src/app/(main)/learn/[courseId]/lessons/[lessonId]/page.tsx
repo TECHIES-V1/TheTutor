@@ -67,23 +67,27 @@ export default function LessonPage() {
 
   if (loading) {
     return (
-      <div className="px-6 py-8">
-        <PageLoader title="Loading lesson..." subtitle="Preparing lesson content, videos, and citations." />
+      <div className="py-6 sm:py-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <PageLoader title="Loading lesson..." subtitle="Preparing lesson content, videos, and citations." />
+        </div>
       </div>
     );
   }
 
   if (!data) {
     return (
-      <div className="px-6 py-8">
-        <div className="neo-surface rounded-2xl p-6 text-sm text-muted-foreground">{error ?? "Lesson not found."}</div>
+      <div className="py-6 sm:py-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="neo-surface rounded-2xl p-6 text-sm text-muted-foreground">{error ?? "Lesson not found."}</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="relative px-4 py-6 sm:px-6 sm:py-8">
-      <div className="relative z-10 mx-auto w-full max-w-7xl">
+    <div className="relative py-6 sm:py-8">
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6">
         <div className={`grid w-full gap-6 ${isCoursePanelOpen ? "lg:grid-cols-[1fr_21.5rem]" : "lg:grid-cols-1"}`}>
 
           {/* Main content */}

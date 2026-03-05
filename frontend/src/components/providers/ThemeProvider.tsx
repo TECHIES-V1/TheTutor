@@ -41,6 +41,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setThemeState(nextTheme);
     if (typeof window !== "undefined") {
       window.localStorage.setItem(STORAGE_KEY, nextTheme);
+      document.documentElement.dataset.theme = nextTheme;
     }
   };
 
