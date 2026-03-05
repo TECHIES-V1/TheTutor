@@ -12,6 +12,12 @@ export function Footer() {
           <img src="/logo.png" alt="TheTutor" className="h-8 w-8 rounded-lg object-contain" />
           <p className="font-playfair text-lg font-bold text-[#111111]">TheTutor</p>
         </div>
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-[#575757]">
+          <Link href="/about" className="hover:text-[#b48b1d]">About</Link>
+          <Link href="/contact" className="hover:text-[#b48b1d]">Contact</Link>
+          <Link href="/privacy" className="hover:text-[#b48b1d]">Privacy</Link>
+          <Link href="/terms" className="hover:text-[#b48b1d]">Terms</Link>
+        </div>
         <p className="text-xs text-[#575757]">&copy; 2026 TheTutor. All rights reserved.</p>
       </div>
 
@@ -35,8 +41,8 @@ export function Footer() {
           <div>
             <h4 className="font-playfair text-lg font-bold text-[#111111]">Product</h4>
             <ul className="mt-4 space-y-2 text-sm text-[#575757]">
-              <li><a href="#features" className="hover:text-[#b48b1d]">Features</a></li>
-              <li><a href="#how-it-works" className="hover:text-[#b48b1d]">How It Works</a></li>
+              <li><Link href="/#features" className="hover:text-[#b48b1d]">Features</Link></li>
+              <li><Link href="/#how-it-works" className="hover:text-[#b48b1d]">How It Works</Link></li>
               <li><a href="/auth/signin" className="hover:text-[#b48b1d]">Get Started</a></li>
             </ul>
           </div>

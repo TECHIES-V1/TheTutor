@@ -94,7 +94,7 @@ export default function ModuleQuizPage() {
 
   if (loading) {
     return (
-      <div className="px-6 py-8">
+      <div className="px-4 py-6 sm:px-6 sm:py-8">
         <div className="neo-surface rounded-2xl p-6 text-sm text-muted-foreground">Loading module quiz...</div>
       </div>
     );
@@ -102,7 +102,7 @@ export default function ModuleQuizPage() {
 
   if (!quizData) {
     return (
-      <div className="px-6 py-8">
+      <div className="px-4 py-6 sm:px-6 sm:py-8">
         <div className="neo-surface rounded-2xl p-6 text-sm text-muted-foreground">
           {loadError ?? "Module quiz not available."}
         </div>
@@ -111,7 +111,7 @@ export default function ModuleQuizPage() {
   }
 
   return (
-    <div className="relative px-6 py-8">
+    <div className="relative px-4 py-6 sm:px-6 sm:py-8">
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_15%_8%,rgba(212,175,55,0.08),transparent_28%),radial-gradient(circle_at_84%_16%,rgba(212,175,55,0.05),transparent_24%)]" />
 
       <div className="relative z-10 mx-auto w-full max-w-7xl space-y-4">
