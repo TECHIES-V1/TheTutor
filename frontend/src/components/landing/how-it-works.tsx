@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Image from "next/image";
 import { BookOpen, Brain, CheckCircle2, Award, ChevronDown, ChevronRight } from "lucide-react";
 import React from "react";
 
@@ -43,9 +42,9 @@ export function HowItWorks() {
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           className="mx-auto mb-14 max-w-3xl text-center"
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#b48b1d]">How It Works</p>
-          <h2 className="mt-3 text-4xl font-bold text-[#111111] md:text-5xl">Four Steps, Clear Results</h2>
-          <p className="mt-4 text-base text-[#505050] md:text-lg">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#d4af37]">How It Works</p>
+          <h2 className="mt-3 text-4xl font-bold text-[#1E3A7A] md:text-5xl">Four Steps, Clear Results</h2>
+          <p className="mt-4 text-base text-[#4a6490] md:text-lg">
             The workflow is simple on purpose: less confusion, better consistency, and faster momentum.
           </p>
         </motion.div>
@@ -60,7 +59,7 @@ export function HowItWorks() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-70px" }}
                   transition={{ duration: 0.45, delay: index * 0.08 }}
-                  className="landing-surface rounded-3xl p-6 xl:flex-1"
+                  className="neo-surface rounded-3xl p-6 xl:flex-1"
                 >
                   <div className="flex items-center justify-between">
                     <div className="landing-gold flex h-12 w-12 items-center justify-center rounded-xl">
@@ -88,18 +87,8 @@ export function HowItWorks() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.5, delay: 0.15 }}
-          className="landing-surface mt-12 overflow-hidden rounded-3xl"
-        >
-          <div className="relative h-56 w-full sm:h-72">
-            <Image
-              src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1400&q=80"
-              alt="Adult learners collaborating in a study session"
-              fill
-              sizes="100vw"
-              className="object-cover"
-            />
-          </div>
-        </motion.div>
+          className="neo-surface mt-12 h-56 rounded-3xl ring-1 ring-[#d4af37]/20 sm:h-72"
+        />
       </div>
     </section>
   );

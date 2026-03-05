@@ -7,7 +7,7 @@ import { Footer } from "@/components/landing/footer";
 
 export default function Home() {
   return (
-    <div className="neu-shell min-h-screen text-[#101010] selection:bg-[#d4af37]/30 selection:text-[#101010]">
+    <div className="neu-shell min-h-screen text-[#1E3A7A] selection:bg-[#d4af37]/30 selection:text-[#1E3A7A]">
       <NavBar />
       <main>
         <Hero />
