@@ -160,7 +160,7 @@ export default function ProfilePage() {
           <p className="mt-1 text-sm text-muted-foreground">
             Manage profile details, notifications, and security preferences.
           </p>
-          <div className="mt-4 grid gap-3 grid-cols-2 sm:grid-cols-3">
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <Link
               href="/settings/personal-info"
               className="motion-card rounded-2xl border border-border/80 bg-card/70 p-4"

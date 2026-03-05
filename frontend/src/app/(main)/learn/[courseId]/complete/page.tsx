@@ -77,7 +77,7 @@ export default function CourseCompletePage() {
   };
 
   return (
-    <div className="relative px-6 py-8">
+    <div className="relative px-4 py-6 sm:px-6 sm:py-8">
 
       <div className="relative z-10 mx-auto w-full max-w-7xl space-y-4">
         <div className={`grid w-full gap-6 ${isCoursePanelOpen ? "lg:grid-cols-[1fr_21.5rem]" : "lg:grid-cols-1"}`}>
