@@ -42,8 +42,7 @@ export function Footer() {
               </div>
             </div>
             <p className="mt-5 max-w-md text-sm leading-relaxed text-[#575757]">
-              Personalized tutoring for learners who want clear structure,
-              practical feedback, and steady progress.
+              Personalized tutoring for learners who want clear structure, practical feedback, and consistent progress.
             </p>
           </div>
 

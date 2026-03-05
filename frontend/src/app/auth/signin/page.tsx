@@ -53,9 +53,8 @@ export default function SignInPage() {
               Transform How{" "} <br className="md:block hidden"/>
               <span className="text-primary">You Learn</span>
             </h1>
-            <p className="max-w-sm text-lg leading-relaxed text-muted-foreground">
-              AI-powered education that adapts to your pace, learning style, and
-              goals in one premium tutoring system.
+            <p className=" text-lg leading-relaxed text-muted-foreground">
+              Personalized AI learning that adapts to your pace, style, and goals in one premium platform.
             </p>
           </div>
 
