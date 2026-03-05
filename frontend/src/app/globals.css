@@ -10,17 +10,17 @@
    and panel surfaces are royal blue leather.
    ───────────────────────────────────────────── */
 :root {
-  --primary: #9a7519;
-  --primary-foreground: #fff7e0;
-  --secondary: #2447A3;           /* royal blue as secondary accent */
+  --primary: #1E3A7A;             /* royal blue — buttons and text in light mode */
+  --primary-foreground: #F6F1DF;  /* cream text on blue buttons */
+  --secondary: #2447A3;           /* brighter royal blue accent */
   --secondary-foreground: #f6f1df;
-  --background: #fbfaf6;          /* warm cream page bg — unchanged */
-  --foreground: #111111;
-  --card: #1E3A7A;                /* royal blue leather card surface */
-  --card-foreground: #F6F1DF;     /* cream text on royal blue (9:1 ratio) */
-  --popover: #1E3A7A;
-  --popover-foreground: #F6F1DF;
-  --muted: #2447A3;               /* brighter royal blue muted bg */
+  --background: #fbfaf6;          /* warm cream page bg */
+  --foreground: #1E3A7A;          /* royal blue body text on cream — 9.2:1 contrast */
+  --card: #f5f9ff;                /* pale blue — Tailwind bg-card/* surfaces (chat, dashboard) */
+  --card-foreground: #1E3A7A;     /* royal blue text on pale blue */
+  --popover: #f5f9ff;
+  --popover-foreground: #1E3A7A;
+  --muted: #e8f0fe;               /* very light blue-grey — soft muted bg for light mode */
   --muted-foreground: #4a6490;    /* dark navy-blue — readable on cream page bg */
   --accent: #d4af37;
   --accent-foreground: #111111;
@@ -152,14 +152,15 @@
    inside blue surfaces so all Tailwind text-*
    classes inherit cream automatically.
    ───────────────────────────────────────────── */
-/* Light mode: royal blue card surfaces need cream text.
-   neo-inset and landing-inset are now light (#eaf2ff) — excluded here. */
-:root .card-leather,
-:root .neo-surface,
-:root .landing-surface,
-:root .skeuo-outline {
+/* Light mode: royal blue surfaces (cards, landing) need cream text.
+   neo-surface is now glassy light panel — dark text from --foreground.
+   neo-inset and landing-inset are light (#eaf2ff) — excluded here. */
+/* landing-surface is royal blue (#1E3A7A hardcoded) — needs cream text */
+:root .landing-surface {
   --foreground: #F6F1DF;
   --muted-foreground: #D6C49A;
+  --primary: #D4AF37;
+  --primary-foreground: #17140c;
   --border: rgba(212, 175, 55, 0.22);
   color: #F6F1DF;
 }
@@ -239,11 +240,23 @@ input[type="radio"]:not(:disabled) {
    SURFACE UTILITIES (neumorphic)
    ───────────────────────────────────────────── */
 
-/* Convex surface — cards, panels (info comes OUT) */
+/* Convex surface — sidebar and panels.
+   Light mode: glassy hard panel (GoHire style) — semi-transparent, backdrop blur, drop shadow.
+   Dark mode: leather navy with neumorphic depth. */
 .neo-surface {
+  background: rgba(245, 249, 255, 0.94);
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  box-shadow: 0 8px 32px rgba(27, 45, 79, 0.14);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+[data-theme="dark"] .neo-surface {
   background: var(--card);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-card);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 /* Concave surface — inputs, inset containers (info goes IN) */
@@ -257,7 +270,7 @@ input[type="radio"]:not(:disabled) {
 .card-leather {
   position: relative;
   overflow: hidden;
-  background: var(--card);
+  background: var(--card);  /* pale blue in light mode (#f5f9ff), leather navy in dark (#243550) */
   border: 1px solid rgba(212, 175, 55, 0.22);
   border-radius: 20px;
   box-shadow: var(--shadow-card);
@@ -313,9 +326,9 @@ input[type="radio"]:not(:disabled) {
    BUTTON STYLES
    ───────────────────────────────────────────── */
 
-/* Primary CTA — dark gradient + gold border + neumorphic depth + spring physics */
+/* Primary CTA — blue gradient + gold border + neumorphic depth + spring physics */
 .skeuo-gold {
-  background: linear-gradient(145deg, #0f0f0f, #1a1a1a);
+  background: linear-gradient(145deg, #1E3A7A, #162F6A);
   border: 1px solid rgba(212, 175, 55, 0.9);
   color: #fff9e6;
   box-shadow: var(--shadow-card);
@@ -343,7 +356,7 @@ input[type="radio"]:not(:disabled) {
 }
 
 html[data-theme="dark"] .skeuo-gold {
-  background: linear-gradient(145deg, #0f0f0f, #1a1a1a);
+  background: linear-gradient(145deg, #1E3A7A, #162F6A);
   border: 1px solid rgba(212, 175, 55, 0.9);
   color: #fff9e6;
 }

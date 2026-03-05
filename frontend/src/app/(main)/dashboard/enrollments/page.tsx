@@ -59,7 +59,7 @@ export default function DashboardEnrollmentsPage() {
             ))}
           </div>
         ) : (
-          <div className="neo-surface rounded-2xl p-4 sm:p-6 text-sm text-muted-foreground">
+          <div className="card-leather rounded-2xl p-4 sm:p-6 text-sm">
             No enrollments yet. Explore published courses and enroll for free.
           </div>
         )}
