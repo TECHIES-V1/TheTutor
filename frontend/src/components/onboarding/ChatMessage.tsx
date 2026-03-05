@@ -1,12 +1,19 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { AlertTriangle, ArrowRight, RotateCcw } from "lucide-react";
 import { ChatInput } from "./ChatInput";
-import { tutorResponses } from "@/utils/dummyTutorResponses";
 import { MessageField } from "./MessageField";
-import { Message } from "@/types";
+import { Message, RelatedCoursePreview } from "@/types";
 import { api } from "@/lib/api";
+import { BACKEND_URL } from "@/lib/backendUrl";
+
+interface ChatMessageProps {
+  initialConversationId?: string | null;
+  onScrollDirectionChange?: (visible: boolean) => void;
+}
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -15,54 +22,735 @@ function getGreeting() {
   return "Good evening.";
 }
 
-export function ChatMessage() {
+type LiveCurriculumModule = {
+  index: number;
+  title: string;
+  lessonCount: number;
+  completedLessons: number;
+  status: "pending" | "building" | "done";
+};
+
+type ConversationPhase =
+  | "onboarding"
+  | "resource_retrieval"
+  | "course_generation"
+  | "completed";
+
+export function ChatMessage({ initialConversationId, onScrollDirectionChange }: ChatMessageProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
-  const tutorResponseIndex = useRef(0);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversationPhase, setConversationPhase] = useState<ConversationPhase>("onboarding");
+  const [requiresConfirmation, setRequiresConfirmation] = useState(false);
+  const [isFinalConfirmation, setIsFinalConfirmation] = useState(false);
+  const [suggestedSubject, setSuggestedSubject] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStatus, setGenerationStatus] = useState("Preparing your course...");
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isReadOnly, setIsReadOnly] = useState(false);
+  const [createdCourseId, setCreatedCourseId] = useState<string | null>(null);
+  const [liveTitle, setLiveTitle] = useState<string | null>(null);
+  const [curriculumModules, setCurriculumModules] = useState<LiveCurriculumModule[]>([]);
+  const [awaitingCourseGenerationDecision, setAwaitingCourseGenerationDecision] = useState(false);
+  const jobIdRef = useRef<string | null>(null);
+  const jobStreamRef = useRef<EventSource | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const lastScrollTop = useRef(0);
   const router = useRouter();
 
-  // Auto-scroll to bottom on new messages
+  const handleScroll = useCallback(() => {
+    if (!scrollRef.current || !onScrollDirectionChange) return;
+    const st = scrollRef.current.scrollTop;
+    if (Math.abs(st - lastScrollTop.current) < 5) return;
+    onScrollDirectionChange(st < lastScrollTop.current);
+    lastScrollTop.current = st;
+  }, [onScrollDirectionChange]);
+
+  // Clean up SSE on unmount
+  useEffect(() => {
+    return () => {
+      if (jobStreamRef.current) {
+        jobStreamRef.current.close();
+        jobStreamRef.current = null;
+      }
+    };
+  }, []);
+
+  // Load a specific conversation when the prop changes
+  useEffect(() => {
+    if (!initialConversationId) return;
+
+    async function loadConversation() {
+      try {
+        const res = await api.get(`/chat/conversation/${initialConversationId}`);
+        if (!res.ok) return;
+        const data = await res.json() as {
+          conversation: {
+            id: string;
+            status: string;
+            phase: string;
+            messages: Array<{
+              id: string;
+              role: string;
+              content: string;
+              metadata?: { relatedCourses?: RelatedCoursePreview[] };
+            }>;
+            confirmationAttempts: number;
+            courseId?: string;
+          };
+        };
+        const conv = data.conversation;
+        setConversationId(conv.id);
+        setConversationPhase(conv.phase as ConversationPhase);
+
+        const mappedMessages = conv.messages.map((m) => ({
+          id: m.id,
+          role: (m.role === "assistant" ? "tutor" : "user") as "user" | "tutor",
+          content: m.content,
+          relatedCourses: Array.isArray(m.metadata?.relatedCourses)
+            ? m.metadata!.relatedCourses
+            : [],
+        }));
+        setMessages(mappedMessages);
+
+        const hasPendingRelatedCourses = mappedMessages.some(
+          (message) => (message.relatedCourses?.length ?? 0) > 0
+        );
+        setAwaitingCourseGenerationDecision(
+          conv.phase === "resource_retrieval" &&
+          hasPendingRelatedCourses &&
+          !(conv.status === "completed" || conv.courseId)
+        );
+
+        // If generation was in progress, reconnect to job stream
+        if (conv.phase === "course_generation" && conv.status === "active" && !conv.courseId) {
+          setIsGenerating(true);
+          setGenerationStatus("Reconnecting to course generation...");
+          setGenerationProgress(10);
+
+          try {
+            const statusRes = await api.get(`/course/generation-status/${conv.id}`);
+            if (statusRes.ok) {
+              const statusData = await statusRes.json() as {
+                status: string;
+                jobId?: string;
+                courseId?: string;
+              };
+              if (statusData.jobId) {
+                jobIdRef.current = statusData.jobId;
+                connectToJobStream(statusData.jobId);
+              } else if (statusData.courseId) {
+                // Already completed while we were away
+                setGenerationProgress(100);
+                setConversationPhase("completed");
+                router.push(`/explore/${statusData.courseId}`);
+              }
+            }
+          } catch {
+            // Keep showing generation state, user can restart if needed
+          }
+        }
+
+        if (conv.confirmationAttempts >= 1) setIsFinalConfirmation(true);
+        if (conv.status === "completed" || conv.courseId) {
+          setIsReadOnly(true);
+          if (conv.courseId) setCreatedCourseId(conv.courseId);
+        }
+      } catch {
+        // Silently fail — treat as fresh start
+      }
+    }
+
+    loadConversation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialConversationId]);
+
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      const el = scrollRef.current;
+      lastScrollTop.current = el.scrollHeight - el.clientHeight;
+      el.scrollTop = el.scrollHeight;
     }
-  }, [messages, isTyping]);
+  }, [messages, isTyping, isGenerating]);
 
-  const handleSend = (content: string) => {
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content,
-    };
-    setMessages((prev) => [...prev, userMessage]);
-    setIsTyping(true);
+  const connectToJobStream = (jId: string) => {
+    if (jobStreamRef.current) {
+      jobStreamRef.current.close();
+      jobStreamRef.current = null;
+    }
 
-    const responseIndex = tutorResponseIndex.current;
-    const isLastResponse = responseIndex === tutorResponses.length - 1;
+    const es = new EventSource(`${BACKEND_URL}/course/jobs/${jId}/events`, {
+      withCredentials: true,
+    });
+    jobStreamRef.current = es;
 
-    setTimeout(async () => {
-      const tutorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "tutor",
-        content: tutorResponses[responseIndex].message,
-      };
+    es.addEventListener("job_state", (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data) as {
+          status: string;
+          completedLessonCount: number;
+          totalLessonCount: number;
+          progressPercent?: number;
+          modules?: Array<{ index: number; title: string; lessonCount: number }>;
+          lessonSlots?: Array<{ moduleIndex: number; title: string; status: string }>;
+        };
+        if (data.progressPercent != null) {
+          setGenerationProgress(Math.min(data.progressPercent, 95));
+        }
+        if (data.totalLessonCount > 0) {
+          const pct = Math.round((data.completedLessonCount / data.totalLessonCount) * 80) + 10;
+          setGenerationProgress((prev) => Math.max(prev, Math.min(pct, 95)));
+        }
+        // Reconstruct module progress from slots
+        if (Array.isArray(data.lessonSlots) && data.lessonSlots.length > 0) {
+          setCurriculumModules((prev) => {
+            if (prev.length === 0) {
+              // outline_done was missed — reconstruct from modules in job_state
+              if (!Array.isArray(data.modules) || data.modules.length === 0) return prev;
+              return data.modules.map((m) => {
+                const modSlots = (data.lessonSlots ?? []).filter((s) => s.moduleIndex === m.index);
+                const completed = modSlots.filter((s) => s.status === "done").length;
+                const building = modSlots.some((s) => s.status === "generating");
+                return {
+                  index: m.index,
+                  title: m.title,
+                  lessonCount: m.lessonCount,
+                  completedLessons: completed,
+                  status: (completed >= m.lessonCount ? "done" : building ? "building" : "pending") as "pending" | "building" | "done",
+                };
+              });
+            }
+            return prev.map((mod) => {
+              const modSlots = data.lessonSlots!.filter((s) => s.moduleIndex === mod.index);
+              const completed = modSlots.filter((s) => s.status === "done").length;
+              const building = modSlots.some((s) => s.status === "generating");
+              return {
+                ...mod,
+                completedLessons: completed,
+                status: completed >= mod.lessonCount ? "done" : building ? "building" : mod.status,
+              };
+            });
+          });
+        }
+      } catch { /* ignore parse errors */ }
+    });
 
-      tutorResponseIndex.current = (responseIndex + 1) % tutorResponses.length;
-      setMessages((prev) => [...prev, tutorMessage]);
-      setIsTyping(false);
+    es.addEventListener("outline_done", (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data) as {
+          modules: Array<{ title: string; lessonCount: number }>;
+          totalLessons: number;
+        };
+        setGenerationStatus("Building lessons...");
+        setGenerationProgress((prev) => Math.max(prev, 10));
+        if (Array.isArray(data.modules)) {
+          setCurriculumModules(
+            data.modules.map((m, i) => ({
+              index: i,
+              title: m.title,
+              lessonCount: m.lessonCount,
+              completedLessons: 0,
+              status: "pending" as const,
+            }))
+          );
+        }
+      } catch { /* ignore */ }
+    });
 
-      // After the final tutor response, mark course creation complete and go to dashboard
-      if (isLastResponse) {
-        await api.put("/user/complete-onboarding", {});
-        router.push("/dashboard");
+    es.addEventListener("lesson_started", (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data) as { moduleIndex: number; title: string };
+        setGenerationStatus(`Writing: ${data.title}`);
+        setCurriculumModules((prev) =>
+          prev.map((mod) =>
+            mod.index === data.moduleIndex && mod.status !== "done"
+              ? { ...mod, status: "building" as const }
+              : mod
+          )
+        );
+      } catch { /* ignore */ }
+    });
+
+    es.addEventListener("lesson_done", (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data) as {
+          moduleIndex?: number;
+          completedCount: number;
+          totalCount: number;
+        };
+        const pct = Math.round((data.completedCount / data.totalCount) * 80) + 10;
+        setGenerationProgress(Math.min(pct, 93));
+        setGenerationStatus(
+          `Lessons: ${data.completedCount} / ${data.totalCount}`
+        );
+        if (data.moduleIndex != null) {
+          setCurriculumModules((prev) =>
+            prev.map((mod) => {
+              if (mod.index !== data.moduleIndex) return mod;
+              const newCompleted = mod.completedLessons + 1;
+              return {
+                ...mod,
+                completedLessons: newCompleted,
+                status: newCompleted >= mod.lessonCount ? "done" : "building",
+              };
+            })
+          );
+        }
+      } catch { /* ignore */ }
+    });
+
+    es.addEventListener("enrichment_done", () => {
+      setGenerationStatus("Adding video references...");
+      setGenerationProgress((prev) => Math.max(prev, 95));
+    });
+
+    es.addEventListener("complete", (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data) as { courseId: string };
+        es.close();
+        jobStreamRef.current = null;
+        setCurriculumModules((prev) =>
+          prev.map((mod) => ({ ...mod, status: "done" as const }))
+        );
+        setGenerationProgress(100);
+        setConversationPhase("completed");
+        router.push(`/explore/${data.courseId}`);
+      } catch { /* ignore */ }
+    });
+
+    // Server-sent error events (distinct from connection errors)
+    es.addEventListener("error", (e: Event) => {
+      const me = e as MessageEvent;
+      if (me.data) {
+        // Generation error from server
+        try {
+          const data = JSON.parse(me.data) as { courseId?: string };
+          if (data.courseId) setCreatedCourseId(data.courseId);
+        } catch { /* ignore */ }
+        es.close();
+        jobStreamRef.current = null;
+        setIsGenerating(false);
+        setConversationPhase("resource_retrieval");
+        setSubmitError("Something went wrong while creating your course. Please try again.");
+      } else {
+        // Connection-level error — EventSource will auto-reconnect
+        setGenerationStatus("Reconnecting...");
       }
-    }, 1000);
+    });
   };
 
+  const appendTutorMessage = (
+    content: string,
+    relatedCourses: RelatedCoursePreview[] = []
+  ) => {
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now().toString(), role: "tutor", content, relatedCourses },
+    ]);
+  };
+
+  const handleSend = async (content: string) => {
+    if (
+      requiresConfirmation ||
+      awaitingCourseGenerationDecision ||
+      isGenerating ||
+      isReadOnly
+    ) return;
+
+    setSubmitError(null);
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now().toString(), role: "user", content },
+    ]);
+    setIsTyping(true);
+
+    try {
+      const res = await api.post("/chat/message", { message: content, conversationId });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error ?? "Failed to send message");
+      }
+
+      const data = await res.json() as {
+        conversationId: string;
+        message: {
+          content: string;
+          metadata?: { relatedCourses?: RelatedCoursePreview[] };
+        };
+        requiresConfirmation: boolean;
+        isFinalConfirmation: boolean;
+        suggestedSubject?: string;
+      };
+
+      // Update URL when first conversation is created (without causing remount)
+      if (typeof window !== "undefined" && !conversationId && data.conversationId) {
+        window.history.replaceState({}, "", `/create-course/${data.conversationId}`);
+      }
+      setConversationId(data.conversationId);
+
+      appendTutorMessage(
+        data.message.content,
+        Array.isArray(data.message.metadata?.relatedCourses)
+          ? data.message.metadata!.relatedCourses
+          : []
+      );
+
+      if (data.requiresConfirmation) {
+        setSuggestedSubject(data.suggestedSubject ?? null);
+        setRequiresConfirmation(true);
+        setIsFinalConfirmation(data.isFinalConfirmation);
+      }
+    } catch {
+      setSubmitError("Couldn't send your message. Please try again.");
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  const handleConfirm = async () => {
+    if (!conversationId) return;
+    setSubmitError(null);
+    setRequiresConfirmation(false);
+    setAwaitingCourseGenerationDecision(false);
+    setConversationPhase("resource_retrieval");
+
+    try {
+      const res = await api.post("/chat/confirm-subject", { conversationId, confirmed: true });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error ?? "Failed to confirm subject");
+      }
+
+      const data = await res.json() as {
+        message?: string;
+        relatedCourses?: RelatedCoursePreview[];
+        hasRelatedCourses?: boolean;
+      };
+      const relatedCourses = Array.isArray(data.relatedCourses) ? data.relatedCourses : [];
+      appendTutorMessage(
+        data.message ?? "I checked for similar public courses first.",
+        relatedCourses
+      );
+
+      if ((data.hasRelatedCourses ?? relatedCourses.length > 0) && relatedCourses.length > 0) {
+        setAwaitingCourseGenerationDecision(true);
+        return;
+      }
+
+      setGenerationStatus("Preparing your course...");
+      setGenerationProgress(2);
+      setLiveTitle(suggestedSubject);
+      setCurriculumModules([]);
+      setIsGenerating(true);
+      await startGeneration(conversationId);
+    } catch {
+      setSubmitError("Something went wrong while confirming. Please try again.");
+    }
+  };
+
+  const handleReject = async () => {
+    if (!conversationId) return;
+    setSubmitError(null);
+
+    try {
+      const res = await api.post("/chat/confirm-subject", { conversationId, confirmed: false });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error ?? "Failed to update conversation");
+      }
+
+      const data = await res.json() as { message?: string };
+      setRequiresConfirmation(false);
+      setSuggestedSubject(null);
+      setIsFinalConfirmation(false);
+      setAwaitingCourseGenerationDecision(false);
+      setConversationPhase("onboarding");
+
+      if (data.message) appendTutorMessage(data.message);
+    } catch {
+      setSubmitError("Couldn't process your response. Please try again.");
+    }
+  };
+
+  const handleRestart = async () => {
+    if (jobStreamRef.current) {
+      jobStreamRef.current.close();
+      jobStreamRef.current = null;
+    }
+    try {
+      const res = await api.post("/chat/restart", { conversationId });
+      const data = await res.json() as { newConversationId?: string };
+      const newId = data.newConversationId ?? null;
+      setConversationId(newId);
+      if (typeof window !== "undefined" && newId) {
+        window.history.replaceState({}, "", `/create-course/${newId}`);
+      } else if (typeof window !== "undefined") {
+        window.history.replaceState({}, "", "/create-course/new");
+      }
+    } catch {
+      setConversationId(null);
+    }
+    setMessages([]);
+    setRequiresConfirmation(false);
+    setIsFinalConfirmation(false);
+    setSuggestedSubject(null);
+    setConversationPhase("onboarding");
+    setSubmitError(null);
+    setIsGenerating(false);
+    setIsReadOnly(false);
+    setAwaitingCourseGenerationDecision(false);
+    setLiveTitle(null);
+    setCurriculumModules([]);
+    jobIdRef.current = null;
+    setGenerationStatus("Preparing your course...");
+    setGenerationProgress(0);
+  };
+
+  const handleCreateCourseAnyway = async () => {
+    if (!conversationId) return;
+    setSubmitError(null);
+    setAwaitingCourseGenerationDecision(false);
+    setConversationPhase("resource_retrieval");
+    setGenerationStatus("Preparing your course...");
+    setGenerationProgress(2);
+    setLiveTitle(suggestedSubject);
+    setCurriculumModules([]);
+    setIsGenerating(true);
+    await startGeneration(conversationId);
+  };
+
+  const startGeneration = async (convId: string) => {
+    try {
+      setConversationPhase("course_generation");
+      setGenerationStatus("Discovering learning resources...");
+      setGenerationProgress(5);
+
+      const res = await fetch(`${BACKEND_URL}/course/generate`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId: convId }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error ?? "Failed to start generation");
+      }
+
+      const data = await res.json() as { jobId: string };
+      jobIdRef.current = data.jobId;
+      connectToJobStream(data.jobId);
+    } catch (err) {
+      setIsGenerating(false);
+      setConversationPhase("resource_retrieval");
+      setSubmitError(
+        err instanceof Error && err.message.length < 200
+          ? err.message
+          : "Something went wrong while creating your course. Please try again."
+      );
+    }
+  };
+
+  // ── Generation Screen ────────────────────────────────────────────────────
+  if (isGenerating) {
+    const genPhases = [
+      { label: "Discovering",  minProgress: 5  },
+      { label: "Outlining",    minProgress: 10 },
+      { label: "Writing",      minProgress: 15 },
+      { label: "Finalizing",   minProgress: 93 },
+    ];
+    const activePhase = genPhases.filter(p => generationProgress >= p.minProgress).length - 1;
+    const circumference = 2 * Math.PI * 52;
+    const courseTitle = liveTitle || suggestedSubject || null;
+
+    return (
+      <div className="relative flex h-full w-full overflow-hidden bg-background">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_30%_50%,rgba(212,175,55,0.07),transparent)]" />
+
+        {/* Left — main progress */}
+        <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-7 px-8 py-10">
+
+          {/* SVG circular progress */}
+          <div className="relative flex h-28 w-28 shrink-0 items-center justify-center animate-in fade-in duration-700">
+            <svg viewBox="0 0 120 120" className="h-28 w-28 -rotate-90" aria-hidden="true">
+              <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(212,175,55,0.12)" strokeWidth="8" />
+              <circle
+                cx="60" cy="60" r="52" fill="none"
+                stroke="url(#goldGrad)" strokeWidth="8" strokeLinecap="round"
+                strokeDasharray={circumference}
+                strokeDashoffset={circumference * (1 - Math.min(Math.max(generationProgress, 0), 100) / 100)}
+                style={{ transition: "stroke-dashoffset 0.7s ease-out" }}
+              />
+              <defs>
+                <linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="#d4af37" />
+                  <stop offset="100%" stopColor="#f5d060" />
+                </linearGradient>
+              </defs>
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-2xl font-bold text-primary">{Math.round(generationProgress)}%</span>
+              <span className="text-[9px] uppercase tracking-widest text-muted-foreground/50">building</span>
+            </div>
+          </div>
+
+          {/* Course title + status */}
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-center space-y-1.5">
+            {courseTitle ? (
+              <h2 className="text-xl font-semibold text-foreground">
+                &ldquo;{courseTitle}&rdquo;
+              </h2>
+            ) : (
+              <h2 className="text-xl font-semibold text-foreground">Building your course</h2>
+            )}
+            <p className="text-sm text-muted-foreground">{generationStatus}</p>
+          </div>
+
+          {/* Phase tracker */}
+          <div className="flex items-center gap-0 animate-in fade-in duration-700 delay-200">
+            {genPhases.map((phase, i) => (
+              <div key={phase.label} className="flex items-center">
+                <div
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition-all duration-500 ${
+                    i < activePhase
+                      ? "bg-primary/15 text-primary border border-primary/25"
+                      : i === activePhase
+                        ? "bg-primary/20 text-primary border border-primary/35 shadow-[0_0_8px_rgba(212,175,55,0.2)]"
+                        : "bg-muted/20 text-muted-foreground/40 border border-border/20"
+                  }`}
+                >
+                  {i < activePhase && <span className="mr-1">✓</span>}
+                  {phase.label}
+                </div>
+                {i < genPhases.length - 1 && (
+                  <div className={`h-px w-4 shrink-0 transition-colors duration-500 ${i < activePhase ? "bg-primary/30" : "bg-border/20"}`} />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Error state */}
+          {submitError && (
+            <div className="w-full max-w-sm space-y-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-center">
+              <div className="flex items-center justify-center gap-2 text-destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <p className="text-sm font-medium">{submitError}</p>
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                {createdCourseId && (
+                  <Link
+                    href={`/explore/${createdCourseId}`}
+                    className="skeuo-gold inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-medium"
+                  >
+                    Go to Course <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                )}
+                <button
+                  onClick={handleRestart}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-border px-4 py-2 text-xs font-medium text-muted-foreground transition hover:text-foreground"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" /> Try Again
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right — curriculum panel (desktop) */}
+        <div className="relative z-10 hidden w-72 shrink-0 flex-col border-l border-border/40 bg-card/50 backdrop-blur-sm lg:flex">
+          <div className="flex-shrink-0 border-b border-border/40 px-5 py-4">
+            <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-muted-foreground/50">Course Outline</p>
+          </div>
+          <div className="flex-1 overflow-y-auto px-3 py-3">
+            {curriculumModules.length === 0 ? (
+              <div className="flex h-full items-center justify-center px-4 text-center">
+                <p className="text-xs text-muted-foreground/40">Modules will appear as your course is built…</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {curriculumModules.map((mod, i) => (
+                  <div
+                    key={mod.index}
+                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-300 animate-in fade-in slide-in-from-bottom-1 ${
+                      mod.status === "building"
+                        ? "border border-primary/20 bg-primary/10"
+                        : mod.status === "done"
+                          ? "border border-transparent bg-primary/5"
+                          : "border border-transparent bg-muted/5"
+                    }`}
+                    style={{ animationDelay: `${i * 40}ms` }}
+                  >
+                    {mod.status === "building" ? (
+                      <span className="relative flex h-4 w-4 shrink-0 items-center justify-center">
+                        <span className="absolute h-4 w-4 rounded-full border border-primary/50 animate-ping" />
+                        <span className="h-2 w-2 rounded-full bg-primary" />
+                      </span>
+                    ) : mod.status === "done" ? (
+                      <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[9px] font-bold text-primary">✓</span>
+                    ) : (
+                      <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-border/30 text-[9px] text-muted-foreground/30">{mod.index + 1}</span>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <span className={`block truncate text-xs ${mod.status === "building" ? "font-medium text-foreground" : mod.status === "done" ? "text-muted-foreground" : "text-muted-foreground/40"}`}>
+                        {mod.index + 1}. {mod.title}
+                      </span>
+                      {mod.lessonCount > 0 && (
+                        <span className="text-[10px] text-muted-foreground/40">
+                          {mod.completedLessons}/{mod.lessonCount} lessons
+                        </span>
+                      )}
+                    </div>
+                    {mod.status === "building" && (
+                      <span className="shrink-0 text-[9px] text-primary/50 animate-pulse">…</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile curriculum chips */}
+        {curriculumModules.length > 0 && (
+          <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-border/40 bg-card/80 backdrop-blur-sm px-4 py-3 lg:hidden">
+            <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground/50">Course Outline</p>
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+              {curriculumModules.map((mod) => (
+                <div
+                  key={mod.index}
+                  className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs ${
+                    mod.status === "building"
+                      ? "border border-primary/25 bg-primary/10 text-foreground font-medium"
+                      : mod.status === "done"
+                        ? "border border-primary/15 bg-primary/5 text-muted-foreground"
+                        : "border border-border/30 bg-muted/30 text-muted-foreground/40"
+                  }`}
+                >
+                  {mod.status === "building" ? (
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                  ) : mod.status === "done" ? (
+                    <span className="text-[8px] text-primary">✓</span>
+                  ) : (
+                    <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/20" />
+                  )}
+                  {mod.index + 1}. {mod.title}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Chat Screen ──────────────────────────────────────────────────────────
   return (
     <div className="relative z-10 mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col">
-      <div ref={scrollRef} className="mt-4 flex-1 min-h-0 overflow-y-auto px-4 no-scrollbar md:mt-6">
+      <div ref={scrollRef} onScroll={handleScroll} className="mt-4 flex-1 min-h-0 overflow-y-auto px-4 no-scrollbar md:mt-6">
         <div className="flex flex-col pb-6 max-w-2xl mx-auto w-full">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center pt-10 md:pt-20 animate-in fade-in slide-in-from-bottom-4 duration-1000">
@@ -80,22 +768,144 @@ export function ChatMessage() {
                 id={msg.id}
                 role={msg.role}
                 content={msg.content}
+                relatedCourses={msg.relatedCourses}
               />
             ))
           )}
+
           {isTyping && (
-            <div className="flex w-full py-5 space-x-4 ml-auto justify-start">
-              <div className="p-3 rounded-2xl bg-muted/40 text-muted-foreground flex items-center gap-1.5 h-11">
-                <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce"></span>
+            <div className="flex w-full items-start gap-3 py-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="TheTutor" className="mt-1 h-8 w-8 flex-shrink-0 rounded-full object-contain ring-2 ring-primary/15" />
+              <div>
+                <span className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-muted-foreground/60">
+                  TheTutor
+                </span>
+                <div className="flex h-10 items-center gap-1.5 rounded-2xl rounded-tl-sm border border-border/40 bg-card/60 px-4 text-muted-foreground backdrop-blur-sm">
+                  <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce [animation-delay:-0.3s]" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce [animation-delay:-0.15s]" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce" />
+                </div>
               </div>
+            </div>
+          )}
+
+          {requiresConfirmation && !isTyping && (
+            isFinalConfirmation ? (
+              <div className="flex flex-col items-start gap-3 mt-4">
+                <button
+                  onClick={handleConfirm}
+                  className="skeuo-gold px-6 py-3 rounded-xl text-sm font-medium text-background hover:opacity-90 transition-opacity"
+                >
+                  Go — Create my course
+                </button>
+                <button
+                  onClick={handleRestart}
+                  className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors"
+                >
+                  Start a new chat instead
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={handleConfirm}
+                  className="skeuo-gold px-5 py-2.5 rounded-xl text-sm font-medium text-background hover:opacity-90 transition-opacity"
+                >
+                  Yes, that&apos;s it!
+                </button>
+                <button
+                  onClick={handleReject}
+                  className="px-5 py-2.5 rounded-xl text-sm font-medium border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+                >
+                  No, let me clarify
+                </button>
+              </div>
+            )
+          )}
+
+          {awaitingCourseGenerationDecision && !isTyping && !requiresConfirmation && (
+            <div className="mt-4 flex flex-col items-start gap-3">
+              <button
+                onClick={handleCreateCourseAnyway}
+                className="skeuo-gold rounded-xl px-5 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-90"
+              >
+                Create a New Course Anyway
+              </button>
+              <p className="text-xs text-muted-foreground">
+                You can open any similar public course listed above, or create yours now.
+              </p>
+            </div>
+          )}
+
+          {conversationPhase === "resource_retrieval" &&
+            !awaitingCourseGenerationDecision &&
+            !requiresConfirmation &&
+            !isTyping &&
+            !isGenerating &&
+            !isReadOnly && (
+              <div className="mt-4 flex flex-col items-start gap-3">
+                <button
+                  onClick={handleCreateCourseAnyway}
+                  className="skeuo-gold rounded-xl px-5 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-90"
+                >
+                  Resume Course Creation
+                </button>
+                <p className="text-xs text-muted-foreground">
+                  Your course setup is ready. Continue generation from where you left it.
+                </p>
+              </div>
+            )}
+
+          {submitError && (
+            <div className="mt-4 space-y-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-4">
+              <div className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                <p className="text-sm font-medium">{submitError}</p>
+              </div>
+              {createdCourseId && (
+                <Link
+                  href={`/explore/${createdCourseId}`}
+                  className="skeuo-gold inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition hover:opacity-90"
+                >
+                  Go to Course <ArrowRight className="h-4 w-4" />
+                </Link>
+              )}
             </div>
           )}
         </div>
       </div>
 
-      <ChatInput onSend={handleSend} disabled={isTyping} />
+      {isReadOnly ? (
+        <div className="mx-4 mb-4 flex flex-col items-center gap-4 rounded-2xl border border-border bg-card/60 p-6 text-center shadow-none backdrop-blur-sm">
+          <div className="space-y-1.5">
+            <p className="text-sm font-semibold text-foreground">Course Already Created</p>
+            <p className="max-w-xs text-xs text-muted-foreground">
+              This conversation is complete. You can jump straight to your course or start a new chat from the sidebar.
+            </p>
+          </div>
+          {createdCourseId && (
+            <Link
+              href={`/explore/${createdCourseId}`}
+              className="skeuo-gold flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-medium transition-all hover:opacity-90 active:scale-95"
+            >
+              Go to Course
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          )}
+        </div>
+      ) : (
+        <ChatInput
+          onSend={handleSend}
+          disabled={
+            isTyping ||
+            requiresConfirmation ||
+            awaitingCourseGenerationDecision ||
+            isGenerating ||
+            conversationPhase !== "onboarding"
+          }
+        />
+      )}
     </div>
   );
 }

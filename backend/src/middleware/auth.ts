@@ -17,19 +17,31 @@ declare global {
   }
 }
 
-export function requireAuth(req: Request, res: Response, next: NextFunction): void {
-  const token = req.cookies?.token as string | undefined;
+function decodeToken(token: string | undefined): JwtPayload | null {
+  if (!token) return null;
 
-  if (!token) {
+  try {
+    return jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
+  } catch {
+    return null;
+  }
+}
+
+export function requireAuth(req: Request, res: Response, next: NextFunction): void {
+  const payload = decodeToken(req.cookies?.token);
+  if (!payload) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
 
-  try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
+  req.jwtUser = payload;
+  next();
+}
+
+export function optionalAuth(req: Request, _res: Response, next: NextFunction): void {
+  const payload = decodeToken(req.cookies?.token);
+  if (payload) {
     req.jwtUser = payload;
-    next();
-  } catch {
-    res.status(401).json({ error: "Invalid or expired token" });
   }
+  next();
 }

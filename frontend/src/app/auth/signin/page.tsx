@@ -1,46 +1,37 @@
 import { Sparkles, Target, Zap, Award, Info } from "lucide-react";
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:5000";
+import { BACKEND_URL } from "@/lib/backendUrl";
 
 const features = [
   {
     icon: Sparkles,
     title: "AI-Powered Curriculum",
-    description: "Generated and adapted specifically for you",
+    description: "A full course plan generated around your topic and level",
   },
   {
     icon: Target,
     title: "Personalized Learning",
-    description: "Matches your exact pace, style, and goals",
+    description: "Adapts to your pace, style, and goals automatically",
   },
   {
     icon: Zap,
     title: "Instant Feedback",
-    description: "Real-time guidance on every step you take",
+    description: "Real-time guidance on every lesson and quiz you take",
   },
   {
     icon: Award,
-    title: "Verified Certificates",
-    description: "Earn credentials that are recognized and matter",
+    title: "Course Certificates",
+    description: "Earn a completion certificate when you finish your course",
   },
-];
-
-const stats = [
-  { value: "10K+", label: "Active Learners" },
-  { value: "500+", label: "Subjects Taught" },
-  { value: "4.9★", label: "Average Rating" },
 ];
 
 export default function SignInPage() {
   return (
-    <div className="grid min-h-screen bg-background lg:grid-cols-2">
+    <div className="neu-shell grid min-h-screen lg:grid-cols-2">
+      {/* Left panel — desktop only */}
       <div className="relative hidden flex-col overflow-hidden border-r border-border lg:flex">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_20%_50%,rgba(212,175,55,0.12)_0%,transparent_70%)]" />
-
         <div className="relative z-10 flex items-center gap-3 p-10">
-          <div className="skeuo-gold flex h-10 w-10 items-center justify-center rounded-lg">
-            <span className="font-playfair text-lg font-bold text-primary-foreground">T</span>
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="TheTutor" className="h-10 w-10 rounded-lg object-contain" />
           <span className="font-playfair text-xl font-bold text-primary">TheTutor</span>
         </div>
 
@@ -48,16 +39,14 @@ export default function SignInPage() {
           <div className="mb-10">
             <h1 className="mb-4 font-playfair text-4xl font-bold leading-tight lg:text-5xl">
               Transform How{" "}
-              <span className="bg-gradient-to-r from-primary via-[#e6c868] to-secondary bg-clip-text text-transparent">
-                You Learn
-              </span>
+              <span className="text-primary">You Learn</span>
             </h1>
             <p className="max-w-sm text-lg leading-relaxed text-muted-foreground">
               AI-powered education that adapts to your pace, learning style, and goals in one premium tutoring system.
             </p>
           </div>
 
-          <div className="mb-10 flex flex-col gap-6">
+          <div className="flex flex-col gap-6">
             {features.map(({ icon: Icon, title, description }) => (
               <div key={title} className="flex items-start gap-4">
                 <div className="neo-inset mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-primary/20">
@@ -70,34 +59,35 @@ export default function SignInPage() {
               </div>
             ))}
           </div>
+        </div>
+      </div>
 
-          <div className="mt-auto border-t border-border/50 pt-8">
-            <div className="flex items-center gap-8">
-              {stats.map(({ value, label }) => (
-                <div key={label}>
-                  <p className="bg-gradient-to-r from-primary to-[#e6c868] bg-clip-text font-playfair text-2xl font-bold text-transparent">
-                    {value}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
+      {/* Right panel — form */}
+      <div className="relative flex min-h-screen flex-col items-center justify-center px-6 py-12 sm:px-8 lg:min-h-0 lg:p-16">
+        <div className="relative w-full max-w-sm">
+
+          {/* Mobile brand header */}
+          <div className="mb-8 lg:hidden">
+            <div className="mb-5 flex items-center justify-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="TheTutor" className="h-10 w-10 rounded-lg object-contain" />
+              <span className="font-playfair text-xl font-bold text-primary">TheTutor</span>
+            </div>
+            <p className="mb-5 text-center text-sm leading-relaxed text-muted-foreground">
+              AI-powered tutoring that adapts to your pace, goals, and learning style.
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {features.map(({ icon: Icon, title }) => (
+                <div key={title} className="neo-inset flex items-center gap-2 rounded-xl border border-primary/15 px-3 py-2.5">
+                  <Icon className="h-3.5 w-3.5 shrink-0 text-primary" />
+                  <span className="text-xs font-medium text-foreground">{title}</span>
                 </div>
               ))}
             </div>
           </div>
-        </div>
-      </div>
 
-      <div className="relative flex min-h-screen flex-col items-center justify-center p-8 lg:min-h-0 lg:p-16">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_40%,rgba(212,175,55,0.08)_0%,transparent_70%)] lg:hidden" />
-
-        <div className="relative w-full max-w-sm">
-          <div className="mb-8 flex items-center justify-center gap-3 lg:hidden">
-            <div className="skeuo-gold flex h-10 w-10 items-center justify-center rounded-lg">
-              <span className="font-playfair text-lg font-bold text-primary-foreground">T</span>
-            </div>
-            <span className="font-playfair text-xl font-bold text-primary">TheTutor</span>
-          </div>
-
-          <div className="mb-6">
+          {/* Form */}
+          <div className="mb-6 text-center lg:text-left">
             <h2 className="font-playfair text-3xl font-semibold tracking-tight text-foreground">
               Welcome to TheTutor
             </h2>
@@ -119,13 +109,7 @@ export default function SignInPage() {
             href={`${BACKEND_URL}/auth/google`}
             className="skeuo-outline flex h-12 w-full items-center justify-center gap-3 rounded-md text-sm font-medium text-foreground transition-all duration-200 hover:border-primary"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              width="20"
-              height="20"
-              aria-hidden="true"
-            >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />

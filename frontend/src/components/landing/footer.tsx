@@ -1,44 +1,59 @@
+
+import Link from "next/link";
+
+
 export function Footer() {
   return (
-    <footer className="border-t border-border/80 bg-background py-14">
-      <div className="container">
+    <footer id="footer" className="border-t border-[#d4af37]/25 bg-[#fbfaf6]">
+      {/* Mobile: compact centered layout */}
+      <div className="container flex flex-col items-center gap-3 py-8 text-center md:hidden">
+        <div className="flex items-center gap-2.5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="TheTutor" className="h-8 w-8 rounded-lg object-contain" />
+          <p className="font-playfair text-lg font-bold text-[#111111]">TheTutor</p>
+        </div>
+        <p className="text-xs text-[#575757]">&copy; 2026 TheTutor. All rights reserved.</p>
+      </div>
+
+      {/* Desktop: full grid layout */}
+      <div className="container hidden py-14 md:block">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3">
-              <div className="skeuo-gold flex h-10 w-10 items-center justify-center rounded-lg font-bold">
-                T
-              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="TheTutor" className="h-10 w-10 rounded-lg object-contain" />
               <div>
-                <p className="font-playfair text-2xl font-bold text-primary">TheTutor</p>
-                <p className="text-sm text-muted-foreground">AI-Powered Learning Coach</p>
+                <p className="font-playfair text-2xl font-bold text-[#111111]">TheTutor</p>
+                <p className="text-sm text-[#575757]">AI-Powered Learning Coach</p>
               </div>
             </div>
-            <p className="mt-5 max-w-md text-sm leading-relaxed text-muted-foreground">
+            <p className="mt-5 max-w-md text-sm leading-relaxed text-[#575757]">
               Personalized tutoring for learners who want clear structure, practical feedback, and steady progress.
             </p>
           </div>
 
           <div>
-            <h4 className="font-playfair text-lg font-bold text-primary">Product</h4>
-            <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-              <li><a href="#features" className="hover:text-primary">Features</a></li>
-              <li><a href="#how-it-works" className="hover:text-primary">How It Works</a></li>
-              <li><a href="/auth/signin" className="hover:text-primary">Get Started</a></li>
+            <h4 className="font-playfair text-lg font-bold text-[#111111]">Product</h4>
+            <ul className="mt-4 space-y-2 text-sm text-[#575757]">
+              <li><a href="#features" className="hover:text-[#b48b1d]">Features</a></li>
+              <li><a href="#how-it-works" className="hover:text-[#b48b1d]">How It Works</a></li>
+              <li><a href="/auth/signin" className="hover:text-[#b48b1d]">Get Started</a></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-playfair text-lg font-bold text-primary">Company</h4>
-            <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-primary">About</a></li>
-              <li><a href="#" className="hover:text-primary">Contact</a></li>
-              <li><a href="#" className="hover:text-primary">Privacy</a></li>
+            <h4 className="font-playfair text-lg font-bold text-[#111111]">Company</h4>
+            <ul className="mt-4 space-y-2 text-sm text-[#575757]">
+              <li><Link href="/about" className="hover:text-[#b48b1d]">About</Link></li>
+              <li><Link href="/contact" className="hover:text-[#b48b1d]">Contact</Link></li>
+              <li><Link href="/privacy" className="hover:text-[#b48b1d]">Privacy</Link></li>
+              <li><Link href="/terms" className="hover:text-[#b48b1d]">Terms</Link></li>
             </ul>
           </div>
         </div>
 
-        <div className="mt-10 border-t border-border/80 pt-6 text-sm text-muted-foreground">
-          <p>(c) 2026 TheTutor. All rights reserved.</p>
+        <div className="mt-10 border-t border-[#d4af37]/25 pt-6 text-sm text-[#575757]">
+          <p>&copy; 2026 TheTutor. All rights reserved.</p>
         </div>
       </div>
     </footer>

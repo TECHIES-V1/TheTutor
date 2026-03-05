@@ -66,4 +66,36 @@ router.get("/profile", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+router.patch("/preferences", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.jwtUser as JwtPayload;
+    const themeRaw = String(req.body?.theme ?? "").toLowerCase();
+
+    if (themeRaw !== "light" && themeRaw !== "dark") {
+      res.status(400).json({ error: "Invalid theme value" });
+      return;
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    user.preferences = {
+      ...(user.preferences ?? {}),
+      theme: themeRaw as "light" | "dark",
+    };
+    await user.save();
+
+    res.json({
+      success: true,
+      preferences: user.preferences,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router;

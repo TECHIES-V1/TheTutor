@@ -6,6 +6,7 @@ import { Menu, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 
+
 const navLinks = [
   { label: "Features", href: "#features" },
   { label: "How It Works", href: "#how-it-works" },
@@ -21,32 +22,33 @@ export function NavBar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsSidebarOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   return (
     <>
-      <nav
-        className={`fixed left-0 right-0 top-0 z-50 transition-all duration-300 ${
-          isScrolled
-            ? "border-b border-primary/20 bg-background/90 backdrop-blur-md"
-            : "bg-transparent"
-        }`}
-      >
-        <div className="container flex items-center justify-between py-4">
+      <nav className="fixed left-0 right-0 top-0 z-50 px-3 pt-3 sm:px-6 sm:pt-4">
+        <div className="mx-auto flex max-w-7xl items-center justify-between rounded-2xl border border-[rgba(212,175,55,0.28)] bg-[rgba(245,249,255,0.92)] px-3 py-2.5 shadow-[0_10px_35px_rgba(27,45,79,0.14)] backdrop-blur-md transition-all duration-300 sm:px-4 sm:py-3">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="skeuo-gold flex h-10 w-10 items-center justify-center rounded-xl text-base font-bold">
-              T
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="TheTutor" className="h-8 w-8 rounded-lg object-contain sm:h-10 sm:w-10 sm:rounded-xl" />
             <div>
-              <p className="font-playfair text-xl font-bold text-primary">TheTutor</p>
-              <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">AI Learning Coach</p>
+              <p className="font-playfair text-base font-bold text-[#1E3A7A] sm:text-xl">TheTutor</p>
+              <p className="hidden text-[10px] uppercase tracking-[0.14em] text-[#4a6490] sm:block">AI Learning Coach</p>
             </div>
           </Link>
 
-          <div className="hidden items-center gap-8 lg:flex">
+          <div className="hidden items-center gap-6 lg:flex">
             {navLinks.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                className="text-sm font-semibold text-muted-foreground transition-colors hover:text-primary"
+                className="motion-link rounded-full px-3 py-1.5 text-sm font-semibold text-[#4a6490] hover:bg-[#eaf2ff] hover:text-[#1E3A7A]"
               >
                 {link.label}
               </a>
@@ -54,7 +56,14 @@ export function NavBar() {
             <Button
               asChild
               size="sm"
-              className="skeuo-gold rounded-full px-5 hover:!opacity-100"
+              className="motion-press rounded-full border border-[#c1d4ef] bg-[#f7fbff] px-4 text-[#1E3A7A] hover:bg-[#eaf2ff]"
+            >
+              <Link href="/auth/signin">Sign In</Link>
+            </Button>
+            <Button
+              asChild
+              size="sm"
+              className="landing-btn-primary rounded-full px-5"
             >
               <Link href="/auth/signin">Start Learning</Link>
             </Button>
@@ -64,7 +73,7 @@ export function NavBar() {
             variant="ghost"
             size="icon"
             onClick={() => setIsSidebarOpen(true)}
-            className="text-foreground hover:bg-primary/10 hover:text-primary lg:hidden"
+            className="text-[#1E3A7A] hover:bg-[#eaf2ff] lg:hidden"
           >
             <Menu className="h-6 w-6" />
           </Button>
@@ -88,20 +97,19 @@ export function NavBar() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-              className="neo-surface fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-sm flex-col border-l border-primary/20 p-6 lg:hidden"
+              className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-[85vw] flex-col border-l border-[rgba(212,175,55,0.28)] bg-[rgba(245,249,255,0.97)] p-6 backdrop-blur-md sm:max-w-sm lg:hidden"
             >
               <div className="mb-10 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="skeuo-gold flex h-9 w-9 items-center justify-center rounded-lg font-bold">
-                    T
-                  </div>
-                  <span className="font-playfair text-lg font-bold text-primary">TheTutor</span>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/logo.png" alt="TheTutor" className="h-9 w-9 rounded-lg object-contain" />
+                  <span className="font-playfair text-lg font-bold text-[#1E3A7A]">TheTutor</span>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsSidebarOpen(false)}
-                  className="text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                  className="text-[#4a6490] hover:bg-[#eaf2ff] hover:text-[#1E3A7A]"
                 >
                   <X className="h-6 w-6" />
                 </Button>
@@ -113,7 +121,7 @@ export function NavBar() {
                     key={link.href}
                     href={link.href}
                     onClick={() => setIsSidebarOpen(false)}
-                    className="border-b border-border/70 pb-4 text-base font-semibold text-muted-foreground transition-colors hover:text-primary"
+                    className="border-b border-[rgba(212,175,55,0.22)] pb-4 text-base font-semibold text-[#4a6490] transition-colors hover:text-[#1E3A7A]"
                   >
                     {link.label}
                   </a>
@@ -123,7 +131,7 @@ export function NavBar() {
               <Button
                 asChild
                 size="lg"
-                className="skeuo-gold mt-8 rounded-full hover:!opacity-100"
+                className="landing-btn-primary mt-8 rounded-full"
               >
                 <Link href="/auth/signin" onClick={() => setIsSidebarOpen(false)}>
                   Start Learning

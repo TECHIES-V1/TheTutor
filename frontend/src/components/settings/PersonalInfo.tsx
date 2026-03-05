@@ -81,7 +81,7 @@ export function PersonalInfo() {
                                 <button
                                     type="button"
                                     onClick={handleProfilePictureEdit}
-                                    className="absolute -bottom-2 -right-2 flex h-9 w-9 items-center justify-center rounded-full border border-primary/30 bg-card/90 text-primary shadow-lg transition hover:bg-card"
+                                    className="absolute -bottom-2 -right-2 flex h-9 w-9 items-center justify-center rounded-full border border-primary/30 bg-card/90 text-primary transition hover:bg-card"
                                     aria-label="Change profile picture"
                                 >
                                     <Camera className="h-4 w-4" />

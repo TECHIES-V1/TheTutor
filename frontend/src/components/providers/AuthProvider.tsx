@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import { User } from "@/types";
+import { useThemeMode } from "./ThemeProvider";
 
 interface AuthContextValue {
   user: User | null;
@@ -19,17 +20,49 @@ const AuthContext = createContext<AuthContextValue>({
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { setTheme } = useThemeMode();
 
   useEffect(() => {
-    api.get("/auth/me")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => setUser(data ?? null))
-      .catch(() => setUser(null))
-      .finally(() => setIsLoading(false));
-  }, []);
+    let cancelled = false;
+
+    const bootstrapAuth = async () => {
+      try {
+        const meResponse = await api.get("/auth/me");
+        if (!meResponse.ok) {
+          if (!cancelled) setUser(null);
+          return;
+        }
+
+        const mePayload = (await meResponse.json()) as User;
+        if (!cancelled) setUser(mePayload);
+
+        const profileResponse = await api.get("/user/profile");
+        if (!profileResponse.ok) return;
+        const profile = (await profileResponse.json()) as {
+          preferences?: { theme?: "light" | "dark" };
+        };
+        const savedTheme = profile.preferences?.theme;
+        if (!cancelled && (savedTheme === "light" || savedTheme === "dark")) {
+          setTheme(savedTheme);
+        }
+      } catch {
+        if (!cancelled) setUser(null);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
+    bootstrapAuth();
+    return () => {
+      cancelled = true;
+    };
+  }, [setTheme]);
 
   const logout = useCallback(async () => {
-    await api.post("/auth/logout", {});
+    await Promise.all([
+      api.post("/auth/logout", {}),
+      fetch("/api/auth/logout", { method: "POST" }),
+    ]);
     setUser(null);
     window.location.href = "/auth/signin";
   }, []);

@@ -1,14 +1,14 @@
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:5000";
+import { BACKEND_URL } from "@/lib/backendUrl";
 
 export const api = {
   get: (path: string) =>
-    fetch(`${BACKEND}${path}`, {
+    fetch(`${BACKEND_URL}${path}`, {
       credentials: "include",
       cache: "no-store",
     }),
 
   post: (path: string, body: unknown) =>
-    fetch(`${BACKEND}${path}`, {
+    fetch(`${BACKEND_URL}${path}`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -16,8 +16,16 @@ export const api = {
     }),
 
   put: (path: string, body: unknown) =>
-    fetch(`${BACKEND}${path}`, {
+    fetch(`${BACKEND_URL}${path}`, {
       method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+
+  patch: (path: string, body: unknown) =>
+    fetch(`${BACKEND_URL}${path}`, {
+      method: "PATCH",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
