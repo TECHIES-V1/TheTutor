@@ -1,172 +1,68 @@
 @import "tailwindcss";
 @config "../../tailwind.config.ts";
 
-/* ─────────────────────────────────────────────
-   LIGHT THEME (landing pages, default)
-   Cards = royal blue leather (#1E3A7A) — aged
-   cobalt, NOT ice-blue. Scales more visible on
-   royal blue via higher contrast arc opacities.
-   Page background stays warm cream; only card
-   and panel surfaces are royal blue leather.
-   ───────────────────────────────────────────── */
 :root {
   --primary: #9a7519;
   --primary-foreground: #fff7e0;
-  --secondary: #2447A3;           /* royal blue as secondary accent */
-  --secondary-foreground: #f6f1df;
-  --background: #fbfaf6;          /* warm cream page bg — unchanged */
+  --secondary: #161616;
+  --secondary-foreground: #f7f2e5;
+  --background: #fbfaf6;
   --foreground: #111111;
-  --card: #1E3A7A;                /* royal blue leather card surface */
-  --card-foreground: #F6F1DF;     /* cream text on royal blue (9:1 ratio) */
-  --popover: #1E3A7A;
-  --popover-foreground: #F6F1DF;
-  --muted: #2447A3;               /* brighter royal blue muted bg */
-  --muted-foreground: #4a6490;    /* dark navy-blue — readable on cream page bg */
+  --card: #ffffff;
+  --card-foreground: #161616;
+  --popover: #ffffff;
+  --popover-foreground: #161616;
+  --muted: #f2eee2;
+  --muted-foreground: #5f5540;
   --accent: #d4af37;
   --accent-foreground: #111111;
   --destructive: #c54848;
   --destructive-foreground: #ffffff;
-  --border: rgba(212, 175, 55, 0.22); /* gold-tinted border on royal blue */
-  --input: #162F6A;               /* deep royal blue input bg (inset) */
-  --ring: #d4af37;                /* gold focus ring */
+  --border: #d6c08a;
+  --input: #e8dcc1;
+  --ring: #b48b1d;
   --radius: 0.75rem;
-  --background-soft: #eaf2ff;     /* soft light blue for page shell gradient */
-  --surface: #1E3A7A;             /* same as card */
-  --surface-raised: #2447A3;      /* slightly lighter royal blue (raised) */
-  --surface-pressed: #0F2258;     /* darker inset/pressed state */
+  --background-soft: #f7f2e7;
+  --surface: #faf7ef;
+  --surface-raised: #ffffff;
+  --surface-pressed: #ece3d0;
   --accent-strong: #8a6a09;
-
-  /* Leather navy tokens for direct use */
-  --leather-blue: #1E3A7A;          /* royal blue leather */
-  --leather-blue-mid: #2447A3;      /* mid — for hover on blue surfaces */
-  --leather-blue-tint: rgba(30, 58, 122, 0.06);  /* very subtle bg wash */
-
-  /* Shadow scale — light mode (GoHire-derived)
-     Dark:  rgba(118,145,191,0.34) — blue-tinted, rich, visible on light-blue surfaces
-     Light: rgba(255,255,255,0.95) — white catch — correct on light/cream surfaces       */
-  --shadow-dark:  rgba(118, 145, 191, 0.34);
-  --shadow-light: rgba(255, 255, 255, 0.95);
-  --shadow-inset:  inset 7px 7px 12px rgba(118, 145, 191, 0.35), inset -7px -7px 12px rgba(255, 255, 255, 0.95);
-  --shadow-card:   6px 6px 16px rgba(118, 145, 191, 0.34), -6px -6px 16px rgba(255, 255, 255, 0.95);
-  --shadow-raised: 8px 8px 20px rgba(118, 145, 191, 0.38), -8px -8px 20px rgba(255, 255, 255, 0.95);
-  --shadow-modal:  10px 10px 28px rgba(118, 145, 191, 0.40), -8px -8px 22px rgba(255, 255, 255, 0.95);
-  --shadow-float:  14px 14px 36px rgba(118, 145, 191, 0.42), -8px -8px 24px rgba(255, 255, 255, 0.95), 0 0 0 1px rgba(212, 175, 55, 0.15);
-  --shadow-focus:  0 0 0 2px rgba(212, 175, 55, 0.60), 0 0 12px rgba(212, 175, 55, 0.25);
-
-  /* Leather grain + scale texture — royal blue version
-     Higher arc opacity so scales are visible against blue surface.
-     White highlights 0.16 (vs 0.055 on navy) — catches the light edge.
-     Dark valleys 0.10 (vs 0.035) — defines scale boundary.
-     Directional grain stronger for blue mid-tone surface.              */
-  --leather-grain:
-    radial-gradient(ellipse at 100% 150%, rgba(255,255,255,0.160) 24%, transparent 25%),
-    radial-gradient(ellipse at 0%   150%, rgba(255,255,255,0.160) 24%, transparent 25%),
-    radial-gradient(ellipse at 100% -50%, rgba(0,0,0,0.100) 24%, transparent 25%),
-    radial-gradient(ellipse at 0%   -50%, rgba(0,0,0,0.100) 24%, transparent 25%),
-    linear-gradient(160deg,
-      rgba(255, 255, 255, 0.055) 0%,
-      rgba(255, 255, 255, 0.015) 40%,
-      rgba(0, 0, 0, 0.020) 60%,
-      rgba(0, 0, 0, 0.080) 100%
-    );
-  --leather-grain-size: 10px 8px;
-
-  /* Motion tokens */
-  --dur-instant: 80ms;
-  --dur-fast:    150ms;
-  --dur-base:    250ms;
-  --dur-mid:     350ms;
-  --dur-slow:    500ms;
-  --ease-spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-out:     cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-in-out:  cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow-light: none;
+  --shadow-dark: none;
+  --shadow-raised: none;
+  --shadow-inset: none;
+  --shadow-focus: 0 0 0 2px rgba(180, 139, 29, 0.15);
 }
 
-/* ─────────────────────────────────────────────
-   DARK / LEATHER THEME (authenticated app)
-   Surface: #1B2D4F — aged Hermès navy leather
-   Shadows: blue specular + deep navy dark
-   ───────────────────────────────────────────── */
 :root[data-theme="dark"] {
   --primary: #f0d27b;
   --primary-foreground: #17140c;
   --secondary: #d4af37;
   --secondary-foreground: #1c170c;
-
-  /* Leathery blue surface scale */
-  --background: #1B2D4F;
-  --background-soft: #0D1A2E;
+  --background: #11100d;
   --foreground: #f6f1df;
-  --card: #243550;
+  --card: #191715;
   --card-foreground: #f6f1df;
-  --popover: #243550;
+  --popover: #191715;
   --popover-foreground: #f6f1df;
-  --muted: #2E4068;
-  --muted-foreground: #D6C49A;
+  --muted: #23201a;
+  --muted-foreground: #b9ab8e;
   --accent: #d4af37;
   --accent-foreground: #19160f;
   --destructive: #f07d7d;
   --destructive-foreground: #251010;
-
-  /* Gold-tinted borders */
-  --border: rgba(212, 175, 55, 0.22);
-  --input: #0D1A2E;
+  --border: #3a3224;
+  --input: #2e271c;
   --ring: #d4af37;
-
-  --surface: #1B2D4F;
-  --surface-raised: #2E4068;
-  --surface-pressed: #0D1A2E;
+  --background-soft: #17140f;
+  --surface: #1b1813;
+  --surface-raised: #221e17;
+  --surface-pressed: #15120e;
   --accent-strong: #f0d27b;
-
-  /* Leather scale texture — fine reptile/crocodile grain for dark surfaces */
-  --leather-grain:
-    radial-gradient(ellipse at 100% 150%, rgba(255,255,255,0.055) 24%, transparent 25%),
-    radial-gradient(ellipse at 0%   150%, rgba(255,255,255,0.055) 24%, transparent 25%),
-    radial-gradient(ellipse at 100% -50%, rgba(0,0,0,0.035) 24%, transparent 25%),
-    radial-gradient(ellipse at 0%   -50%, rgba(0,0,0,0.035) 24%, transparent 25%),
-    linear-gradient(160deg,
-      rgba(255, 255, 255, 0.030) 0%,
-      rgba(255, 255, 255, 0.008) 40%,
-      rgba(0, 0, 0, 0.012) 60%,
-      rgba(0, 0, 0, 0.045) 100%
-    );
-  --leather-grain-size: 10px 8px;
-
-  /* Neumorphic shadow scale — derived from #1B2D4F via HSL math
-     Dark:  HSL(220°, 53%, 8%)  → rgba(13, 26, 46, 0.85)
-     Light: HSL(220°, 43%, 35%) → rgba(74, 102, 153, 0.45)  [blue specular, not white] */
-  --shadow-dark:  rgba(13, 26, 46, 0.85);
-  --shadow-light: rgba(74, 102, 153, 0.45);
-  --shadow-inset:  inset 3px 3px 8px rgba(13, 26, 46, 0.85),  inset -3px -3px 8px rgba(74, 102, 153, 0.45);
-  --shadow-card:   6px 6px 16px rgba(13, 26, 46, 0.85),  -6px -6px 16px rgba(74, 102, 153, 0.45);
-  --shadow-raised: 8px 8px 20px rgba(13, 26, 46, 0.85),  -8px -8px 20px rgba(74, 102, 153, 0.45);
-  --shadow-modal:  12px 12px 30px rgba(13, 26, 46, 0.85), -6px -6px 20px rgba(74, 102, 153, 0.45);
-  --shadow-float:  14px 14px 40px rgba(13, 26, 46, 0.85), -8px -8px 24px rgba(74, 102, 153, 0.45), 0 0 0 1px rgba(212, 175, 55, 0.2);
-  --shadow-focus:  0 0 0 2px rgba(212, 175, 55, 0.6), 0 0 12px rgba(212, 175, 55, 0.25);
+  --shadow-light: none;
+  --shadow-dark: none;
 }
 
-/* ─────────────────────────────────────────────
-   LIGHT MODE — BLUE SURFACE TEXT CASCADE
-   Royal blue cards need cream text. Scope
-   --foreground and --muted-foreground overrides
-   inside blue surfaces so all Tailwind text-*
-   classes inherit cream automatically.
-   ───────────────────────────────────────────── */
-/* Light mode: royal blue card surfaces need cream text.
-   neo-inset and landing-inset are now light (#eaf2ff) — excluded here. */
-:root .card-leather,
-:root .neo-surface,
-:root .landing-surface,
-:root .skeuo-outline {
-  --foreground: #F6F1DF;
-  --muted-foreground: #D6C49A;
-  --border: rgba(212, 175, 55, 0.22);
-  color: #F6F1DF;
-}
-
-/* ─────────────────────────────────────────────
-   BASE STYLES
-   ───────────────────────────────────────────── */
 * {
   @apply border-border outline-ring/50;
 }
@@ -190,15 +86,31 @@ html[data-theme="dark"] {
   color-scheme: dark;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   @apply font-bold;
-  font-family: var(--font-playfair), var(--font-comfortaa), serif;
+  font-family: var(--font-comfortaa), sans-serif;
 }
 
-h1 { @apply text-5xl md:text-6xl; }
-h2 { @apply text-4xl md:text-5xl; }
-h3 { @apply text-3xl md:text-4xl; }
-h4 { @apply text-2xl md:text-3xl; }
+/* h1 {
+  @apply text-5xl md:text-6xl;
+}
+
+h2 {
+  @apply text-4xl md:text-5xl;
+}
+
+h3 {
+  @apply text-3xl md:text-4xl;
+}
+
+h4 {
+  @apply text-2xl md:text-3xl;
+} */
 
 button:not(:disabled),
 [role="button"]:not([aria-disabled="true"]),
@@ -225,173 +137,89 @@ input[type="radio"]:not(:disabled) {
   min-width: 0;
 }
 
-::-webkit-scrollbar { display: none; }
-* { -ms-overflow-style: none; scrollbar-width: none; }
+::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
 @media (min-width: 640px) {
-  .container { padding-left: 1.5rem; padding-right: 1.5rem; }
-}
-@media (min-width: 1024px) {
-  .container { padding-left: 2rem; padding-right: 2rem; max-width: 1280px; }
-}
-
-/* ─────────────────────────────────────────────
-   SURFACE UTILITIES (neumorphic)
-   ───────────────────────────────────────────── */
-
-/* Convex surface — cards, panels (info comes OUT) */
-.neo-surface {
-  background: var(--card);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-card);
-}
-
-/* Concave surface — inputs, inset containers (info goes IN) */
-.neo-inset {
-  background: var(--background-soft);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-inset);
-}
-
-/* Leather card — full leathery surface with grain + neumorphic depth */
-.card-leather {
-  position: relative;
-  overflow: hidden;
-  background: var(--card);
-  border: 1px solid rgba(212, 175, 55, 0.22);
-  border-radius: 20px;
-  box-shadow: var(--shadow-card);
-  transition:
-    transform var(--dur-mid) var(--ease-out),
-    box-shadow var(--dur-mid) ease,
-    border-color var(--dur-base) ease;
-}
-
-.card-leather::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--leather-grain);
-  background-size: var(--leather-grain-size, 10px 8px), var(--leather-grain-size, 10px 8px),
-                   var(--leather-grain-size, 10px 8px), var(--leather-grain-size, 10px 8px),
-                   100% 100%;
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: 0;
-}
-
-@media (hover: hover) {
-  .card-leather:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-raised);
-    border-color: rgba(212, 175, 55, 0.50);
+  .container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
   }
 }
 
-/* Concave input — recessed leather surface */
-.input-leather {
+@media (min-width: 1024px) {
+  .container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+    max-width: 1280px;
+  }
+}
+
+.neo-surface {
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+
+.neo-inset {
   background: var(--background-soft);
-  border: 1px solid rgba(212, 175, 55, 0.18);
-  border-radius: 12px;
-  box-shadow: var(--shadow-inset);
-  color: var(--foreground); /* dark in light mode (light blue bg), cream in dark mode (navy bg) */
-  padding: 10px 14px;
-  transition: border-color var(--dur-base) ease, box-shadow var(--dur-base) ease;
+  border: 1px solid var(--border);
 }
 
-.input-leather:hover {
-  border-color: rgba(212, 175, 55, 0.35);
+html[data-theme="dark"] .neo-surface {
+  border-color: rgba(212, 175, 55, 0.26);
 }
 
-.input-leather:focus {
-  outline: none;
-  border-color: rgba(212, 175, 55, 0.70);
-  box-shadow: var(--shadow-inset), var(--shadow-focus);
+html[data-theme="dark"] .neo-inset {
+  border-color: rgba(212, 175, 55, 0.2);
 }
 
-/* ─────────────────────────────────────────────
-   BUTTON STYLES
-   ───────────────────────────────────────────── */
-
-/* Primary CTA — dark gradient + gold border + neumorphic depth + spring physics */
 .skeuo-gold {
   background: linear-gradient(145deg, #0f0f0f, #1a1a1a);
   border: 1px solid rgba(212, 175, 55, 0.9);
   color: #fff9e6;
-  box-shadow: var(--shadow-card);
-  transition:
-    transform var(--dur-fast) var(--ease-spring),
-    filter var(--dur-base) ease,
-    box-shadow var(--dur-base) ease;
+  transition: transform 0.15s ease, filter 0.2s ease;
 }
 
 .skeuo-gold:hover {
-  filter: brightness(1.08);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-raised);
+  filter: brightness(1.06);
+  transform: translateY(-1px);
 }
 
 .skeuo-gold:active {
-  transform: scale(0.96) translateY(1px);
-  filter: brightness(0.96);
-  box-shadow: var(--shadow-inset);
-}
-
-.skeuo-gold:focus-visible {
-  outline: none;
-  box-shadow: var(--shadow-focus);
+  transform: translateY(0);
 }
 
 html[data-theme="dark"] .skeuo-gold {
-  background: linear-gradient(145deg, #0f0f0f, #1a1a1a);
-  border: 1px solid rgba(212, 175, 55, 0.9);
-  color: #fff9e6;
+  background: var(--primary);
+  border: 1px solid rgba(255, 229, 153, 0.4);
+  color: #1a1408;
 }
 
 html[data-theme="dark"] .skeuo-gold:hover {
-  filter: brightness(1.08);
+  filter: brightness(1.05);
 }
 
-/* Secondary / outline — leather surface + gold border */
+
 .skeuo-outline {
-  position: relative;
-  overflow: hidden;
-  background: var(--card);
+  background: #ffffff;
   border: 1px solid rgba(212, 175, 55, 0.5);
-  color: var(--foreground);
-  box-shadow: var(--shadow-card);
-  transition:
-    transform var(--dur-fast) var(--ease-spring),
-    box-shadow var(--dur-base) ease,
-    border-color var(--dur-base) ease;
-}
-
-.skeuo-outline::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--leather-grain);
-  background-size: var(--leather-grain-size, 10px 8px), var(--leather-grain-size, 10px 8px),
-                   var(--leather-grain-size, 10px 8px), var(--leather-grain-size, 10px 8px),
-                   100% 100%;
-  border-radius: inherit;
-  pointer-events: none;
+  color: #1a1a1a;
+  transition: transform 0.15s ease;
 }
 
 .skeuo-outline:hover {
   transform: translateY(-1px);
-  box-shadow: var(--shadow-raised);
-  border-color: rgba(212, 175, 55, 0.70);
+  background: var(--muted);
 }
 
 .skeuo-outline:active {
-  transform: scale(0.97) translateY(1px);
-  box-shadow: var(--shadow-inset);
-}
-
-.skeuo-outline:focus-visible {
-  outline: none;
-  box-shadow: var(--shadow-focus);
+  transform: translateY(0);
 }
 
 html[data-theme="dark"] .skeuo-outline {
@@ -402,105 +230,24 @@ html[data-theme="dark"] .skeuo-outline {
 
 html[data-theme="dark"] .skeuo-outline:hover {
   background: var(--muted);
-  border-color: rgba(212, 175, 55, 0.55);
 }
 
-/* ─────────────────────────────────────────────
-   LANDING PAGE VARIANTS (light theme only)
-   Blue introduced via:
-   — .landing-surface  pale blue-white card
-   — .landing-inset    slightly deeper blue-white
-   — .landing-blue     full leathery navy section (cream text + gold accents)
-   ───────────────────────────────────────────── */
 
-/* Royal blue leather card surface — matches --card in light mode */
 .landing-surface {
-  position: relative;
-  overflow: hidden;
-  background: #1E3A7A;
-  color: #F6F1DF;
-  border: 1px solid rgba(212, 175, 55, 0.22);
-  box-shadow: var(--shadow-card);
+  background: #ffffff;
+  border: 1px solid rgba(212, 175, 55, 0.34);
 }
 
-.landing-surface::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--leather-grain);
-  background-size:
-    var(--leather-grain-size, 10px 8px),
-    var(--leather-grain-size, 10px 8px),
-    var(--leather-grain-size, 10px 8px),
-    var(--leather-grain-size, 10px 8px),
-    100% 100%;
-  pointer-events: none;
-  border-radius: inherit;
-}
-
-/* Slightly recessed — badges, pills, info boxes (light surface) */
 .landing-inset {
-  background: #eaf2ff;
-  border: 1px solid rgba(27, 45, 79, 0.14);
-  box-shadow: var(--shadow-inset);
-  color: #1E3A7A;
+  background: #ffffff;
+  border: 1px solid rgba(212, 175, 55, 0.3);
 }
-
-/* Full leathery navy section — bold blue with cream text and gold accents */
-.landing-blue {
-  position: relative;
-  overflow: hidden;
-  background: #1B2D4F;
-  color: #F6F1DF;
-  border: 1px solid rgba(212, 175, 55, 0.22);
-  box-shadow: var(--shadow-card);
-}
-
-/* Scale texture on blue sections */
-.landing-blue::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--leather-grain);
-  background-size:
-    var(--leather-grain-size, 10px 8px),
-    var(--leather-grain-size, 10px 8px),
-    var(--leather-grain-size, 10px 8px),
-    var(--leather-grain-size, 10px 8px),
-    100% 100%;
-  pointer-events: none;
-  border-radius: inherit;
-}
-
-/* Ambient shell background — GoHire's neu-shell pattern.
-   Applied to full pages (not cards). Radial ambient glows + linear gradient. */
-.neu-shell {
-  background:
-    radial-gradient(circle at 12% 8%, rgba(30, 58, 122, 0.07) 0%, transparent 52%),
-    radial-gradient(circle at 90% 18%, rgba(212, 175, 55, 0.05) 0%, transparent 48%),
-    linear-gradient(165deg, var(--background-soft) 0%, var(--background) 100%);
-}
-
-/* Blue-gradient primary button — suits light page background (not dark like skeuo-gold) */
-.landing-btn-primary {
-  background: linear-gradient(145deg, #1E3A7A, #162F6A);
-  border: 1px solid rgba(212, 175, 55, 0.75);
-  color: #F6F1DF;
-  box-shadow: -5px -5px 10px rgba(255, 255, 255, 0.52), 7px 7px 14px rgba(30, 58, 122, 0.35);
-  transition:
-    transform var(--dur-fast) var(--ease-spring),
-    filter var(--dur-base) ease,
-    box-shadow var(--dur-base) ease;
-}
-.landing-btn-primary:hover  { filter: brightness(1.10); transform: translateY(-2px); box-shadow: var(--shadow-raised); }
-.landing-btn-primary:active { transform: scale(0.96) translateY(1px); box-shadow: var(--shadow-inset); }
-.landing-btn-primary:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
 
 .landing-gold {
   background: var(--primary);
   border: 1px solid rgba(212, 175, 55, 0.9);
   color: #fff9e6;
-  transition: transform var(--dur-fast) ease, filter var(--dur-base) ease;
+  transition: transform 0.15s ease, filter 0.2s ease;
 }
 
 .landing-gold:hover {
@@ -516,7 +263,7 @@ html[data-theme="dark"] .skeuo-outline:hover {
   background: #ffffff;
   border: 1px solid rgba(212, 175, 55, 0.5);
   color: #1a1a1a;
-  transition: transform var(--dur-fast) ease;
+  transition: transform 0.15s ease;
 }
 
 .landing-outline:hover {
@@ -528,106 +275,41 @@ html[data-theme="dark"] .skeuo-outline:hover {
   transform: translateY(0);
 }
 
-/* ─────────────────────────────────────────────
-   BADGES / TAGS
-   ───────────────────────────────────────────── */
-.badge-gold {
-  background: rgba(212, 175, 55, 0.12);
-  border: 1px solid rgba(212, 175, 55, 0.35);
-  color: #F5D060;
-  border-radius: 9999px;
-  padding: 2px 10px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  box-shadow: 0 0 8px rgba(212, 175, 55, 0.15);
-  display: inline-flex;
-  align-items: center;
-}
-
-.badge-leather {
-  background: var(--card);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  color: var(--muted-foreground);
-  border-radius: 9999px;
-  padding: 2px 10px;
-  font-size: 11px;
-  box-shadow: var(--shadow-card);
-  display: inline-flex;
-  align-items: center;
-}
-
-/* ─────────────────────────────────────────────
-   PROGRESS BAR
-   ───────────────────────────────────────────── */
-.progress-track {
-  background: var(--background-soft);
-  border-radius: 9999px;
-  height: 6px;
-  box-shadow: var(--shadow-inset);
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #C9A227, #F5D060);
-  border-radius: 9999px;
-  box-shadow: 0 0 8px rgba(212, 175, 55, 0.4);
-  transition: width 400ms var(--ease-out);
-}
-
-/* ─────────────────────────────────────────────
-   MOTION UTILITIES
-   ───────────────────────────────────────────── */
 .motion-link {
   transition: color 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
 }
 
 .motion-press {
   transition:
-    transform var(--dur-fast) ease,
-    filter var(--dur-base) ease,
-    background-color var(--dur-base) ease,
-    border-color var(--dur-base) ease,
-    color var(--dur-base) ease;
+    transform 0.18s ease,
+    filter 0.22s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .motion-card {
   transition:
-    transform var(--dur-mid) var(--ease-out),
-    border-color var(--dur-base) ease,
-    background-color var(--dur-base) ease,
-    box-shadow var(--dur-mid) ease;
-}
-
-/* Spring physics — Disney squash & stretch on interactive elements */
-.motion-spring {
-  transition:
-    transform var(--dur-fast) var(--ease-spring),
-    box-shadow var(--dur-base) var(--ease-out);
-}
-
-/* Card lift — Disney anticipation + slow-out */
-.motion-lift {
-  transition:
-    transform var(--dur-mid) var(--ease-out),
-    box-shadow var(--dur-mid) ease,
-    border-color var(--dur-base) ease;
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.22s ease,
+    background-color 0.22s ease;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .motion-link:hover  { transform: translateY(-1px); }
-  .motion-card:hover  { transform: translateY(-3px); }
-  .motion-lift:hover  { transform: translateY(-4px); }
+  .motion-link:hover {
+    transform: translateY(-1px);
+  }
+
+  .motion-card:hover {
+    transform: translateY(-3px);
+  }
+
 }
 
-.motion-press:active { transform: translateY(1px) scale(0.995); }
-.motion-spring:active { transform: scale(0.96) translateY(1px); }
+.motion-press:active {
+  transform: translateY(1px) scale(0.995);
+}
 
-/* ─────────────────────────────────────────────
-   KEYFRAME ANIMATIONS
-   ───────────────────────────────────────────── */
 @keyframes aurora-shift {
   0%   { background-position: 0%   50%; }
   50%  { background-position: 100% 50%; }
@@ -639,22 +321,10 @@ html[data-theme="dark"] .skeuo-outline:hover {
   100% { background-position: -200% center; }
 }
 
-/* Disney Appeal principle — gold pulse for empty states & loading icons */
-@keyframes gold-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4); }
-  50%       { box-shadow: 0 0 0 8px rgba(212, 175, 55, 0); }
-}
-
-/* Disney Secondary Action — staggered bounce dots */
-@keyframes neo-bounce {
-  0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
-  40%           { transform: scale(1); opacity: 1; }
-}
-
 .aurora-bg {
   background: linear-gradient(
     135deg,
-    rgba(212, 175,  55, 0.15),
+    rgba(212, 175, 55, 0.15),
     rgba(150,  60, 220, 0.10),
     rgba(  0, 160, 220, 0.08),
     rgba(212, 175,  55, 0.12),
@@ -665,31 +335,16 @@ html[data-theme="dark"] .skeuo-outline:hover {
   animation: aurora-shift 12s ease infinite;
 }
 
-.animate-gold-pulse {
-  animation: gold-pulse 2s var(--ease-in-out) infinite;
-}
-
-/* ─────────────────────────────────────────────
-   ACCESSIBILITY
-   ───────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
+  html {
+    scroll-behavior: auto;
+  }
 
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-  }
-}
-
-@media (prefers-contrast: high) {
-  :root[data-theme="dark"] {
-    --border: rgba(212, 175, 55, 0.7);
-    --shadow-dark:  rgba(0, 0, 0, 0.98);
-    --shadow-light: rgba(100, 140, 210, 0.7);
-    --muted-foreground: #f6f1df;
-    --shadow-card:   6px 6px 16px rgba(0, 0, 0, 0.98), -6px -6px 16px rgba(100, 140, 210, 0.7);
-    --shadow-inset:  inset 3px 3px 8px rgba(0, 0, 0, 0.98), inset -3px -3px 8px rgba(100, 140, 210, 0.7);
-    --shadow-focus:  0 0 0 3px rgba(212, 175, 55, 0.9), 0 0 16px rgba(212, 175, 55, 0.4);
   }
 }

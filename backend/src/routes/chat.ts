@@ -2,7 +2,7 @@ import { Router, type Request, type Response } from "express";
 import { Types } from "mongoose";
 import { randomUUID } from "crypto";
 import { requireAuth } from "../middleware/auth";
-import { Conversation, type IMessage } from "../models/Conversation";
+import { Conversation, type IMessage, type IConversation } from "../models/Conversation";
 import { Course } from "../models/Course";
 import {
   chat,
@@ -10,6 +10,17 @@ import {
   extractOnboardingDataFromConversation,
 } from "../services/ai/nova";
 import type { ModelMessage } from "ai";
+import {
+  cacheActiveConversation,
+  cacheConversationById,
+  cacheConversationsList,
+  getCachedActiveConversation,
+  getCachedConversationById,
+  getCachedConversationsList,
+  invalidateConversationByIdCache,
+  invalidateConversationCaches,
+  invalidateUserConversationCaches,
+} from "../services/cache/chatCache";
 
 const router = Router();
 
@@ -24,6 +35,39 @@ type RelatedCoursePreview = {
   authorName: string;
   moduleCount: number;
   lessonCount: number;
+};
+
+type ConversationPayload = {
+  id: string;
+  messages: Array<{
+    id: string;
+    role: "user" | "assistant";
+    content: string;
+    timestamp: string;
+    metadata?: IMessage["metadata"];
+  }>;
+  phase: IConversation["phase"];
+  onboardingData: IConversation["onboardingData"];
+  confirmationAttempts: number;
+  status: IConversation["status"];
+  courseId?: string;
+};
+
+type ConversationResponse = {
+  conversation: ConversationPayload;
+};
+
+type ConversationsListResponse = {
+  conversations: Array<{
+    id: string;
+    status: IConversation["status"];
+    phase: IConversation["phase"];
+    subject: string | null;
+    messageCount: number;
+    courseId: string | null;
+    createdAt: string;
+    updatedAt: string;
+  }>;
 };
 
 function escapeRegex(input: string): string {
@@ -115,6 +159,24 @@ function toAIMessages(messages: IMessage[]): ModelMessage[] {
     role: m.role,
     content: m.content,
   }));
+}
+
+function toConversationPayload(conversation: IConversation): ConversationPayload {
+  return {
+    id: conversation._id.toString(),
+    messages: conversation.messages.map((m) => ({
+      id: m.id,
+      role: m.role,
+      content: m.content,
+      timestamp: m.timestamp.toISOString(),
+      metadata: m.metadata,
+    })),
+    phase: conversation.phase,
+    onboardingData: conversation.onboardingData,
+    confirmationAttempts: conversation.confirmationAttempts,
+    status: conversation.status,
+    courseId: conversation.courseId?.toString(),
+  };
 }
 
 // ── POST /chat/message ────────────────────────────────────────────────────
@@ -235,9 +297,19 @@ router.post("/message", requireAuth, async (req: Request, res: Response) => {
     };
     conversation.messages.push(assistantMessage);
     await conversation.save();
+    const savedConversationId = conversation._id.toString();
+    const conversationPayload: ConversationResponse = {
+      conversation: toConversationPayload(conversation),
+    };
+
+    await Promise.all([
+      invalidateConversationCaches(userId, savedConversationId),
+      cacheActiveConversation(userId, conversationPayload),
+      cacheConversationById(userId, savedConversationId, conversationPayload),
+    ]);
 
     res.json({
-      conversationId: conversation._id.toString(),
+      conversationId: savedConversationId,
       message: {
         id: assistantMessage.id,
         role: assistantMessage.role,
@@ -260,13 +332,18 @@ router.post("/message", requireAuth, async (req: Request, res: Response) => {
 router.get("/conversations", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.jwtUser!.userId;
+    const cachedPayload = await getCachedConversationsList<ConversationsListResponse>(userId);
+    if (cachedPayload) {
+      res.json(cachedPayload);
+      return;
+    }
 
     const conversations = await Conversation.find({ userId: new Types.ObjectId(userId) })
       .sort({ updatedAt: -1 })
       .limit(50)
       .select("_id status phase onboardingData courseId createdAt updatedAt messages");
 
-    res.json({
+    const payload: ConversationsListResponse = {
       conversations: conversations.map((c) => ({
         id: c._id.toString(),
         status: c.status,
@@ -277,7 +354,10 @@ router.get("/conversations", requireAuth, async (req: Request, res: Response) =>
         createdAt: c.createdAt.toISOString(),
         updatedAt: c.updatedAt.toISOString(),
       })),
-    });
+    };
+
+    await cacheConversationsList(userId, payload);
+    res.json(payload);
   } catch (error) {
     console.error("List conversations error:", error);
     res.status(500).json({ error: "Failed to list conversations", code: "DB_ERROR" });
@@ -289,6 +369,11 @@ router.get("/conversations", requireAuth, async (req: Request, res: Response) =>
 router.get("/conversation", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.jwtUser!.userId;
+    const cachedPayload = await getCachedActiveConversation<ConversationResponse>(userId);
+    if (cachedPayload) {
+      res.json(cachedPayload);
+      return;
+    }
 
     const conversation = await Conversation.findOne({
       userId: new Types.ObjectId(userId),
@@ -300,23 +385,13 @@ router.get("/conversation", requireAuth, async (req: Request, res: Response) => 
       return;
     }
 
-    res.json({
-      conversation: {
-        id: conversation._id.toString(),
-        messages: conversation.messages.map((m) => ({
-          id: m.id,
-          role: m.role,
-          content: m.content,
-          timestamp: m.timestamp.toISOString(),
-          metadata: m.metadata,
-        })),
-        phase: conversation.phase,
-        onboardingData: conversation.onboardingData,
-        confirmationAttempts: conversation.confirmationAttempts,
-        status: conversation.status,
-        courseId: conversation.courseId?.toString(),
-      },
-    });
+    const payload: ConversationResponse = { conversation: toConversationPayload(conversation) };
+    await Promise.all([
+      cacheActiveConversation(userId, payload),
+      cacheConversationById(userId, conversation._id.toString(), payload),
+    ]);
+
+    res.json(payload);
   } catch (error) {
     console.error("Get conversation error:", error);
     res.status(500).json({ error: "Failed to get conversation", code: "DB_ERROR" });
@@ -335,6 +410,12 @@ router.get("/conversation/:id", requireAuth, async (req: Request, res: Response)
       return;
     }
 
+    const cachedPayload = await getCachedConversationById<ConversationResponse>(userId, id);
+    if (cachedPayload) {
+      res.json(cachedPayload);
+      return;
+    }
+
     const conversation = await Conversation.findById(id);
 
     if (!conversation) {
@@ -347,23 +428,13 @@ router.get("/conversation/:id", requireAuth, async (req: Request, res: Response)
       return;
     }
 
-    res.json({
-      conversation: {
-        id: conversation._id.toString(),
-        messages: conversation.messages.map((m) => ({
-          id: m.id,
-          role: m.role,
-          content: m.content,
-          timestamp: m.timestamp.toISOString(),
-          metadata: m.metadata,
-        })),
-        phase: conversation.phase,
-        onboardingData: conversation.onboardingData,
-        confirmationAttempts: conversation.confirmationAttempts,
-        status: conversation.status,
-        courseId: conversation.courseId?.toString(),
-      },
-    });
+    const payload: ConversationResponse = { conversation: toConversationPayload(conversation) };
+    await cacheConversationById(userId, id, payload);
+    if (conversation.status === "active") {
+      await cacheActiveConversation(userId, payload);
+    }
+
+    res.json(payload);
   } catch (error) {
     console.error("Get conversation error:", error);
     res.status(500).json({ error: "Failed to get conversation", code: "DB_ERROR" });
@@ -426,6 +497,15 @@ router.post("/confirm-subject", requireAuth, async (req: Request, res: Response)
       conversation.messages.push(discoveryAssistantMessage);
 
       await conversation.save();
+      const savedConversationId = conversation._id.toString();
+      const payload: ConversationResponse = {
+        conversation: toConversationPayload(conversation),
+      };
+      await Promise.all([
+        invalidateConversationCaches(userId, savedConversationId),
+        cacheActiveConversation(userId, payload),
+        cacheConversationById(userId, savedConversationId, payload),
+      ]);
       console.log(
         "[confirm-subject] Saved. Phase is now:",
         conversation.phase,
@@ -446,6 +526,15 @@ router.post("/confirm-subject", requireAuth, async (req: Request, res: Response)
       // Rejection — increment counter, let user continue chatting
       conversation.confirmationAttempts += 1;
       await conversation.save();
+      const savedConversationId = conversation._id.toString();
+      const payload: ConversationResponse = {
+        conversation: toConversationPayload(conversation),
+      };
+      await Promise.all([
+        invalidateConversationCaches(userId, savedConversationId),
+        cacheActiveConversation(userId, payload),
+        cacheConversationById(userId, savedConversationId, payload),
+      ]);
 
       res.json({
         success: true,
@@ -466,13 +555,22 @@ router.post("/restart", requireAuth, async (req: Request, res: Response) => {
   try {
     const { conversationId } = req.body as { conversationId?: string };
     const userId = req.jwtUser!.userId;
+    const conversationsToInvalidate: string[] = [];
 
     if (conversationId) {
+      conversationsToInvalidate.push(conversationId);
       await Conversation.findOneAndUpdate(
         { _id: conversationId, userId: new Types.ObjectId(userId), status: "active" },
         { status: "abandoned" }
       );
     } else {
+      const activeConversations = await Conversation.find({
+        userId: new Types.ObjectId(userId),
+        status: "active",
+      }).select("_id");
+      conversationsToInvalidate.push(
+        ...activeConversations.map((conversation) => conversation._id.toString())
+      );
       await Conversation.updateMany(
         { userId: new Types.ObjectId(userId), status: "active" },
         { status: "abandoned" }
@@ -488,10 +586,25 @@ router.post("/restart", requireAuth, async (req: Request, res: Response) => {
       status: "active",
     });
     await newConversation.save();
+    const newConversationId = newConversation._id.toString();
+    const newPayload: ConversationResponse = {
+      conversation: toConversationPayload(newConversation),
+    };
+
+    await invalidateUserConversationCaches(userId);
+    await Promise.all(
+      conversationsToInvalidate.map((idToInvalidate) =>
+        invalidateConversationByIdCache(userId, idToInvalidate)
+      )
+    );
+    await Promise.all([
+      cacheActiveConversation(userId, newPayload),
+      cacheConversationById(userId, newConversationId, newPayload),
+    ]);
 
     res.json({
       success: true,
-      newConversationId: newConversation._id.toString(),
+      newConversationId,
       message: "Conversation restarted",
     });
   } catch (error) {

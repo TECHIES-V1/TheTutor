@@ -45,20 +45,24 @@ export default function ExploreCourseDetailPage() {
 
   if (loading) {
     return (
-      <div className="px-4 py-6 sm:px-6 sm:py-8">
-        <PageLoader
-          title="Loading course preview..."
-          subtitle="Preparing curriculum, access, and enrollment details."
-        />
+      <div className="py-6 sm:py-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <PageLoader
+            title="Loading course preview..."
+            subtitle="Preparing curriculum, access, and enrollment details."
+          />
+        </div>
       </div>
     );
   }
 
   if (!data) {
     return (
-      <div className="px-4 py-6 sm:px-6 sm:py-8">
-        <div className="neo-surface rounded-2xl p-6 text-sm text-muted-foreground">
-          {error ?? "Course not found."}
+      <div className="py-6 sm:py-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="neo-surface rounded-2xl p-6 text-sm text-muted-foreground">
+            {error ?? "Course not found."}
+          </div>
         </div>
       </div>
     );
@@ -70,9 +74,9 @@ export default function ExploreCourseDetailPage() {
   const isFailed = generationStatus === "failed";
 
   return (
-    <div className="relative px-4 py-6 sm:px-6 sm:py-8">
+    <div className="relative py-6 sm:py-8">
 
-      <div className="relative z-10 mx-auto w-full max-w-7xl space-y-4">
+      <div className="relative z-10 mx-auto w-full max-w-7xl space-y-4 px-4 sm:px-6">
 
         {isGenerating && (
           <div className="flex items-center gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
@@ -174,7 +178,7 @@ export default function ExploreCourseDetailPage() {
 
               <div className="space-y-4">
                 {data.curriculumOutline.map((module) => (
-                  <div key={module.moduleId} className="rounded-2xl border border-primary/15 bg-card/60 p-4">
+                  <div key={module.moduleId} className="card-leather rounded-2xl p-4">
                     <p className="text-xs uppercase tracking-wide text-primary/80">Module {module.order}</p>
                     <h3 className="mt-1 text-lg font-semibold text-foreground">{module.title}</h3>
                     {module.moduleQuiz && (
@@ -187,7 +191,7 @@ export default function ExploreCourseDetailPage() {
                         <li
                           id={`lesson-${lesson.lessonId}`}
                           key={lesson.lessonId}
-                          className="rounded-xl border border-border/80 bg-background/40 p-3"
+                          className="card-leather rounded-xl p-3"
                         >
                           <p className="text-sm font-medium text-foreground">
                             Lesson {lesson.order}: {lesson.title}
@@ -206,7 +210,7 @@ export default function ExploreCourseDetailPage() {
                 <h2 className="text-xl font-bold text-foreground">Textbook Sources</h2>
                 <ul className="mt-3 space-y-2">
                   {data.course.sourceAttribution.map((source) => (
-                    <li key={`${source.title}-${source.source}`} className="rounded-xl border border-border/70 bg-card/50 p-3">
+                    <li key={`${source.title}-${source.source}`} className="card-leather rounded-xl p-3">
                       <p className="text-sm font-semibold text-foreground">{source.title}</p>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {source.authors.length > 0 ? source.authors.join(", ") : "Unknown author"} • {source.source || "source unavailable"}

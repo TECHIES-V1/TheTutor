@@ -61,9 +61,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-6 sm:py-8">
+    <div className="py-6 sm:py-8">
 
-      <div className="relative z-10 mx-auto w-full max-w-7xl space-y-7">
+      <div className="relative z-10 mx-auto w-full max-w-7xl space-y-7 px-4 sm:px-6">
         <section className="neo-surface rounded-3xl p-4 sm:p-6">
           <h3 className="text-xl sm:text-2xl font-bold text-foreground">
             {getTimeGreeting(overview?.greetingName ?? user?.name)}
@@ -74,7 +74,7 @@ export default function DashboardPage() {
 
           <div className="mt-5 grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
             {stats.map(({ label, value, icon: Icon, suffix }) => (
-              <div key={label} className="rounded-2xl border border-border/80 bg-card/70 p-4">
+              <div key={label} className="card-leather rounded-2xl p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">{label}</p>
                   <div className="neo-inset flex h-8 w-8 items-center justify-center rounded-lg">
@@ -88,13 +88,13 @@ export default function DashboardPage() {
           </div>
 
           <div className="mt-5 grid gap-3 grid-cols-1 md:grid-cols-2">
-            <Link href="/dashboard/courses" className="motion-card rounded-2xl border border-border/80 bg-card/70 p-4">
+            <Link href="/dashboard/courses" className="card-leather motion-card rounded-2xl p-4">
               <p className="text-xs uppercase tracking-[0.12em] text-primary/75">Created Courses</p>
               <p className="mt-2 text-2xl font-bold text-foreground">{overview?.ownedCourses.length ?? 0}</p>
               <p className="mt-1 text-sm text-muted-foreground">Manage authored courses and publishing.</p>
             </Link>
 
-            <Link href="/dashboard/enrollments" className="motion-card rounded-2xl border border-border/80 bg-card/70 p-4">
+            <Link href="/dashboard/enrollments" className="card-leather motion-card rounded-2xl p-4">
               <p className="text-xs uppercase tracking-[0.12em] text-primary/75">Enrollments</p>
               <p className="mt-2 text-2xl font-bold text-foreground">{overview?.enrolledCourses.length ?? 0}</p>
               <p className="mt-1 text-sm text-muted-foreground">Continue learner courses and certificates.</p>

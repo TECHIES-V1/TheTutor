@@ -19,9 +19,9 @@ export function CTA() {
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           className="landing-surface mx-auto max-w-4xl rounded-3xl p-8 backdrop-blur-md md:p-12"
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#d4af37]">Ready To Begin</p>
-          <h2 className="mt-3 text-4xl font-bold text-foreground md:text-5xl">Build A Personalized Study Path Today</h2>
-          <p className="mx-auto mt-4 max-w-2xl text-base text-muted-foreground md:text-lg">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#b48b1d]">Ready To Begin</p>
+            <h2 className="mt-3 text-[25px] font-bold text-[#111111] md:text-5xl text-balance leading-tight">Build A Personalized Study Path Today</h2>
+          <p className="mx-auto mt-4 max-w-2xl text-base text-[#4f4f4f] md:text-[16px] text-[14px]">
             Ask your first question, get a tailored plan, and keep learning with a tutor that adapts to you.
           </p>
 
@@ -29,7 +29,7 @@ export function CTA() {
             <Button
               asChild
               size="lg"
-              className="skeuo-gold rounded-full px-8 hover:!opacity-100"
+              className="landing-gold rounded-full px-8 hover:!opacity-100"
             >
               <Link href="/auth/signin">
                 Start Learning
@@ -38,9 +38,9 @@ export function CTA() {
             </Button>
             <Button
               asChild
-              variant="ghost"
+              variant="outline"
               size="lg"
-              className="rounded-full border border-[rgba(212,175,55,0.50)] bg-transparent px-8 text-[#F6F1DF] hover:bg-[rgba(255,255,255,0.08)] hover:text-[#F6F1DF]"
+              className="landing-outline rounded-full bg-transparent px-8"
             >
               <a href="#features">Explore Features</a>
             </Button>

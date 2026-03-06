@@ -67,23 +67,27 @@ export default function LessonPage() {
 
   if (loading) {
     return (
-      <div className="px-6 py-8">
-        <PageLoader title="Loading lesson..." subtitle="Preparing lesson content, videos, and citations." />
+      <div className="py-6 sm:py-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <PageLoader title="Loading lesson..." subtitle="Preparing lesson content, videos, and citations." />
+        </div>
       </div>
     );
   }
 
   if (!data) {
     return (
-      <div className="px-6 py-8">
-        <div className="neo-surface rounded-2xl p-6 text-sm text-muted-foreground">{error ?? "Lesson not found."}</div>
+      <div className="py-6 sm:py-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="neo-surface rounded-2xl p-6 text-sm text-muted-foreground">{error ?? "Lesson not found."}</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="relative px-4 py-6 sm:px-6 sm:py-8">
-      <div className="relative z-10 mx-auto w-full max-w-7xl">
+    <div className="relative py-6 sm:py-8">
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6">
         <div className={`grid w-full gap-6 ${isCoursePanelOpen ? "lg:grid-cols-[1fr_21.5rem]" : "lg:grid-cols-1"}`}>
 
           {/* Main content */}
@@ -152,7 +156,7 @@ export default function LessonPage() {
                 <Accordion label="Video References">
                   <ul className="space-y-2">
                     {data.lesson.videoReferences.map((video, i) => (
-                      <li key={`${video.url}-${i}`} className="rounded-lg border border-border/60 bg-background/50 p-3">
+                      <li key={`${video.url}-${i}`} className="card-leather rounded-lg p-3">
                         <a
                           href={video.url}
                           target="_blank"
@@ -176,7 +180,7 @@ export default function LessonPage() {
                 <Accordion label="APA Citations">
                   <ul className="space-y-2">
                     {data.lesson.citations.map((c, i) => (
-                      <li key={`${c.citationKey}-${i}`} className="rounded-lg border border-border/60 bg-background/50 p-3">
+                      <li key={`${c.citationKey}-${i}`} className="card-leather rounded-lg p-3">
                         <p className="text-xs text-muted-foreground">{c.citationText}</p>
                         <p className="mt-0.5 text-[11px] text-muted-foreground/70">
                           {c.sourceTitle || "Unknown"} —{" "}
@@ -276,7 +280,7 @@ export default function LessonPage() {
 function Accordion({ label, children }: { label: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="mt-6 rounded-2xl border border-border/70 bg-card/50">
+    <div className="card-leather mt-6 rounded-2xl">
       <button
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold text-foreground"

@@ -60,7 +60,7 @@ export function Notifications() {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="max-w-3xl">
+        <form onSubmit={handleSubmit}>
             <div className="neo-surface rounded-2xl p-6">
                 <div>
                     <h4 className="font-semibold text-foreground">Notification Preferences</h4>

@@ -11,7 +11,6 @@ import {
   LayoutDashboard,
   LogOut,
   PanelLeftClose,
-  PanelLeftOpen,
   Plus,
   Sparkles,
   UserCircle2,
@@ -52,6 +51,7 @@ export function Sidebar({
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const isCourseWorkspace =
     pathname.startsWith("/learn/") || /^\/explore\/[^/]+$/.test(pathname);
@@ -75,11 +75,16 @@ export function Sidebar({
   const completionHref = activeCourseId
     ? `/learn/${activeCourseId}/complete`
     : "/dashboard";
+  const handleLogoClick = () => {
+    if (isCollapsed) {
+      onToggleCollapse?.();
+    }
+  };
 
   const textReveal = cx(
     "overflow-hidden whitespace-nowrap transition-all duration-300",
     isCollapsed
-      ? "lg:max-w-0 lg:opacity-0 lg:group-hover/sidebar:max-w-[10rem] lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:max-w-[10rem] lg:group-focus-within/sidebar:opacity-100"
+      ? "lg:max-w-0 lg:opacity-0"
       : "max-w-[10rem] opacity-100"
   );
 
@@ -87,7 +92,7 @@ export function Sidebar({
     "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm",
     "border transition-all duration-200",
     isCollapsed
-      ? "lg:justify-center lg:px-0 lg:group-hover/sidebar:justify-start lg:group-hover/sidebar:px-3 lg:group-focus-within/sidebar:justify-start lg:group-focus-within/sidebar:px-3"
+      ? "lg:justify-center lg:px-0"
       : ""
   );
 
@@ -102,26 +107,27 @@ export function Sidebar({
 
       <aside
         className={cx(
-          "group/sidebar neo-surface fixed bottom-0 left-0 top-0 z-50 flex flex-col",
-          "border-r border-primary/10 shadow-neo-modal",
-          "transition-[transform,width] duration-300 ease-in-out lg:translate-x-0",
-          isCollapsed ? "w-72 lg:w-16 lg:hover:w-72 lg:focus-within:w-72" : "w-72",
+          "group/sidebar neo-surface fixed bottom-0 left-0 top-0 z-50 flex flex-col border-r border-primary/10 transition-[transform,width] duration-300 ease-in-out lg:translate-x-0",
+          isCollapsed ? "w-72 lg:w-16" : "w-72",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Header */}
         <div className="flex items-center gap-3 px-3 pt-5 pb-4">
-          <div
+          <button
+            type="button"
+            onClick={handleLogoClick}
             className={cx(
               "flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-primary/15 bg-primary/5 shadow-neo-card transition-all duration-300",
               isCollapsed
-                ? "h-10 w-10 lg:group-hover/sidebar:h-9 lg:group-hover/sidebar:w-9 lg:group-focus-within/sidebar:h-9 lg:group-focus-within/sidebar:w-9"
-                : "h-9 w-9"
+                ? "h-10 w-10 cursor-pointer lg:h-9 lg:w-9"
+                : "h-9 w-9 cursor-default"
             )}
+            aria-label={isCollapsed ? "Expand sidebar" : "Sidebar logo"}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="TheTutor" className="h-full w-full object-contain p-1.5" />
-          </div>
+          </button>
           <span className={cx("font-playfair text-base font-bold text-primary", textReveal)}>
             TheTutor
           </span>
@@ -131,17 +137,11 @@ export function Sidebar({
               onClick={onToggleCollapse}
               className={cx(
                 "hidden rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-                isCollapsed
-                  ? "lg:group-hover/sidebar:inline-flex lg:group-focus-within/sidebar:inline-flex"
-                  : "lg:inline-flex"
+                isCollapsed ? "lg:hidden" : "lg:inline-flex"
               )}
-              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-label="Collapse sidebar"
             >
-              {isCollapsed ? (
-                <PanelLeftOpen className="h-4 w-4" />
-              ) : (
-                <PanelLeftClose className="h-4 w-4" />
-              )}
+              <PanelLeftClose className="h-4 w-4" />
             </button>
             <button
               type="button"
@@ -209,7 +209,7 @@ export function Sidebar({
               className={cx(
                 "mt-3 space-y-0.5 rounded-xl border border-primary/20 bg-primary/8 p-2 shadow-neo-inset",
                 isCollapsed
-                  ? "lg:hidden lg:group-hover/sidebar:block lg:group-focus-within/sidebar:block"
+                  ? "lg:hidden"
                   : ""
               )}
             >
@@ -253,7 +253,7 @@ export function Sidebar({
                 "flex w-full items-center gap-2.5 rounded-xl px-2 py-2 border border-transparent transition-all duration-200",
                 "hover:bg-primary/5 hover:border-[rgba(212,175,55,0.12)]",
                 isCollapsed
-                  ? "lg:justify-center lg:px-0 lg:group-hover/sidebar:justify-start lg:group-hover/sidebar:px-2 lg:group-focus-within/sidebar:justify-start lg:group-focus-within/sidebar:px-2"
+                  ? "lg:justify-center lg:px-0"
                   : ""
               )}
             >
@@ -300,10 +300,7 @@ export function Sidebar({
                   Profile
                 </Link>
                 <button
-                  onClick={() => {
-                    logout();
-                    onClose?.();
-                  }}
+                  onClick={() => setShowLogoutConfirm(true)}
                   className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
                   <LogOut className="h-4 w-4" />
@@ -314,6 +311,36 @@ export function Sidebar({
           </div>
         )}
       </aside>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="neo-surface mx-4 w-full max-w-sm rounded-2xl p-6">
+            <h3 className="text-lg font-semibold text-foreground">Sign Out</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Are you sure you want to sign out?
+            </p>
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  logout();
+                  setShowLogoutConfirm(false);
+                  onClose?.();
+                }}
+                className="flex-1 rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground transition-colors hover:bg-destructive/90"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
