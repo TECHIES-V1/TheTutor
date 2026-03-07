@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import { User } from "@/types";
-import { useThemeMode } from "./ThemeProvider";
+import { ThemeMode, useThemeMode } from "./ThemeProvider";
 
 interface AuthContextValue {
   user: User | null;
@@ -39,10 +39,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const profileResponse = await api.get("/user/profile");
         if (!profileResponse.ok) return;
         const profile = (await profileResponse.json()) as {
-          preferences?: { theme?: "light" | "dark" };
+          preferences?: { theme?: ThemeMode };
         };
         const savedTheme = profile.preferences?.theme;
-        if (!cancelled && (savedTheme === "light" || savedTheme === "dark")) {
+        if (
+          !cancelled &&
+          (savedTheme === "light" || savedTheme === "dark" || savedTheme === "system")
+        ) {
           setTheme(savedTheme);
         }
       } catch {
