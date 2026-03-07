@@ -30,12 +30,12 @@ export function Hero() {
           className="h-full w-full"
           color={[1, 1, 1]}
           speed={0.9}
-          amplitude={0.05}
+          amplitude={0.065}
           mouseReact
         />
       </div>
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.84),rgba(255,255,255,0.64)_38%,rgba(255,255,255,0.3)_62%,rgba(255,255,255,0)_100%)]" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-white/72 via-white/24 to-transparent" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.76),rgba(255,255,255,0.54)_38%,rgba(255,255,255,0.22)_62%,rgba(255,255,255,0)_100%)]" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-white/62 via-white/18 to-transparent" />
 
       <div className="container relative z-10 grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
         <motion.div

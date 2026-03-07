@@ -34,7 +34,7 @@ export function NavBar() {
       <nav
         className={`fixed left-0 right-0 top-0 z-50 transition-all duration-300 ${
           isScrolled
-            ? "border-b border-[#d4af37]/35 bg-white/95 backdrop-blur-md"
+            ? "bg-white/92 shadow-[0_10px_30px_-22px_rgba(17,17,17,0.35)] backdrop-blur-md"
             : "bg-transparent"
         }`}
       >

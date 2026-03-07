@@ -38,10 +38,10 @@ export default function SignInPage() {
             className="h-10 w-10 rounded-xl object-contain"
           />
           <div>
-            <p className="font-playfair text-xl font-bold text-[#111111]">
+            <p className="font-playfair text-xl font-bold text-foreground">
               TheTutor
             </p>
-            <p className="text-[11px] uppercase tracking-[0.14em] text-[#595959]">
+            <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
               AI-Powered Learning Coach
             </p>
           </div>
