@@ -8,12 +8,24 @@ import { Button } from "@/components/ui/button";
 import { Search, ArrowRight } from "lucide-react";
 import { PageLoader } from "@/components/ui/PageLoader";
 
+function getLevelPillClasses(level?: string) {
+  switch (level?.toLowerCase()) {
+    case "beginner":
+      return "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+    case "intermediate":
+      return "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+    case "advanced":
+      return "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300";
+    default:
+      return "border-primary/30 bg-primary/10 text-primary";
+  }
+}
+
 export default function ExplorePage() {
   const [courses, setCourses] = useState<CourseSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -50,7 +62,7 @@ export default function ExplorePage() {
   }, []);
 
   const filtered = useMemo(() => {
-    const normalizedQuery = searchTerm.trim().toLowerCase();
+    const normalizedQuery = query.trim().toLowerCase();
     return courses.filter((course) => {
       const queryMatch =
         !normalizedQuery ||
@@ -60,12 +72,12 @@ export default function ExplorePage() {
         course.ownerName.toLowerCase().includes(normalizedQuery);
       return queryMatch;
     });
-  }, [courses, searchTerm]);
+  }, [courses, query]);
 
   return (
     <div className="relative min-h-full py-6 sm:py-8">
 
-      <div className="relative z-10 w-full max-w-5xl px-4 sm:px-6">
+      <div className="relative z-10 w-full max-w-7xl px-4 sm:px-6">
         <div className="mb-8 sm:mb-10">
           <h3 className="font-playfair text-2xl font-bold text-foreground sm:text-3xl">Explore Courses</h3>
           <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground sm:text-base">
@@ -73,13 +85,7 @@ export default function ExplorePage() {
           </p>
         </div>
 
-        <form
-          className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center"
-          onSubmit={(event) => {
-            event.preventDefault();
-            setSearchTerm(query);
-          }}
-        >
+        <div className="mb-6">
           <div className="neo-inset relative flex-1 rounded-xl">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -89,13 +95,7 @@ export default function ExplorePage() {
               className="h-11 w-full rounded-xl bg-transparent pl-10 pr-4 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
             />
           </div>
-          <Button
-            type="submit"
-            className="skeuo-gold h-11 rounded-xl px-5 text-sm hover:!opacity-100"
-          >
-            Search
-          </Button>
-        </form>
+        </div>
 
         {error && (
           <div className="mb-4 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -113,7 +113,7 @@ export default function ExplorePage() {
             No courses found for this search.
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {filtered.map((course) => {
               const continueHref = course.enrollment?.currentLessonId
                 ? `/learn/${course.id}/lessons/${course.enrollment.currentLessonId}`
@@ -122,7 +122,7 @@ export default function ExplorePage() {
               return (
                 <article key={course.id} className="neo-surface flex flex-col rounded-2xl border-0 p-5 sm:border">
                   <div className="mb-3 flex items-center justify-between gap-2">
-                    <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-xs text-primary capitalize">
+                    <span className={`rounded-full border px-2 py-0.5 text-xs font-medium capitalize ${getLevelPillClasses(course.level)}`}>
                       {course.level}
                     </span>
                     <span className="text-xs text-muted-foreground">
