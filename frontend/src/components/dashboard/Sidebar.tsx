@@ -17,7 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -52,6 +52,7 @@ export function Sidebar({
   const { user, logout } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   const isCourseWorkspace =
     pathname.startsWith("/learn/") || /^\/explore\/[^/]+$/.test(pathname);
@@ -75,29 +76,46 @@ export function Sidebar({
   const completionHref = activeCourseId
     ? `/learn/${activeCourseId}/complete`
     : "/dashboard";
+
   const handleLogoClick = () => {
     if (isCollapsed) {
       onToggleCollapse?.();
     }
   };
 
+  // Close profile popup when clicking outside
+  useEffect(() => {
+    if (!profileOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [profileOpen]);
+
+  // Close profile popup on route change
+  useEffect(() => {
+    setProfileOpen(false);
+  }, [pathname]);
+
   const textReveal = cx(
     "overflow-hidden whitespace-nowrap transition-all duration-300",
     isCollapsed
-      ? "lg:max-w-0 lg:opacity-0"
-      : "max-w-[10rem] opacity-100"
+      ? "lg:max-w-0 lg:opacity-0 lg:pointer-events-none"
+      : "max-w-[12rem] opacity-100"
   );
 
   const linkBase = cx(
-    "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm",
+    "relative flex items-center rounded-xl px-3 py-2.5 text-sm",
     "border transition-all duration-200",
-    isCollapsed
-      ? "lg:justify-center lg:px-0"
-      : ""
+    isCollapsed ? "lg:justify-center lg:px-0 lg:gap-0 gap-3" : "gap-3"
   );
 
   return (
     <>
+      {/* Mobile overlay */}
       <div
         className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
           isOpen ? "opacity-100" : "pointer-events-none opacity-0"
@@ -108,12 +126,15 @@ export function Sidebar({
       <aside
         className={cx(
           "group/sidebar neo-surface fixed bottom-0 left-0 top-0 z-50 flex flex-col border-r border-primary/10 transition-[transform,width] duration-300 ease-in-out lg:translate-x-0",
-          isCollapsed ? "w-72 lg:w-16" : "w-72",
+          isCollapsed ? "w-72 lg:w-[4.5rem]" : "w-72",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* Header */}
-        <div className="flex items-center gap-3 px-3 pt-5 pb-4">
+        {/* ── Header ── */}
+        <div className={cx(
+          "flex items-center border-b border-primary/10 px-3 pb-4 pt-5",
+          isCollapsed ? "lg:justify-center lg:px-0 lg:gap-0 gap-3" : "gap-3"
+        )}>
           <button
             type="button"
             onClick={handleLogoClick}
@@ -131,14 +152,11 @@ export function Sidebar({
           <span className={cx("font-playfair text-base font-bold text-primary", textReveal)}>
             TheTutor
           </span>
-          <div className="ml-auto flex items-center gap-1">
+          <div className={cx("ml-auto flex items-center gap-1", textReveal)}>
             <button
               type="button"
               onClick={onToggleCollapse}
-              className={cx(
-                "hidden rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-                isCollapsed ? "lg:hidden" : "lg:inline-flex"
-              )}
+              className="hidden rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:inline-flex"
               aria-label="Collapse sidebar"
             >
               <PanelLeftClose className="h-4 w-4" />
@@ -154,8 +172,8 @@ export function Sidebar({
           </div>
         </div>
 
-        {/* Nav */}
-        <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2 py-2">
+        {/* ── Nav ── */}
+        <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 py-3">
           {navItems.map((item) => {
             const active = isActive(pathname, item.href, item.exact);
             return (
@@ -174,14 +192,14 @@ export function Sidebar({
                 {active && (
                   <div className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />
                 )}
-                <item.icon className="h-4 w-4 shrink-0" />
+                <item.icon className="h-[1.125rem] w-[1.125rem] shrink-0" />
                 <span className={textReveal}>{item.label}</span>
               </Link>
             );
           })}
 
           {/* Separator */}
-          <div className="my-2 h-px bg-border/40" />
+          <div className="my-1.5 h-px bg-border/40" />
 
           {/* Create Course */}
           <Link
@@ -199,7 +217,7 @@ export function Sidebar({
             {pathname.startsWith("/create-course") && (
               <div className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />
             )}
-            <Plus className="h-4 w-4 shrink-0 text-primary" />
+            <Plus className="h-[1.125rem] w-[1.125rem] shrink-0 text-primary" />
             <span className={textReveal}>Create Course</span>
           </Link>
 
@@ -208,9 +226,7 @@ export function Sidebar({
             <div
               className={cx(
                 "mt-3 space-y-0.5 rounded-xl border border-primary/20 bg-primary/8 p-2 shadow-neo-inset",
-                isCollapsed
-                  ? "lg:hidden"
-                  : ""
+                isCollapsed ? "lg:hidden" : ""
               )}
             >
               <p className={cx("mb-1 px-2 text-[10px] font-semibold uppercase tracking-widest text-primary/60", textReveal)}>
@@ -244,17 +260,16 @@ export function Sidebar({
           )}
         </nav>
 
-        {/* Footer */}
+        {/* ── Footer ── */}
         {user && (
-          <div className="relative px-2 pb-3">
+          <div ref={profileRef} className="relative border-t border-primary/10 px-2 pb-3 pt-2">
             <button
               onClick={() => setProfileOpen((p) => !p)}
               className={cx(
-                "flex w-full items-center gap-2.5 rounded-xl px-2 py-2 border border-transparent transition-all duration-200",
+                "flex w-full items-center rounded-xl px-2.5 py-2 border border-transparent transition-all duration-200",
                 "hover:bg-primary/5 hover:border-[rgba(212,175,55,0.12)]",
-                isCollapsed
-                  ? "lg:justify-center lg:px-0"
-                  : ""
+                profileOpen && "bg-primary/5 border-[rgba(212,175,55,0.12)]",
+                isCollapsed ? "lg:justify-center lg:px-0 lg:gap-0 gap-2.5" : "gap-2.5"
               )}
             >
               {user.image ? (
@@ -280,14 +295,22 @@ export function Sidebar({
               <ChevronUp
                 className={cx(
                   "h-3.5 w-3.5 shrink-0 text-muted-foreground/50 transition-transform duration-200",
-                  textReveal,
+                  isCollapsed && "lg:hidden",
                   !profileOpen && "rotate-180"
                 )}
               />
             </button>
 
+            {/* Profile popup */}
             {profileOpen && (
-              <div className="absolute bottom-full left-2 right-2 mb-2 rounded-xl border border-primary/15 bg-card p-1 shadow-neo-raised">
+              <div
+                className={cx(
+                  "absolute rounded-xl border border-primary/15 bg-card p-1 shadow-neo-raised",
+                  isCollapsed
+                    ? "lg:bottom-0 lg:left-full lg:mb-0 lg:ml-2 lg:w-48 bottom-full left-2 right-2 mb-2"
+                    : "bottom-full left-2 right-2 mb-2"
+                )}
+              >
                 <Link
                   href="/profile"
                   onClick={() => {
@@ -312,9 +335,9 @@ export function Sidebar({
         )}
       </aside>
 
-      {/* Logout Confirmation Modal */}
+      {/* Logout Confirmation Modal — z-[60] to sit above sidebar z-50 */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="neo-surface mx-4 w-full max-w-sm rounded-2xl p-6">
             <h3 className="text-lg font-semibold text-foreground">Sign Out</h3>
             <p className="mt-2 text-sm text-muted-foreground">

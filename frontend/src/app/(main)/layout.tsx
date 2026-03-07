@@ -78,7 +78,7 @@ export default function MainLayout({
 
             {/* Main Content */}
             <main className={`flex-1 min-w-0 transition-[margin,padding] duration-300 ${showSidebar ? "pt-16 lg:pt-0" : "pt-0"
-                } ${showSidebar ? (isSidebarCollapsed ? "lg:ml-16" : "lg:ml-72") : "lg:ml-0"
+                } ${showSidebar ? (isSidebarCollapsed ? "lg:ml-[4.5rem]" : "lg:ml-72") : "lg:ml-0"
                 }`}>
                 {children}
             </main>
