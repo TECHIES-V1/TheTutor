@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { Iridescence } from "./iridescence";
+import Squares from "@/components/Squares";
 
 const heroImages = [
   {
@@ -26,12 +26,12 @@ export function Hero() {
   return (
     <section id="hero" className="relative overflow-hidden pb-20 pt-32 md:pb-28 md:pt-40">
       <div className="pointer-events-none absolute inset-0">
-        <Iridescence
-          className="h-full w-full"
-          color={[1, 1, 1]}
-          speed={0.9}
-          amplitude={0.09}
-          mouseReact
+        <Squares
+          speed={0.5}
+          squareSize={64}
+          direction="down"
+          borderColor="rgba(212, 175, 55, 0.08)"
+          hoverFillColor="rgba(212, 175, 55, 0.05)"
         />
       </div>
 

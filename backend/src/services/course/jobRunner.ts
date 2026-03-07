@@ -5,13 +5,14 @@ import { Course, type IGeneratedLesson, type IGeneratedModule } from "../../mode
 import { Conversation } from "../../models/Conversation";
 import { Enrollment } from "../../models/Enrollment";
 import { User } from "../../models/User";
-import { discoverSourceReferences } from "../ai/nova";
 import { generateCourseOutline, type CourseOutline, type OutlineLesson, type OutlineModule } from "./outline";
 import { generateLessonContent } from "./lessonGen";
+import { buildGenerationContext } from "./contextBuilder";
+import { discoverAndParseBooks } from "../mcp/discovery";
 import { fetchVideoReferencesForQueries } from "../youtube/youtube.service";
 import type { SSEBroadcaster } from "../sse/broadcaster";
 import { getBroadcaster, createNoOpBroadcaster } from "../sse/broadcaster";
-import type { OnboardingData } from "../../types/index";
+import type { OnboardingData, BookContext } from "../../types/index";
 import { logger } from "../../config/logger";
 import pLimit from "p-limit";
 
@@ -62,17 +63,39 @@ export async function startGenerationJob(
   const owner = await User.findById(userId).select("name");
   const ownerName = owner?.name ?? "Course Creator";
 
-  // Phase 1: Discover source references via MCP
-  // Uses confirmedSubject (e.g. "British History") as a single focused search term
-  const mcpKeyword = onboardingData.confirmedSubject || onboardingData.topic || "";
-  logger.info({ keyword: mcpKeyword }, "[jobRunner] Discovering source references");
+  // Phase 1: Discover and parse book content via MCP
+  // Searches, filters, downloads, and parses real textbook content
+  logger.info({ topic: onboardingData.confirmedSubject || onboardingData.topic }, "[jobRunner] Discovering and parsing book content");
   let sourceReferences: Array<{ title: string; authors: string[]; source: string }> = [];
+  let bookContexts: BookContext[] = [];
   try {
-    sourceReferences = await discoverSourceReferences(onboardingData);
-    logger.info({ count: sourceReferences.length }, "[jobRunner] Found source references");
+    const gen = discoverAndParseBooks(onboardingData);
+    let iterResult = await gen.next();
+    while (!iterResult.done) {
+      if (iterResult.value.type === "status") {
+        logger.info({ data: iterResult.value.data }, "[jobRunner] MCP progress");
+      }
+      iterResult = await gen.next();
+    }
+    const discovery = iterResult.value;
+    bookContexts = discovery.bookContexts;
+    sourceReferences = discovery.selectedBooks.map((b) => ({
+      title: b.title,
+      authors: b.authors,
+      source: b.source,
+    }));
+    logger.info(
+      { sources: sourceReferences.length, bookContexts: bookContexts.length },
+      "[jobRunner] MCP discovery complete"
+    );
   } catch (err) {
     logger.warn({ err }, "[jobRunner] MCP discovery failed, continuing without sources");
   }
+
+  // Trim book content to fit within prompt limits
+  const trimmedBooks = bookContexts.length > 0
+    ? buildGenerationContext(onboardingData, bookContexts).books
+    : [];
 
   // Phase 2: Generate course outline (fast, structured JSON — retry up to 2×)
   logger.info("[jobRunner] Generating course outline...");
@@ -207,7 +230,7 @@ export async function startGenerationJob(
   await job.save();
   broadcaster.send("outline_done", outlineEvent, job.lastEventId);
 
-  runJob(jobId, broadcaster, outline, onboardingData).catch((err) => {
+  runJob(jobId, broadcaster, outline, onboardingData, trimmedBooks).catch((err) => {
     logger.error({ err, jobId }, "[jobRunner] Unhandled error in background job");
   });
 
@@ -220,7 +243,8 @@ export async function runJob(
   jobId: string,
   broadcast: SSEBroadcaster,
   preloadedOutline?: CourseOutline,
-  preloadedOnboardingData?: OnboardingData
+  preloadedOnboardingData?: OnboardingData,
+  preloadedBookContexts?: BookContext[]
 ): Promise<void> {
   const job = await GenerationJob.findById(jobId);
   if (!job) {
@@ -330,7 +354,8 @@ export async function runJob(
             outline,
             onboardingData,
             sourceReferences,
-            previousTitles
+            previousTitles,
+            preloadedBookContexts
           );
 
           // Save lesson content atomically — no full-document reload/save race

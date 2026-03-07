@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { generateText } from "ai";
 import { getModel, LESSON_CONFIG } from "../../config/ai";
-import type { OnboardingData } from "../../types/index";
+import type { OnboardingData, BookContext } from "../../types/index";
 import type { OutlineLesson, OutlineModule, CourseOutline } from "./outline";
 import { logger } from "../../config/logger";
 
@@ -121,7 +121,8 @@ function buildLessonPrompt(
   outline: CourseOutline,
   onboardingData: OnboardingData,
   sourceReferences: Array<{ title: string; authors: string[]; source: string }>,
-  previousLessonTitles: string[]
+  previousLessonTitles: string[],
+  bookContexts?: BookContext[]
 ): string {
   const { level, goal } = onboardingData;
   const genre = detectGenre(onboardingData.topic || "", goal || "");
@@ -140,6 +141,19 @@ function buildLessonPrompt(
     previousLessonTitles.length > 0
       ? `Previously covered: ${previousLessonTitles.join(", ")}.`
       : "This is the first lesson in the course.";
+
+  // Build reference material block from actual parsed book content
+  const referenceBlock =
+    bookContexts && bookContexts.length > 0
+      ? bookContexts
+          .map((book) => {
+            const chapters = book.relevantChapters
+              .map((ch) => `### ${ch.title}\n${ch.contentSnippet}`)
+              .join("\n\n");
+            return `## "${book.title}" by ${book.authors.join(", ") || "Unknown"}\n${chapters}`;
+          })
+          .join("\n\n---\n\n")
+      : "";
 
   return `You are an expert educator writing lesson content. Respond ONLY with a valid JSON object — no markdown fences, no explanation.
 
@@ -165,7 +179,10 @@ ${bloomsGuide}
 
 AVAILABLE SOURCES (for citations):
 ${sourcesBlock}
-
+${referenceBlock ? `
+REFERENCE MATERIAL FROM TEXTBOOKS (use this content to ground your lesson — incorporate facts, examples, and explanations from these excerpts):
+${referenceBlock}
+` : ""}
 CONTENT REQUIREMENTS:
 1. contentMarkdown: Minimum 1500 words. ${contentStructure}
    Use appropriate ## and ### headings. Write for the "${level || "beginner"}" level.
@@ -226,7 +243,8 @@ export async function generateLessonContent(
   outline: CourseOutline,
   onboardingData: OnboardingData,
   sourceReferences: Array<{ title: string; authors: string[]; source: string }>,
-  previousLessonTitles: string[]
+  previousLessonTitles: string[],
+  bookContexts?: BookContext[]
 ): Promise<LessonContent> {
   const prompt = buildLessonPrompt(
     lesson,
@@ -234,7 +252,8 @@ export async function generateLessonContent(
     outline,
     onboardingData,
     sourceReferences,
-    previousLessonTitles
+    previousLessonTitles,
+    bookContexts
   );
 
   const result = await generateText({
