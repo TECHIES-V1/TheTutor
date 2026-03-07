@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { Menu } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -26,20 +26,6 @@ export default function MainLayout({
     const { user, isLoading } = useAuth();
     const showSidebar = !isLoading && !!user;
 
-    const [headerVisible, setHeaderVisible] = useState(true);
-    const lastScrollY = useRef(0);
-
-    useEffect(() => {
-        const handleScroll = () => {
-            const y = window.scrollY;
-            if (Math.abs(y - lastScrollY.current) < 5) return;
-            setHeaderVisible(y < lastScrollY.current || y < 60);
-            lastScrollY.current = y;
-        };
-        window.addEventListener("scroll", handleScroll, { passive: true });
-        return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
-
     useEffect(() => {
         try {
             window.localStorage.setItem(SIDEBAR_COLLAPSE_KEY, String(isSidebarCollapsed));
@@ -51,7 +37,7 @@ export default function MainLayout({
     return (
         <div className="flex min-h-screen bg-background">
             {/* Mobile Header */}
-            <header className={`fixed top-0 left-0 right-0 z-30 h-16 items-center border-b border-primary/10 bg-background/80 px-4 backdrop-blur-md transition-transform duration-300 lg:hidden ${showSidebar ? "flex" : "hidden"} ${headerVisible ? "translate-y-0" : "-translate-y-full"}`}>
+            <header className={`fixed top-0 left-0 right-0 z-30 h-16 items-center border-b border-primary/10 bg-background/80 px-4 backdrop-blur-md lg:hidden ${showSidebar ? "flex" : "hidden"}`}>
                 <button
                     type="button"
                     onClick={() => setIsMobileSidebarOpen(true)}
@@ -77,9 +63,7 @@ export default function MainLayout({
             )}
 
             {/* Main Content */}
-            <main className={`flex-1 min-w-0 transition-[margin,padding] duration-300 ${showSidebar ? "pt-16 lg:pt-0" : "pt-0"
-                } ${showSidebar ? (isSidebarCollapsed ? "lg:ml-16" : "lg:ml-72") : "lg:ml-0"
-                }`}>
+            <main className={`flex-1 min-w-0 transition-[padding] duration-300 ${showSidebar ? "pt-16 lg:pt-0" : "pt-0"}`}>
                 {children}
             </main>
             {showSidebar && <GenerationNotifier />}
