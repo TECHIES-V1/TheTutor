@@ -12,6 +12,7 @@ import type {
   OnboardingData,
 } from "../../types";
 import { logger } from "../../config/logger";
+import { extractKeywords } from "../course/contextBuilder";
 
 // ── Discovery Pipeline ────────────────────────────────────────────────────
 
@@ -25,7 +26,17 @@ export async function* discoverAndParseBooks(
   onboardingData: OnboardingData
 ): AsyncGenerator<SSEEvent, DiscoveryResult> {
   const { topic, level, confirmedSubject } = onboardingData;
-  const searchQuery = confirmedSubject || topic || "";
+  const rawQuery = confirmedSubject || topic || "";
+  const keywords = extractKeywords(rawQuery);
+
+  // Build search attempts: 3 keywords → 2 keywords → 1 keyword → raw query
+  const searchAttempts: string[] = [];
+  if (keywords.length >= 3) searchAttempts.push(keywords.slice(0, 3).join(" "));
+  if (keywords.length >= 2) searchAttempts.push(keywords.slice(0, 2).join(" "));
+  if (keywords.length >= 1) searchAttempts.push(keywords[0]);
+  if (searchAttempts.length === 0 || searchAttempts[searchAttempts.length - 1] !== rawQuery) {
+    searchAttempts.push(rawQuery);
+  }
 
   // Check MCP health first
   yield {
@@ -50,20 +61,26 @@ export async function* discoverAndParseBooks(
     throw new Error("MCP service unavailable");
   }
 
-  // Search for books
-  yield {
-    type: "status",
-    data: {
-      phase: "resource_retrieval",
-      message: `Searching for textbooks about "${searchQuery}"...`,
-      progress: 10,
-    },
-  };
+  // Search for books, retrying with broader keywords if no results
+  let searchResult = { books: [] as DiscoveredBook[] };
 
-  const searchResult = await discoverySearch({
-    query: searchQuery,
-    limit: 18,
-  });
+  for (const attempt of searchAttempts) {
+
+    yield {
+      type: "status",
+      data: {
+        phase: "resource_retrieval",
+        message: `Searching for textbooks about "${attempt}"...`,
+        progress: 10,
+      },
+    };
+
+    searchResult = await discoverySearch({ query: attempt, limit: 18 });
+
+    if (searchResult.books.length > 0) break;
+
+    logger.info({ query: attempt }, "[discovery] No results, retrying with broader keywords");
+  }
 
   yield {
     type: "resources",
@@ -98,7 +115,7 @@ export async function* discoverAndParseBooks(
   };
 
   const selectedIndices = await filterBooks(
-    searchQuery,
+    rawQuery,
     level || "beginner",
     searchResult.books
   );

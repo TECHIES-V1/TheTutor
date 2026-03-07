@@ -98,7 +98,7 @@ export default function ExploreCourseDetailPage() {
               <div className="flex items-start gap-3">
                 <div className="min-w-0 flex-1">
                   <p className="text-xs uppercase tracking-wide text-primary/80">Course Preview</p>
-                  <h1 className="mt-2 text-3xl font-bold text-foreground">{data.course.title}</h1>
+                  <h1 className="mt-2 text-2xl font-bold text-foreground">{data.course.title}</h1>
                 </div>
                 <button
                   onClick={toggleCoursePanel}
@@ -173,14 +173,14 @@ export default function ExploreCourseDetailPage() {
             <section id="course-curriculum" className="neo-surface rounded-3xl p-6 border-0 sm:border">
               <div className="mb-4 flex items-center gap-2">
                 <BookCopy className="h-5 w-5 text-primary" />
-                <h2 className="text-2xl font-bold text-foreground">Curriculum Outline</h2>
+                <h2 className="text-xl font-bold text-foreground">Curriculum Outline</h2>
               </div>
 
               <div className="space-y-4">
                 {data.curriculumOutline.map((module) => (
                   <div key={module.moduleId} className="card-leather rounded-2xl p-4">
                     <p className="text-xs uppercase tracking-wide text-primary/80">Module {module.order}</p>
-                    <h3 className="mt-1 text-lg font-semibold text-foreground">{module.title}</h3>
+                    <h3 className="mt-1 text-base font-semibold text-foreground">{module.title}</h3>
                     {module.moduleQuiz && (
                       <p className="mt-1 text-xs text-muted-foreground">
                         {module.moduleQuiz.title} • {module.moduleQuiz.questionCount} questions
@@ -207,7 +207,7 @@ export default function ExploreCourseDetailPage() {
 
             {data.course.sourceAttribution.length > 0 && (
               <section id="course-sources" className="neo-surface rounded-3xl p-6 border-0 sm:border">
-                <h2 className="text-xl font-bold text-foreground">Textbook Sources</h2>
+                <h2 className="text-lg font-bold text-foreground">Textbook Sources</h2>
                 <ul className="mt-3 space-y-2">
                   {data.course.sourceAttribution.map((source) => (
                     <li key={`${source.title}-${source.source}`} className="card-leather rounded-xl p-3">

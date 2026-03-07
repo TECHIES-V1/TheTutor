@@ -25,7 +25,7 @@ export function DashboardCourseCard({
     <article className="card-leather motion-card w-full min-w-0 rounded-2xl p-4 sm:p-5">
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
-          <h4 className="truncate text-lg font-bold text-foreground sm:text-xl">{course.title}</h4>
+          <h4 className="truncate text-base font-bold text-foreground sm:text-lg">{course.title}</h4>
           <p className="mt-1 line-clamp-2 break-words text-sm text-muted-foreground">
             {course.description}
           </p>

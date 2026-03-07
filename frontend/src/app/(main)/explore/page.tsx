@@ -67,7 +67,7 @@ export default function ExplorePage() {
 
       <div className="relative z-10 w-full max-w-5xl px-4 sm:px-6">
         <div className="mb-8 sm:mb-10">
-          <h3 className="font-playfair text-2xl font-bold text-foreground sm:text-3xl">Explore Courses</h3>
+          <h3 className="font-playfair text-xl font-bold text-foreground sm:text-2xl">Explore Courses</h3>
           <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground sm:text-base">
             Discover courses published by other learners and enroll for free during the hackathon.
           </p>
@@ -129,7 +129,7 @@ export default function ExplorePage() {
                       By {course.author?.name || course.ownerName}
                     </span>
                   </div>
-                  <h4 className="font-playfair text-lg font-bold text-foreground">{course.title}</h4>
+                  <h4 className="font-playfair text-base font-bold text-foreground">{course.title}</h4>
                   <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{course.description}</p>
                   <p className="mt-3 text-xs text-muted-foreground">
                     {course.moduleCount} modules • {course.lessonCount} lessons • Free

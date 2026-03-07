@@ -41,7 +41,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setThemeState(nextTheme);
     if (typeof window !== "undefined") {
       window.localStorage.setItem(STORAGE_KEY, nextTheme);
+      // Disable all transitions while swapping theme to prevent twitch/flash
+      document.documentElement.classList.add("no-transitions");
       document.documentElement.dataset.theme = nextTheme;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          document.documentElement.classList.remove("no-transitions");
+        });
+      });
     }
   };
 

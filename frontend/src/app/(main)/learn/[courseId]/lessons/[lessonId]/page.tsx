@@ -99,7 +99,7 @@ export default function LessonPage() {
                   <p className="text-xs font-medium uppercase tracking-widest text-primary/70">
                     {data.course.title}
                   </p>
-                  <h1 className="mt-1.5 text-2xl font-bold text-foreground sm:text-3xl">
+                  <h1 className="mt-1.5 text-xl font-bold text-foreground sm:text-2xl">
                     {data.lesson.title}
                   </h1>
                   {data.lesson.summary && (
@@ -120,15 +120,17 @@ export default function LessonPage() {
               </div>
 
               {/* Video */}
-              <div className="mt-5 overflow-hidden rounded-2xl border border-border/60">
-                <iframe
-                  src={toEmbedUrl(data.lesson.videoUrl)}
-                  title={data.lesson.title}
-                  className="aspect-video w-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
+              {data.lesson.videoUrl && (
+                <div className="mt-5 overflow-hidden rounded-2xl border border-border/60">
+                  <iframe
+                    src={toEmbedUrl(data.lesson.videoUrl)}
+                    title={data.lesson.title}
+                    className="aspect-video w-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              )}
 
               {/* Content */}
               <div className="mt-6 text-sm leading-relaxed text-muted-foreground">

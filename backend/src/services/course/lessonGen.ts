@@ -180,9 +180,19 @@ ${bloomsGuide}
 AVAILABLE SOURCES (for citations):
 ${sourcesBlock}
 ${referenceBlock ? `
-REFERENCE MATERIAL FROM TEXTBOOKS (use this content to ground your lesson — incorporate facts, examples, and explanations from these excerpts):
+REFERENCE MATERIAL FROM TEXTBOOKS:
 ${referenceBlock}
-` : ""}
+
+TEXTBOOK USAGE REQUIREMENT:
+You MUST incorporate content from the textbook excerpts above into your lesson. Specifically:
+- Draw facts, definitions, and explanations directly from the provided textbook material
+- Reference specific concepts, examples, or data points from the excerpts
+- Your citations MUST reference the textbook titles listed above
+- If the textbook content covers this lesson's topic, it should form the backbone of your explanation
+- Supplement with your own knowledge only where the textbook excerpts have gaps
+` : `
+NOTE: No textbook reference material is available. Generate from your own knowledge but do not fabricate citations to non-existent textbooks.
+`}
 CONTENT REQUIREMENTS:
 1. contentMarkdown: Minimum 1500 words. ${contentStructure}
    Use appropriate ## and ### headings. Write for the "${level || "beginner"}" level.

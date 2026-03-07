@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Bell, X } from "lucide-react";
 import { api } from "@/lib/api";
@@ -55,6 +55,15 @@ export function GenerationNotifier() {
   const [notice, setNotice] = useState<CompletionNotice | null>(null);
   // In-memory set of conversation IDs being tracked (no localStorage)
   const trackedRef = useRef<Set<string>>(new Set());
+  const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const dismiss = useCallback(() => {
+    if (dismissTimerRef.current) {
+      clearTimeout(dismissTimerRef.current);
+      dismissTimerRef.current = null;
+    }
+    setNotice(null);
+  }, []);
 
   useEffect(() => {
     if (isLoading || !user) return;
@@ -116,6 +125,18 @@ export function GenerationNotifier() {
     };
   }, [isLoading, user]);
 
+  // Auto-dismiss after 10 seconds
+  useEffect(() => {
+    if (!notice) return;
+    dismissTimerRef.current = setTimeout(() => setNotice(null), 10_000);
+    return () => {
+      if (dismissTimerRef.current) {
+        clearTimeout(dismissTimerRef.current);
+        dismissTimerRef.current = null;
+      }
+    };
+  }, [notice]);
+
   if (!notice) return null;
 
   return (
@@ -133,7 +154,7 @@ export function GenerationNotifier() {
           </p>
           <Link
             href={`/explore/${notice.courseId}`}
-            onClick={() => setNotice(null)}
+            onClick={dismiss}
             className="mt-3 inline-flex rounded-full border border-primary/30 bg-primary/15 px-3 py-1.5 text-xs font-medium text-primary transition hover:bg-primary/20"
           >
             Open Course
@@ -142,7 +163,7 @@ export function GenerationNotifier() {
         <button
           type="button"
           aria-label="Dismiss notification"
-          onClick={() => setNotice(null)}
+          onClick={dismiss}
           className="rounded-full p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
         >
           <X className="h-4 w-4" />

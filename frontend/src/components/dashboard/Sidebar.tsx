@@ -132,8 +132,8 @@ export function Sidebar({
       >
         {/* ── Header ── */}
         <div className={cx(
-          "flex items-center border-b border-primary/10 px-3 pb-4 pt-5",
-          isCollapsed ? "lg:justify-center lg:px-0 lg:gap-0 gap-3" : "gap-3"
+          "flex items-center border-b border-primary/10 pb-4 pt-5 transition-all duration-300",
+          isCollapsed ? "lg:justify-center lg:px-0 lg:gap-0 gap-3 px-3" : "gap-3 px-3"
         )}>
           <button
             type="button"
@@ -141,7 +141,7 @@ export function Sidebar({
             className={cx(
               "flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-primary/15 bg-primary/5 shadow-neo-card transition-all duration-300",
               isCollapsed
-                ? "h-10 w-10 cursor-pointer lg:h-9 lg:w-9"
+                ? "h-9 w-9 cursor-pointer"
                 : "h-9 w-9 cursor-default"
             )}
             aria-label={isCollapsed ? "Expand sidebar" : "Sidebar logo"}
@@ -149,10 +149,10 @@ export function Sidebar({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="TheTutor" className="h-full w-full object-contain p-1.5" />
           </button>
-          <span className={cx("font-playfair text-base font-bold text-primary", textReveal)}>
+          <span className={cx("font-playfair text-base font-bold text-primary", textReveal, isCollapsed && "lg:hidden")}>
             TheTutor
           </span>
-          <div className={cx("ml-auto flex items-center gap-1", textReveal)}>
+          <div className={cx("ml-auto flex items-center gap-1", textReveal, isCollapsed && "lg:hidden")}>
             <button
               type="button"
               onClick={onToggleCollapse}

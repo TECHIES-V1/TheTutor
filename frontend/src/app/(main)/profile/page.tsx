@@ -109,7 +109,7 @@ export default function ProfilePage() {
 
             <div className="min-w-0">
               <p className="text-xs uppercase tracking-[0.12em] text-primary/80">Profile</p>
-              <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate">
+              <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">
                 {profile?.name ?? user?.name ?? "Learner"}
               </h1>
               <p className="text-sm text-muted-foreground truncate">
@@ -127,7 +127,7 @@ export default function ProfilePage() {
         >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-foreground">Appearance</h2>
+              <h2 className="text-sm sm:text-base font-bold text-foreground">Appearance</h2>
               <p className="text-sm text-muted-foreground">
                 Toggle your dashboard between light and dark mode.
               </p>
@@ -151,7 +151,7 @@ export default function ProfilePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: 0.1 }}
         >
-          <h2 className="text-base sm:text-lg font-bold text-foreground">Settings</h2>
+          <h2 className="text-sm sm:text-base font-bold text-foreground">Settings</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Manage profile details, notifications, and security preferences.
           </p>
