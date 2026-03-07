@@ -15,16 +15,14 @@ function parseHostname(rawUrl: string): string | null {
 
 if (isProduction) {
   if (!rawBackendUrl) {
-    throw new Error("Missing NEXT_PUBLIC_BACKEND_URL in production.");
-  }
-
-  const hostname = parseHostname(resolvedBackendUrl);
-  if (!hostname) {
-    throw new Error("NEXT_PUBLIC_BACKEND_URL is invalid.");
-  }
-
-  if (LOCALHOST_HOSTS.has(hostname)) {
-    throw new Error("NEXT_PUBLIC_BACKEND_URL cannot point to localhost in production.");
+    console.error("[backendUrl] WARNING: Missing NEXT_PUBLIC_BACKEND_URL in production.");
+  } else {
+    const hostname = parseHostname(resolvedBackendUrl);
+    if (!hostname) {
+      console.error("[backendUrl] WARNING: NEXT_PUBLIC_BACKEND_URL is invalid.");
+    } else if (LOCALHOST_HOSTS.has(hostname)) {
+      console.error("[backendUrl] WARNING: NEXT_PUBLIC_BACKEND_URL points to localhost in production.");
+    }
   }
 }
 

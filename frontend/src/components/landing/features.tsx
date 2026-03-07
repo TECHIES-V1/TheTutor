@@ -28,7 +28,7 @@ const features = [
 
 export function Features() {
   return (
-    <section id="features" className="relative overflow-hidden border-y border-[#d4af37]/25 bg-white py-20 md:py-28">
+    <section id="features" className="relative overflow-hidden border-y border-[#c9a227] bg-[#f0e9dd] py-20 md:py-28">
       <div className="container relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -38,8 +38,8 @@ export function Features() {
           className="mx-auto mb-14 max-w-3xl text-center"
         >
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#b48b1d]">What You Get</p>
-          <h2 className="mt-3 text-[35px] font-bold text-[#111111] md:text-5xl text-balance leading-tight">A Tutor Experience Built For & Around You</h2>
-          <p className="mt-4 text-base text-[#505050] md:text-lg text-[14px]">
+          <h2 className="mt-3 text-[35px] font-bold text-[#4a3728] md:text-5xl text-balance leading-tight">A Tutor Experience Built For & Around You</h2>
+          <p className="mt-4 text-base text-[#5c4a2a] md:text-lg text-[14px]">
             TheTutor combines guided conversation, clear structure, and fast response time so learning feels focused, not overwhelming.
           </p>
         </motion.div>
@@ -63,9 +63,9 @@ export function Features() {
                   className="object-cover"
                 />
               </div>
-              <div className="p-6">
-                <h3 className="font-playfair md:text-2xl font-bold text-[#111111] text-[20px]">{feature.title}</h3>
-                <p className="mt-3 text-base leading-relaxed text-[#505050] md:text-[16px] text-[14px]">{feature.description}</p>
+              <div className="p-6 text-center md:text-left">
+                <h3 className="font-playfair md:text-2xl font-bold text-[#4a3728] text-[20px]">{feature.title}</h3>
+                <p className="mt-3 text-base leading-relaxed text-[#5c4a2a] md:text-[16px] text-[14px]">{feature.description}</p>
               </div>
             </motion.article>
           ))}
