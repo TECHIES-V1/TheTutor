@@ -524,6 +524,13 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
   };
 
   const startGeneration = async (convId: string) => {
+    // Close any existing EventSource before starting a new one
+    if (jobStreamRef.current) {
+      jobStreamRef.current.close();
+      jobStreamRef.current = null;
+    }
+    jobIdRef.current = null;
+
     try {
       setConversationPhase("course_generation");
       setGenerationStatus("Discovering learning resources...");

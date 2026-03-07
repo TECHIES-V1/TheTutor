@@ -11,6 +11,7 @@ import type {
   SSEEvent,
   OnboardingData,
 } from "../../types";
+import { logger } from "../../config/logger";
 
 // ── Discovery Pipeline ────────────────────────────────────────────────────
 
@@ -267,7 +268,7 @@ export async function* discoverAndParseBooks(
         };
       }
     } catch (error) {
-      console.error(`Failed to parse ${book.title}:`, error);
+      logger.error({ err: error, bookTitle: book.title }, "Failed to parse book");
       yield {
         type: "parsing_progress",
         data: {

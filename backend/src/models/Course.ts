@@ -354,5 +354,8 @@ const CourseSchema = new Schema<ICourse>(
 CourseSchema.index({ userId: 1, status: 1 });
 CourseSchema.index({ ownerId: 1, visibility: 1 });
 CourseSchema.index({ conversationId: 1 });
+CourseSchema.index({ generationJobId: 1 });
+CourseSchema.index({ userId: 1, updatedAt: -1 });
+CourseSchema.index({ title: "text", subject: "text", topic: "text", description: "text" });
 
 export const Course = mongoose.model<ICourse>("Course", CourseSchema);

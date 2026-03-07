@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import { Sparkles, X, ArrowUp } from "lucide-react";
 import { api } from "@/lib/api";
+import { BACKEND_URL } from "@/lib/backendUrl";
+import { MarkdownContent } from "@/components/ui/markdown-content";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -23,6 +25,7 @@ export function AiAssistantButton({ courseId, lessonId, lessonTitle, lessonConte
   const [streaming, setStreaming] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (open && inputRef.current) inputRef.current.focus();
@@ -32,8 +35,17 @@ export function AiAssistantButton({ courseId, lessonId, lessonTitle, lessonConte
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Abort stream on panel close
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
+  }, []);
+
   const sendMessage = async (text: string) => {
     if (!text.trim() || streaming) return;
+
+    // Abort any in-flight stream
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
 
     const userMsg: ChatMessage = { role: "user", content: text.trim() };
     const nextMessages = [...messages, userMsg];
@@ -50,9 +62,12 @@ export function AiAssistantButton({ courseId, lessonId, lessonTitle, lessonConte
         lessonContent ? `Content: ${lessonContent}` : "",
       ].filter(Boolean).join("\n");
 
-      const response = await api.post(`/courses/${courseId}/lessons/${lessonId}/assistant`, {
-        messages: nextMessages,
-        lessonContext,
+      const response = await fetch(`${BACKEND_URL}/courses/${courseId}/lessons/${lessonId}/assistant`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: nextMessages, lessonContext }),
+        signal: abortRef.current.signal,
       });
 
       if (!response.ok || !response.body) throw new Error("assistant failed");
@@ -146,7 +161,13 @@ export function AiAssistantButton({ courseId, lessonId, lessonTitle, lessonConte
                       : "rounded-tl-sm border border-border/50 bg-card text-foreground"
                   }`}
                 >
-                  {msg.content || (streaming && msg.role === "assistant" ? (
+                  {msg.content ? (
+                    msg.role === "assistant" ? (
+                      <MarkdownContent compact>{msg.content}</MarkdownContent>
+                    ) : (
+                      msg.content
+                    )
+                  ) : (streaming && msg.role === "assistant" ? (
                     <span className="flex h-4 items-center gap-1">
                       <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce [animation-delay:-0.3s]" />
                       <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce [animation-delay:-0.15s]" />

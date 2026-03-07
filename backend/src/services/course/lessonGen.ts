@@ -3,6 +3,7 @@ import { generateText } from "ai";
 import { getModel, LESSON_CONFIG } from "../../config/ai";
 import type { OnboardingData } from "../../types/index";
 import type { OutlineLesson, OutlineModule, CourseOutline } from "./outline";
+import { logger } from "../../config/logger";
 
 export interface LessonContent {
   contentMarkdown: string;
@@ -271,13 +272,13 @@ export async function generateLessonContent(
   } catch {
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      console.error("[lessonGen] Raw response (first 500):", result.text.slice(0, 500));
+      logger.error({ text: result.text.slice(0, 500) }, "[lessonGen] Raw response (first 500)");
       throw new Error(`lesson_parse_failed: No JSON in response for "${lesson.title}"`);
     }
     try {
       parsed = JSON.parse(jsonMatch[0]);
     } catch (e) {
-      console.error("[lessonGen] JSON parse error:", e);
+      logger.error({ err: e }, "[lessonGen] JSON parse error");
       throw new Error(`lesson_parse_failed: Invalid JSON for "${lesson.title}"`);
     }
   }

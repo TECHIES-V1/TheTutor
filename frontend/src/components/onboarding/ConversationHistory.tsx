@@ -202,7 +202,7 @@ export function ConversationHistory({ activeId, onSelect, onNew, isMobile, onClo
         if (data) setConversations(data.conversations);
       })
       .catch(() => {});
-  }, [activeId]);
+  }, []);
 
   if (isMobile) {
     return (

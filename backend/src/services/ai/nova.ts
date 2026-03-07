@@ -16,6 +16,7 @@ import type {
 } from "../../types";
 import type { IMessage } from "../../models/Conversation";
 import { getMCPTools, closeMCPClient } from "../mcp/mcpClient";
+import { logger } from "../../config/logger";
 
 // ── Chat (Non-streaming for onboarding) ───────────────────────────────────
 
@@ -73,7 +74,7 @@ export async function extractOnboardingDataFromConversation(messages: IMessage[]
     const match = result.text.match(/\{[\s\S]*\}/);
     if (match) return JSON.parse(match[0]);
   } catch {
-    console.error("Failed to parse onboarding data extraction:", result.text);
+    logger.error({ text: result.text }, "Failed to parse onboarding data extraction");
   }
 
   return { level: "beginner", hoursPerWeek: 5, goal: "build practical skills" };
@@ -113,7 +114,7 @@ export async function filterBooks(
     }
     return [];
   } catch {
-    console.error("Failed to parse book filter result:", result.text);
+    logger.error({ text: result.text }, "Failed to parse book filter result");
     return [];
   }
 }

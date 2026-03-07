@@ -2,6 +2,8 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+import { logger } from "../../config/logger";
+
 export interface YouTubeVideoReference {
     url: string;
     title: string;
@@ -13,7 +15,7 @@ export async function searchYouTubeVideo(query: string): Promise<YouTubeVideoRef
     const apiKey = process.env.YOUTUBE_API_KEY;
 
     if (!apiKey) {
-        console.warn("YOUTUBE_API_KEY is not set. Skipping YouTube search.");
+        logger.warn("YOUTUBE_API_KEY is not set. Skipping YouTube search.");
         return null;
     }
 
@@ -28,7 +30,7 @@ export async function searchYouTubeVideo(query: string): Promise<YouTubeVideoRef
         const response = await fetch(url.toString());
 
         if (!response.ok) {
-            console.error("YouTube API responded with error:", response.status, await response.text());
+            logger.error({ status: response.status, body: await response.text() }, "YouTube API responded with error");
             return null;
         }
 
@@ -47,7 +49,7 @@ export async function searchYouTubeVideo(query: string): Promise<YouTubeVideoRef
             }
         }
     } catch (error) {
-        console.error("Failed to search YouTube:", error);
+        logger.error({ err: error }, "Failed to search YouTube");
     }
 
     return null;

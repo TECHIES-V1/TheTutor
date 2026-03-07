@@ -24,6 +24,7 @@ import {
   fetchVideoReferencesForQueries,
   type YouTubeVideoReference,
 } from "../youtube/youtube.service";
+import { logger } from "../../config/logger";
 
 const MAX_REPAIR_ATTEMPTS = 3;
 const MIN_LESSON_CONTENT_CHARS = 2000;
@@ -168,7 +169,7 @@ function parseLessonQuiz(rawJson: string): Quiz[] {
       },
     ];
   } catch (error) {
-    console.error("[generator] Failed to parse lesson quiz JSON:", error);
+    logger.error({ err: error }, "[generator] Failed to parse lesson quiz JSON");
     return [];
   }
 }
@@ -197,7 +198,7 @@ function parseModuleQuiz(rawJson: string, moduleOrder: number): IModuleQuiz | un
       questions,
     };
   } catch (error) {
-    console.error("[generator] Failed to parse module quiz JSON:", error);
+    logger.error({ err: error }, "[generator] Failed to parse module quiz JSON");
     return undefined;
   }
 }
@@ -465,19 +466,21 @@ export function flushCourseStreamMilestones(
 
 function logMilestoneEvent(event: StreamMilestoneEvent): void {
   if (event.type === "course_title") {
-    console.log(`[generator] Detected course title: "${event.data.title}"`);
+    logger.info({ title: event.data.title }, "[generator] Detected course title");
     return;
   }
 
   if (event.type === "module_started") {
-    console.log(
-      `[generator] module_started index=${event.data.index} title="${event.data.title}"`
+    logger.info(
+      { index: event.data.index, title: event.data.title },
+      "[generator] module_started"
     );
     return;
   }
 
-  console.log(
-    `[generator] module_complete index=${event.data.index} title="${event.data.title}"`
+  logger.info(
+    { index: event.data.index, title: event.data.title },
+    "[generator] module_complete"
   );
 }
 
@@ -485,7 +488,7 @@ export async function* generate(
   conversationId: string,
   userId: string
 ): AsyncGenerator<SSEEvent> {
-  console.log("[generator] Starting", { conversationId, userId });
+  logger.info({ conversationId, userId }, "[generator] Starting");
   const conversation = await Conversation.findOne({
     _id: conversationId,
     userId: ensureObjectId(userId),
@@ -505,7 +508,7 @@ export async function* generate(
   }
 
   if (conversation.phase !== "resource_retrieval") {
-    console.log("[generator] Invalid phase", conversation.phase);
+    logger.info({ phase: conversation.phase }, "[generator] Invalid phase");
     yield {
       type: "error",
       data: {
@@ -528,7 +531,7 @@ export async function* generate(
 
   conversation.phase = "course_generation";
   await conversation.save();
-  console.log("[generator] Phase updated to course_generation");
+  logger.info("[generator] Phase updated to course_generation");
 
   let course: InstanceType<typeof Course> | null = null;
 
@@ -584,14 +587,16 @@ export async function* generate(
       userId
     )) {
       if (event.type === "tool_call") {
-        console.log(
-          `[generator] tool_call ${event.data.toolName} id=${event.data.toolCallId}`
+        logger.info(
+          { toolName: event.data.toolName, toolCallId: event.data.toolCallId },
+          "[generator] tool_call"
         );
       }
 
       if (event.type === "tool_result") {
-        console.log(
-          `[generator] tool_result ${event.data.toolName} id=${event.data.toolCallId} summary="${event.data.summary}"`
+        logger.info(
+          { toolName: event.data.toolName, toolCallId: event.data.toolCallId, summary: event.data.summary },
+          "[generator] tool_result"
         );
 
         const refs = uniqueSourceRefs(event.data.resourceRefs ?? []);
@@ -619,10 +624,10 @@ export async function* generate(
       yield milestone;
     }
 
-    console.log("[generator] Stream complete", {
+    logger.info({
       contentLength: courseContent.length,
       sourceRefCount: sourceRefs.size,
-    });
+    }, "[generator] Stream complete");
 
     yield {
       type: "status",
@@ -647,10 +652,9 @@ export async function* generate(
         break;
       }
 
-      console.log(
-        `[generator] Validation failed attempt=${attempt + 1} issues=${allIssues.join(
-          " | "
-        )}`
+      logger.info(
+        { attempt: attempt + 1, issues: allIssues.join(" | ") },
+        "[generator] Validation failed"
       );
 
       if (attempt === MAX_REPAIR_ATTEMPTS) {
@@ -661,7 +665,7 @@ export async function* generate(
         }
         // Accept course with only warnings
         parsedCourse = candidate;
-        console.log(`[generator] Accepting course with warnings: ${validation.warnings.length} warnings remaining.`);
+        logger.info({ warningCount: validation.warnings.length }, "[generator] Accepting course with warnings");
         break;
       }
 
@@ -708,7 +712,7 @@ export async function* generate(
           // Retry with alternative keywords from the convo (topic + goal or level)
           const alternateQuery = `${onboardingData.confirmedSubject || onboardingData.topic || ""} ${onboardingData.goal || onboardingData.level || ""} concepts`.trim();
           if (alternateQuery && !queries.includes(alternateQuery)) {
-            console.log(`[generator] Retrying YouTube fetch with alternate query: "${alternateQuery}" for lesson "${lesson.title}"`);
+            logger.info({ alternateQuery, lessonTitle: lesson.title }, "[generator] Retrying YouTube fetch with alternate query");
             references = await fetchVideoReferencesForQueries([alternateQuery]);
           }
         }
@@ -788,14 +792,14 @@ export async function* generate(
       estimatedHours: course.estimatedHours,
     };
 
-    console.log("[generator] Completed", completionData);
+    logger.info({ completionData }, "[generator] Completed");
 
     yield {
       type: "complete",
       data: completionData,
     };
   } catch (error) {
-    console.error("[generator] Generation error", error);
+    logger.error({ err: error }, "[generator] Generation error");
 
     conversation.phase = "resource_retrieval";
     await conversation.save();

@@ -60,8 +60,11 @@ export function GenerationNotifier() {
     if (isLoading || !user) return;
 
     let cancelled = false;
+    let inFlight = false;
 
     const poll = async () => {
+      if (inFlight || cancelled) return;
+      inFlight = true;
       try {
         const res = await api.get("/chat/conversations");
         if (!res.ok || cancelled) return;
@@ -97,13 +100,15 @@ export function GenerationNotifier() {
         }
       } catch {
         // Keep polling quietly; this should never block navigation.
+      } finally {
+        inFlight = false;
       }
     };
 
     void poll();
     const interval = setInterval(() => {
       void poll();
-    }, 10000);
+    }, 30_000);
 
     return () => {
       cancelled = true;

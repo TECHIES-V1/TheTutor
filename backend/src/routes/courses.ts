@@ -21,6 +21,8 @@ import {
 } from "../services/courseUtils";
 import { COOKIE_OPTIONS, signTokenForUser } from "../utils/auth";
 import { CourseLevel, OnboardingPayload } from "../types/courseContract";
+import { aiLimiter } from "../middleware/rateLimiter";
+import { logger } from "../config/logger";
 
 const router = Router();
 
@@ -367,7 +369,7 @@ router.post("/bootstrap", requireAuth, async (req: Request, res: Response) => {
       course: buildCourseSummary(course, enrollment, user.name),
     });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Failed to bootstrap course");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -375,12 +377,32 @@ router.post("/bootstrap", requireAuth, async (req: Request, res: Response) => {
 router.get("/explore", optionalAuth, async (req: Request, res: Response) => {
   try {
     const userId = getRequesterUserId(req);
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = 24;
+    const skip = (page - 1) * limit;
+    const q = (req.query.q as string || "").trim();
 
-    const allCourses = await Course.find({}).sort({ createdAt: -1 });
-    const ownerNameById = await buildOwnerNameMap(allCourses);
-    const courses = allCourses.filter((course) => {
-      return getCourseVisibility(course) === "published" && isCourseReadyForLearners(course);
-    });
+    const filter: Record<string, unknown> = {
+      visibility: "published",
+      generationStatus: "ready",
+    };
+    if (q) {
+      filter.$text = { $search: q };
+    }
+
+    const projection = "title description topic subject level goal ownerId ownerName userId visibility generationStatus accessModel sourceReferences curriculum createdAt";
+
+    const [courses, total] = await Promise.all([
+      Course.find(filter)
+        .select(projection)
+        .sort(q ? ({ score: { $meta: "textScore" } } as any) : { createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Course.countDocuments(filter),
+    ]);
+
+    const ownerNameById = await buildOwnerNameMap(courses as unknown as ICourse[]);
 
     const enrollmentByCourseId = new Map<string, IEnrollment>();
     if (userId) {
@@ -398,14 +420,17 @@ router.get("/explore", optionalAuth, async (req: Request, res: Response) => {
       const enrollment = userId
         ? enrollmentByCourseId.get(String(course._id)) ?? null
         : null;
-      const ownerId = getCourseOwnerId(course);
+      const ownerId = getCourseOwnerId(course as unknown as ICourse);
       const ownerNameFallback = ownerId ? ownerNameById.get(ownerId) ?? "" : "";
-      return buildCourseSummary(course, enrollment, ownerNameFallback);
+      return buildCourseSummary(course as unknown as ICourse, enrollment, ownerNameFallback);
     });
 
-    res.json({ courses: payload });
+    res.json({
+      courses: payload,
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+    });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Failed to list explore courses");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -454,7 +479,7 @@ router.get("/:courseId/preview", optionalAuth, async (req: Request, res: Respons
       },
     });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Failed to get course preview");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -499,7 +524,7 @@ router.post("/:courseId/enroll", requireAuth, async (req: Request, res: Response
       },
     });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Failed to enroll in course");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -611,12 +636,12 @@ router.get("/:courseId/lessons/:lessonId", requireAuth, async (req: Request, res
         : null,
     });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Failed to get lesson");
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
-router.post("/:courseId/lessons/:lessonId/assistant", requireAuth, async (req: Request, res: Response) => {
+router.post("/:courseId/lessons/:lessonId/assistant", requireAuth, aiLimiter, async (req: Request, res: Response) => {
   try {
     const { userId } = req.jwtUser as JwtPayload;
     const courseId = toCourseId(req.params.courseId);
@@ -688,7 +713,7 @@ Be concise, focused on this specific lesson content, and encourage the student. 
       res.end();
     }
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Failed to run lesson assistant");
     if (!res.headersSent) {
       res.status(500).json({ error: "Internal server error" });
     } else {
@@ -697,7 +722,7 @@ Be concise, focused on this specific lesson content, and encourage the student. 
   }
 });
 
-router.post("/:courseId/lessons/:lessonId/quiz-attempts", requireAuth, async (req: Request, res: Response) => {
+router.post("/:courseId/lessons/:lessonId/quiz-attempts", requireAuth, aiLimiter, async (req: Request, res: Response) => {
   try {
     const { userId } = req.jwtUser as JwtPayload;
     const courseId = toCourseId(req.params.courseId);
@@ -793,7 +818,7 @@ router.post("/:courseId/lessons/:lessonId/quiz-attempts", requireAuth, async (re
       progressPercent: enrollmentRecord.progressPercent,
     });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Failed to submit quiz attempt");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -864,7 +889,7 @@ router.post("/:courseId/complete", requireAuth, async (req: Request, res: Respon
       },
     });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Failed to complete course");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -906,7 +931,7 @@ router.get("/:courseId/certificate", requireAuth, async (req: Request, res: Resp
       },
     });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Failed to get certificate");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -942,7 +967,7 @@ router.get("/:courseId/certificate/download", requireAuth, async (req: Request, 
     res.setHeader("Content-Disposition", `attachment; filename="${certificate.fileName}"`);
     res.sendFile(certificate.pdfPath);
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Failed to download certificate");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -983,7 +1008,7 @@ router.patch("/:courseId/publish", requireAuth, async (req: Request, res: Respon
       course: buildCourseSummary(course, enrollment, ownerNameFallback),
     });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Failed to update course visibility");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -1019,7 +1044,7 @@ router.get("/mine/list", requireAuth, async (req: Request, res: Response) => {
       ),
     });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Failed to list owned courses");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -1080,13 +1105,13 @@ router.get("/:courseId/modules/:moduleId/quiz", requireAuth, async (req: Request
       })),
     });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Failed to get module quiz");
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
 // POST /courses/:courseId/modules/:moduleId/quiz-attempts
-router.post("/:courseId/modules/:moduleId/quiz-attempts", requireAuth, async (req: Request, res: Response) => {
+router.post("/:courseId/modules/:moduleId/quiz-attempts", requireAuth, aiLimiter, async (req: Request, res: Response) => {
   try {
     const { userId } = req.jwtUser as JwtPayload;
     const courseId = toCourseId(req.params.courseId);
@@ -1162,7 +1187,7 @@ router.post("/:courseId/modules/:moduleId/quiz-attempts", requireAuth, async (re
       moduleCompleted,
     });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Failed to submit module quiz attempt");
     res.status(500).json({ error: "Internal server error" });
   }
 });
