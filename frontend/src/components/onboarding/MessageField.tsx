@@ -12,22 +12,22 @@ export function MessageField({ role, content, relatedCourses = [] }: MessageProp
     return (
         <div
             className={cn(
-                "flex w-full gap-3 py-4 animate-in fade-in slide-in-from-bottom-2 duration-300",
+                "flex w-full gap-2.5 py-3 animate-in fade-in slide-in-from-bottom-2 duration-300 sm:gap-3 sm:py-4",
                 isUser && "flex-row-reverse"
             )}
         >
             {/* Avatar */}
-            <div className="flex-shrink-0 mt-1">
+            <div className="mt-1 flex-shrink-0">
                 {isUser ? (
                     user?.image ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
                             src={user.image}
                             alt={user.name ?? "You"}
-                            className="h-9 w-9 rounded-full object-cover ring-1 ring-primary/20"
+                            className="h-8 w-8 rounded-full object-cover ring-1 ring-primary/20 sm:h-9 sm:w-9"
                         />
                     ) : (
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary ring-1 ring-primary/20">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary ring-1 ring-primary/20 sm:h-9 sm:w-9">
                             {user?.name?.[0]?.toUpperCase() ?? "U"}
                         </div>
                     )
@@ -36,7 +36,7 @@ export function MessageField({ role, content, relatedCourses = [] }: MessageProp
                     <img
                         src="/logo.png"
                         alt="TheTutor"
-                        className="h-9 w-9 rounded-full object-contain ring-1 ring-primary/20"
+                        className="h-8 w-8 rounded-full object-contain ring-1 ring-primary/20 sm:h-9 sm:w-9"
                     />
                 )}
             </div>
@@ -48,10 +48,10 @@ export function MessageField({ role, content, relatedCourses = [] }: MessageProp
                 </span>
                 <div
                     className={cn(
-                        "inline-block max-w-[85%] whitespace-pre-wrap text-[15px] leading-relaxed md:max-w-[75%]",
+                        "inline-block max-w-[89%] whitespace-pre-wrap text-[14px] leading-relaxed sm:max-w-[85%] sm:text-[15px] md:max-w-[75%]",
                         isUser
-                            ? "skeuo-gold rounded-2xl rounded-tr-sm px-4 py-3 text-left"
-                            : "rounded-2xl rounded-tl-sm border border-primary/15 bg-gradient-to-br from-card/80 to-card/40 px-4 py-3 text-foreground backdrop-blur-sm"
+                            ? "skeuo-gold rounded-2xl rounded-tr-sm px-3.5 py-2.5 text-left sm:px-4 sm:py-3"
+                            : "rounded-2xl rounded-tl-sm border border-primary/15 bg-gradient-to-br from-card/80 to-card/40 px-3.5 py-2.5 text-foreground backdrop-blur-sm sm:px-4 sm:py-3"
                     )}
                 >
                     {content}
