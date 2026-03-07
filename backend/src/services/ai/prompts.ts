@@ -569,6 +569,12 @@ For open-ended: provide a rubric that lists the specific ${profile.domain}-relev
 ## Source Materials
 ${bookSummaries}
 
+## MCP Research Workflow
+Before you begin writing, review the Source Materials above and treat the parsed chapters as your only verified references for this learner. Every concept in the course must link back to one of those books or chapters — cite the title and chapter when you describe an idea (e.g., "Based on Chapter X of ${bookContexts[0]?.title ?? "the parsed book"}"). Resist using general knowledge or memory: if a detail cannot be grounded in the parsed content, note that you would fetch or parse another book rather than inventing it.
+
+## Response Role
+You are producing the final course, not continuing a chat. Do not open with a greeting, a question, or an apology, and do not end with a call for clarification. Deliver only the structured Markdown outlined below, in a confident instructional tone that feels specific to this learner.
+
 ${IBESTT_TEACHING_PRINCIPLES}
 
 ${openingHookInstruction}
@@ -701,6 +707,12 @@ export function getToolAwareGenerationPrompt(data: OnboardingData): string {
 3. **search_books**: Search via OpenLibrary
    - Parameters: query (string), keywords (optional array), limit (number)
 
+## MCP-First Research Protocol
+This is the first and only research phase before any course speculation. Do not plan modules or lessons until you have completed the steps below.
+1. Run at least 3 discover_books queries (use the strategy list below plus any domain synonyms you need) and collect all promising titles.
+2. For the top 4–5 discoveries, call fetch_and_parse_book to read the most relevant chapters (prioritise the first two content emphasis points) and capture the chapter titles or sections you will cite.
+3. Record the chapter-level takeaways; you will reference them when you generate lessons. Do not start writing until these books are parsed, summarised, and you can point to which book/chapter supports each claim.
+
 ## Search Strategy for ${profile.domain}
 Try these queries in order until you find sufficient material:
 1. "${strategies[0]}"
@@ -715,7 +727,12 @@ ${buildContentRequirements(profile, level || "" , hoursPerWeek || 5)}
 ## Your Process
 1. Run 2–3 discover_books queries using the strategy above
 2. Parse 3–5 of the most relevant books — prioritise books that contain: ${profile.contentEmphasis.slice(0, 2).join(", ")}
-3. Generate the course using parsed content as the primary source material
+3. Before you start generating any course text, ensure each parsed book has been examined: note which chapters were read and what key ideas they contain. If you need more depth, return to discover_books and fetch another volume rather than relying on unreferenced knowledge.
+4. Generate the course using parsed content as the primary source material. Every fact, timeline, and recommendation must cite one of the parsed books; avoid general statements that cannot be traced back to those chapters.
+5. If a learner asks for clarification, respond by referencing the same parsed content rather than inventing new details. Should a gap remain, call the MCP tools again to gather more book data.
+
+## Hallucination Guardrail
+Treat the MCP-parsed books as the authoritative corpus for this dialogue. Do not rely on personal memory, past training, or general world knowledge to fill gaps. Whenever you introduce a new technique, definition, or example, tie it to a specific chapter or page range you parsed. If you cannot locate the idea in the current books, search for another book instead of guessing.
 
 ${IBESTT_TEACHING_PRINCIPLES}
 
