@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { MoonStar, Sun, UserCircle2, Bell, Shield } from "lucide-react";
+import { LaptopMinimal, MoonStar, Sun, UserCircle2, SlidersHorizontal, Shield } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { useThemeMode } from "@/components/providers/ThemeProvider";
+import { ThemeMode, useThemeMode } from "@/components/providers/ThemeProvider";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -15,9 +15,19 @@ interface ProfilePayload {
   email: string;
   image?: string;
   preferences?: {
-    theme?: "light" | "dark";
+    theme?: ThemeMode;
   };
 }
+
+const themeOptions: Array<{
+  value: ThemeMode;
+  label: string;
+  icon: typeof LaptopMinimal;
+}> = [
+  { value: "system", label: "System", icon: LaptopMinimal },
+  { value: "light", label: "Light", icon: Sun },
+  { value: "dark", label: "Dark", icon: MoonStar },
+];
 
 export default function ProfilePage() {
   const { user, isLoading } = useAuth();
@@ -35,7 +45,7 @@ export default function ProfilePage() {
         if (!cancelled) {
           setProfile(payload);
           const savedTheme = payload.preferences?.theme;
-          if (savedTheme === "dark" || savedTheme === "light") {
+          if (savedTheme === "dark" || savedTheme === "light" || savedTheme === "system") {
             setTheme(savedTheme);
           }
         }
@@ -49,8 +59,7 @@ export default function ProfilePage() {
     };
   }, [setTheme]);
 
-  const handleThemeToggle = () => {
-    const nextTheme = theme === "light" ? "dark" : "light";
+  const handleThemeChange = (nextTheme: ThemeMode) => {
     setTheme(nextTheme);
     api.patch("/user/preferences", { theme: nextTheme }).catch(() => {
       // Silent fail - theme is already applied locally
@@ -129,19 +138,32 @@ export default function ProfilePage() {
             <div>
               <h2 className="text-base sm:text-lg font-bold text-foreground">Appearance</h2>
               <p className="text-sm text-muted-foreground">
-                Toggle your dashboard between light and dark mode.
+                Choose whether the app should follow your device or stay fixed.
               </p>
             </div>
-            <Button
-              type="button"
-              onClick={handleThemeToggle}
-              className="flex items-center gap-2 skeuo-outline rounded-full border border-border/70 text-foreground hover:border-primary/40"
-              size="sm"
-            >
-              {theme === "light" ? <MoonStar className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-              <span className="hidden sm:inline text-[10px] mt-[2px]">{theme === "light" ? "switch to dark" : "Switch to light"}</span>
-              <span className="sm:hidden">{theme === "light" ? "Dark" : "Light"}</span>
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              {themeOptions.map((option) => {
+                const Icon = option.icon;
+                const isActive = theme === option.value;
+                return (
+                  <Button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleThemeChange(option.value)}
+                    variant="outline"
+                    size="sm"
+                    className={`inline-flex items-center justify-center gap-2 rounded-full border ${
+                      isActive
+                        ? "border-primary/35 bg-primary/[0.08] text-primary"
+                        : "border-border/70 text-foreground hover:border-primary/30"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {option.label}
+                  </Button>
+                );
+              })}
+            </div>
           </div>
         </motion.section>
 
@@ -153,29 +175,38 @@ export default function ProfilePage() {
         >
           <h2 className="text-base sm:text-lg font-bold text-foreground">Settings</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Manage profile details, notifications, and security preferences.
+            Manage profile details, preferences, and account access.
           </p>
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-3">
             <Link
               href="/settings/personal-info"
-              className="card-leather motion-card rounded-2xl p-4"
+              className="card-leather motion-card flex min-w-0 items-center gap-3 rounded-2xl border border-primary/12 p-4"
             >
               <UserCircle2 className="h-5 w-5 text-primary" />
-              <p className="mt-2 text-sm font-semibold text-foreground">Personal Info</p>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground">Profile</p>
+                <p className="truncate text-xs text-muted-foreground">Identity and account details</p>
+              </div>
             </Link>
             <Link
               href="/settings/notifications"
-              className="card-leather motion-card rounded-2xl p-4"
+              className="card-leather motion-card flex min-w-0 items-center gap-3 rounded-2xl border border-primary/12 p-4"
             >
-              <Bell className="h-5 w-5 text-primary" />
-              <p className="mt-2 text-sm font-semibold text-foreground">Notifications</p>
+              <SlidersHorizontal className="h-5 w-5 text-primary" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground">Preferences</p>
+                <p className="truncate text-xs text-muted-foreground">Theme and product defaults</p>
+              </div>
             </Link>
             <Link
               href="/settings/security"
-              className="card-leather motion-card rounded-2xl p-4"
+              className="card-leather motion-card flex min-w-0 items-center gap-3 rounded-2xl border border-primary/12 p-4"
             >
               <Shield className="h-5 w-5 text-primary" />
-              <p className="mt-2 text-sm font-semibold text-foreground">Security</p>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground">Account Access</p>
+                <p className="truncate text-xs text-muted-foreground">OAuth sign-in and sessions</p>
+              </div>
             </Link>
           </div>
         </motion.section>
