@@ -1,135 +1,81 @@
 "use client"
 
-import { useState } from "react"
-import { Input } from "@/components/ui/input"
+import { ShieldCheck, LogOut, KeyRound, LaptopMinimal } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useAuth } from "@/components/providers/AuthProvider"
 
 export function Security() {
-    const [isLoading, setIsLoading] = useState(false)
-    const [formData, setFormData] = useState({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-    })
-    const [error, setError] = useState("")
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }))
-        setError("")
-    }
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-
-        // Validation
-        if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
-            setError("All fields are required")
-            return
-        }
-
-        if (formData.newPassword !== formData.confirmPassword) {
-            setError("New passwords do not match")
-            return
-        }
-
-        if (formData.newPassword.length < 8) {
-            setError("Password must be at least 8 characters long")
-            return
-        }
-
-        setIsLoading(true)
-        try {
-            console.log("Updating password:", {
-                currentPassword: formData.currentPassword,
-                newPassword: formData.newPassword,
-            })
-            // Backend integration coming later
-            await new Promise(resolve => setTimeout(resolve, 500))
-
-            // Reset form on success
-            setFormData({
-                currentPassword: "",
-                newPassword: "",
-                confirmPassword: "",
-            })
-        } finally {
-            setIsLoading(false)
-        }
-    }
+    const { user, logout } = useAuth()
 
     return (
-        <form onSubmit={handleSubmit}>
-            <div className="neo-surface rounded-2xl p-6">
-                <h4 className="font-semibold text-foreground">Security</h4>
-                <p className="text-sm text-muted-foreground mt-1">
-                    Update your password regularly to keep your account secure.
+        <div className="grid grid-cols-1 gap-6 pb-10 xl:grid-cols-[1.05fr_0.95fr]">
+            <section className="neo-surface rounded-3xl p-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary/75">
+                    Access
+                </p>
+                <h4 className="mt-3 text-2xl font-semibold text-foreground">Authentication is handled by OAuth</h4>
+                <p className="mt-2 text-sm text-muted-foreground">
+                    Passwords are not stored or managed inside TheTutor. Your sign-in provider handles credentials, recovery, and account verification.
                 </p>
 
-                <div className="mt-6 space-y-5">
-                    <div>
-                        <label htmlFor="currentPassword" className="block text-sm font-medium text-foreground mb-2">
-                            Current Password
-                        </label>
-                        <Input
-                            id="currentPassword"
-                            name="currentPassword"
-                            type="password"
-                            value={formData.currentPassword}
-                            onChange={handleInputChange}
-                            className="bg-card border-border/80"
-                            placeholder="Enter your current password"
-                        />
-                    </div>
-
-                    <div>
-                        <label htmlFor="newPassword" className="block text-sm font-medium text-foreground mb-2">
-                            New Password
-                        </label>
-                        <Input
-                            id="newPassword"
-                            name="newPassword"
-                            type="password"
-                            value={formData.newPassword}
-                            onChange={handleInputChange}
-                            className="bg-card border-border/80"
-                            placeholder="Enter your new password"
-                        />
-                    </div>
-
-                    <div>
-                        <label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground mb-2">
-                            Confirm New Password
-                        </label>
-                        <Input
-                            id="confirmPassword"
-                            name="confirmPassword"
-                            type="password"
-                            value={formData.confirmPassword}
-                            onChange={handleInputChange}
-                            className="bg-card border-border/80"
-                            placeholder="Confirm your new password"
-                        />
-                    </div>
-
-                    {error && (
-                        <div className="text-sm text-destructive bg-destructive/10 border border-destructive/30 p-3 rounded-md">
-                            {error}
+                <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                    <div className="min-w-0 rounded-2xl border border-primary/12 bg-card/60 p-4">
+                        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                            <KeyRound className="h-4 w-4 text-primary" />
+                            Sign-in Method
                         </div>
-                    )}
+                        <p className="mt-2 text-sm text-muted-foreground">
+                            Connected provider account
+                        </p>
+                    </div>
+                    <div className="min-w-0 rounded-2xl border border-primary/12 bg-card/60 p-4">
+                        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                            <ShieldCheck className="h-4 w-4 text-primary" />
+                            Protection Model
+                        </div>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                            Session-based access with provider-managed verification
+                        </p>
+                    </div>
+                </div>
+
+                <div className="mt-6 rounded-2xl border border-primary/12 bg-primary/[0.04] p-4">
+                    <p className="text-sm font-medium text-foreground">What belongs here</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        This page focuses on account access, trust, and session actions. Password reset and credential changes should happen in your OAuth provider dashboard, not here.
+                    </p>
+                </div>
+            </section>
+
+            <section className="neo-surface rounded-3xl p-6">
+                <h4 className="font-semibold text-foreground">Session actions</h4>
+                <p className="mt-2 text-sm text-muted-foreground">
+                    Use this area for account-level actions on this device.
+                </p>
+
+                <div className="mt-6 space-y-4">
+                    <div className="min-w-0 rounded-2xl border border-primary/12 bg-card/60 p-4">
+                        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                            <LaptopMinimal className="h-4 w-4 text-primary" />
+                            Current account
+                        </div>
+                        <p className="mt-2 truncate text-sm text-muted-foreground">
+                            {user?.email ?? "Signed-in account not available"}
+                        </p>
+                    </div>
 
                     <Button
-                        type="submit"
-                        disabled={isLoading}
-                        className="skeuo-gold mt-2 w-full sm:w-auto"
+                        type="button"
+                        onClick={() => {
+                            void logout()
+                        }}
+                        className="skeuo-gold inline-flex w-full items-center justify-center gap-2 sm:w-auto"
                     >
-                        {isLoading ? "Updating..." : "Update Password"}
+                        <LogOut className="h-4 w-4" />
+                        Sign Out
                     </Button>
                 </div>
-            </div>
-        </form>
+            </section>
+        </div>
     )
 }
