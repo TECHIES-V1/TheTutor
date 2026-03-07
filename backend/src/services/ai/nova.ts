@@ -4,6 +4,7 @@ import { getModel, GENERATION_CONFIG, STREAMING_CONFIG, MCP_DISCOVERY_CONFIG } f
 import {
   getOnboardingSystemPrompt,
   getBookFilteringPrompt,
+  getTextbookSearchQueriesPrompt,
   getSubjectFromConversationPrompt,
   getOnboardingDataExtractionPrompt,
   getToolAwareGenerationPrompt,
@@ -115,6 +116,32 @@ export async function filterBooks(
     return [];
   } catch {
     logger.error({ text: result.text }, "Failed to parse book filter result");
+    return [];
+  }
+}
+
+// ── Generate Textbook Search Queries ──────────────────────────────────────
+
+export async function generateTextbookSearchQueries(
+  topic: string,
+  level: string
+): Promise<string[]> {
+  try {
+    const result = await generateText({
+      model: getModel(),
+      prompt: getTextbookSearchQueriesPrompt(topic, level),
+      maxOutputTokens: 256,
+      temperature: 0.7,
+    });
+
+    const jsonMatch = result.text.match(/\[[\s\S]*\]/);
+    if (jsonMatch) {
+      const queries = JSON.parse(jsonMatch[0]) as string[];
+      return queries.filter((q) => typeof q === "string" && q.trim().length > 0).map((q) => q.trim());
+    }
+    return [];
+  } catch (err) {
+    logger.error({ err }, "Failed to generate textbook search queries");
     return [];
   }
 }

@@ -199,7 +199,8 @@ CONTENT REQUIREMENTS:
 
 2. keyTakeaways: 3-5 bullet points summarizing the most important concepts.
 
-3. citations: 1-3 citations from the sources list above (use real titles from the list).
+3. citations: 1-3 APA 7th edition citations from the sources list above (use real titles from the list).
+   Format: Author, A. B. (Year). *Title of work*. Publisher. https://doi.org/xxxxx
    If no sources available, use an empty array.
 
 4. quiz: 2-3 open-ended questions aligned to Bloom's Level ${lesson.bloomsLevel} (${bloomsName}).

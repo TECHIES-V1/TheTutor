@@ -3,7 +3,7 @@ import {
   discoverySearch,
   fetchAndParse,
 } from "./client";
-import { filterBooks } from "../ai/nova";
+import { filterBooks, generateTextbookSearchQueries } from "../ai/nova";
 import { Resource } from "../../models/Resource";
 import type {
   DiscoveredBook,
@@ -12,7 +12,6 @@ import type {
   OnboardingData,
 } from "../../types";
 import { logger } from "../../config/logger";
-import { extractKeywords } from "../course/contextBuilder";
 
 // ── Discovery Pipeline ────────────────────────────────────────────────────
 
@@ -26,16 +25,34 @@ export async function* discoverAndParseBooks(
   onboardingData: OnboardingData
 ): AsyncGenerator<SSEEvent, DiscoveryResult> {
   const { topic, level, confirmedSubject } = onboardingData;
-  const rawQuery = confirmedSubject || topic || "";
-  const keywords = extractKeywords(rawQuery);
+  // Use topic (what the user typed) for book search, NOT confirmedSubject (AI-generated course title)
+  const rawQuery = topic || confirmedSubject || "";
 
-  // Build search attempts: 3 keywords → 2 keywords → 1 keyword → raw query
-  const searchAttempts: string[] = [];
-  if (keywords.length >= 3) searchAttempts.push(keywords.slice(0, 3).join(" "));
-  if (keywords.length >= 2) searchAttempts.push(keywords.slice(0, 2).join(" "));
-  if (keywords.length >= 1) searchAttempts.push(keywords[0]);
-  if (searchAttempts.length === 0 || searchAttempts[searchAttempts.length - 1] !== rawQuery) {
-    searchAttempts.push(rawQuery);
+  // Use AI to generate proper textbook search queries (e.g., "neumorphism" → ["CSS design patterns", "UI design", ...])
+  yield {
+    type: "status",
+    data: {
+      phase: "resource_retrieval",
+      message: "Generating textbook search queries...",
+    },
+  };
+
+  let aiQueries: string[] = [];
+  try {
+    aiQueries = await generateTextbookSearchQueries(rawQuery, level || "beginner");
+    logger.info({ aiQueries }, "[discovery] AI-generated search queries");
+  } catch (err) {
+    logger.warn({ err }, "[discovery] AI query generation failed, using raw topic");
+  }
+
+  // Build search attempts: AI queries first, then raw topic as fallback
+  const uniqueAttempts: string[] = [];
+  const seen = new Set<string>();
+  for (const q of [rawQuery, ...aiQueries]) {
+    const lower = q.toLowerCase().trim();
+    if (!lower || seen.has(lower)) continue;
+    seen.add(lower);
+    uniqueAttempts.push(q.trim());
   }
 
   // Check MCP health first
@@ -64,7 +81,7 @@ export async function* discoverAndParseBooks(
   // Search for books, retrying with broader keywords if no results
   let searchResult = { books: [] as DiscoveredBook[] };
 
-  for (const attempt of searchAttempts) {
+  for (const attempt of uniqueAttempts) {
 
     yield {
       type: "status",

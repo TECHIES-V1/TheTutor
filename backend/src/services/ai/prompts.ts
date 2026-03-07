@@ -442,6 +442,30 @@ Important: Never ask more than one question at a time. Never list your questions
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// TEXTBOOK SEARCH QUERY GENERATION — AI-powered query expansion
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function getTextbookSearchQueriesPrompt(
+  topic: string,
+  level: string
+): string {
+  return `You are an expert librarian. A student wants to learn "${topic}" at the "${level}" level.
+
+Generate 4-6 search queries to find relevant textbooks in open digital libraries (Open Library, Project Gutenberg, Standard Ebooks). The queries should:
+
+1. Start with the most specific query matching the exact topic
+2. Then broaden to the parent field/discipline
+3. Include fundamental/foundational terms that textbooks actually use in their titles
+4. Avoid branded course names, marketing language, or overly specific jargon
+
+Examples:
+- Topic "neumorphism" → ["neumorphism design", "CSS design patterns", "user interface design", "web design fundamentals", "frontend development"]
+- Topic "React hooks" → ["React JavaScript", "JavaScript frameworks", "frontend web development", "web application development"]
+- Topic "machine learning" → ["machine learning", "artificial intelligence", "statistical learning", "data science", "pattern recognition"]
+
+Respond with ONLY a JSON array of search query strings. No explanation.`;
+}
+
 // BOOK FILTERING PROMPT — Subject-aware selection
 // ─────────────────────────────────────────────────────────────────────────────
 

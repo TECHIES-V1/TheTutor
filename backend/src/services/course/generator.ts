@@ -717,28 +717,29 @@ export async function* generate(
           }
         }
 
+        lesson.videoSearchQueries = queries;
+
         if (references.length === 0) {
-          throw new Error(
-            `No YouTube references were found for lesson "${lesson.title}". Check YOUTUBE_API_KEY.`
-          );
+          logger.warn({ lessonTitle: lesson.title }, "[generator] No YouTube references found for lesson, skipping video enrichment");
+          lesson.videoLinks = [];
+          lesson.videoReferences = [];
+        } else {
+          lesson.videoLinks = references.map((ref) => ref.url);
+          lesson.videoReferences = references.map((ref: YouTubeVideoReference) => ({
+            url: ref.url,
+            title: ref.title,
+            channelName: ref.channelName,
+            queryUsed: ref.queryUsed,
+          }));
         }
 
-        lesson.videoSearchQueries = queries;
-        lesson.videoLinks = references.map((ref) => ref.url);
-        lesson.videoReferences = references.map((ref: YouTubeVideoReference) => ({
-          url: ref.url,
-          title: ref.title,
-          channelName: ref.channelName,
-          queryUsed: ref.queryUsed,
-        }));
-
         if (!lesson.citations || lesson.citations.length === 0) {
-          if (sourceLedger.length === 0) {
-            throw new Error(
-              `Lesson "${lesson.title}" has no citations and no source references are available.`
-            );
+          if (sourceLedger.length > 0) {
+            lesson.citations = [toFallbackCitation(sourceLedger[0])];
+          } else {
+            logger.warn({ lessonTitle: lesson.title }, "[generator] No citations or source references for lesson");
+            lesson.citations = [];
           }
-          lesson.citations = [toFallbackCitation(sourceLedger[0])];
         }
       }
     }
