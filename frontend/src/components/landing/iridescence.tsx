@@ -50,21 +50,23 @@ void main() {
   }
   d += uTime * 0.5 * uSpeed;
 
-  // Palette: warm white → gold → royal blue iridescence.
+  // Palette: warm white → champagne → amber iridescence.
   float wave = cos(uv.x * (1.7 + d * 0.08) + a * 0.22) * 0.5 + 0.5;
   float grain = sin((uv.x + uv.y) * 5.4 + d * 0.35) * 0.5 + 0.5;
   float intensity = clamp(wave * 0.72 + grain * 0.28, 0.0, 1.0);
   float glow = smoothstep(0.58, 0.92, intensity);
 
-  // Royal blue wave — offset frequency so it drifts out of phase with gold
-  float blueWave = sin(uv.y * (1.4 + d * 0.06) - uv.x * 0.9 + a * 0.18) * 0.5 + 0.5;
-  float blueGlow = smoothstep(0.52, 0.88, blueWave);
+  // Warm accent wave — offset frequency so it drifts out of phase with gold
+  float amberWave = sin(uv.y * (1.4 + d * 0.06) - uv.x * 0.9 + a * 0.18) * 0.5 + 0.5;
+  float amberGlow = smoothstep(0.52, 0.88, amberWave);
 
   vec3 base  = mix(vec3(0.92, 0.90, 0.85), vec3(1.0), intensity);
   vec3 gold  = vec3(0.83, 0.69, 0.23);              // #D4AF37
-  vec3 royal = vec3(0.18, 0.42, 0.85);              // royal blue #2E6BD9
+  vec3 champagne = vec3(0.95, 0.84, 0.68);          // champagne #F2D6AE
+  vec3 amber = vec3(0.76, 0.49, 0.15);              // amber #C27D26
   vec3 col   = mix(base, gold, glow * 0.55);
-  col        = mix(col, royal, blueGlow * 0.38);    // blue at 38% — visible, not dominant
+  col        = mix(col, champagne, intensity * 0.18);
+  col        = mix(col, amber, amberGlow * 0.28);
   col       *= uColor;
 
   gl_FragColor = vec4(col, 1.0);

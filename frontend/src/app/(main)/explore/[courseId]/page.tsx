@@ -12,6 +12,19 @@ import { useCoursePanelState } from "@/hooks/useCoursePanelState";
 import { AiAssistantButton } from "@/components/course/AiAssistantButton";
 import { PageLoader } from "@/components/ui/PageLoader";
 
+function getLevelPillClasses(level?: string) {
+  switch (level?.toLowerCase()) {
+    case "beginner":
+      return "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+    case "intermediate":
+      return "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+    case "advanced":
+      return "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300";
+    default:
+      return "border-primary/25 bg-primary/10 text-primary";
+  }
+}
+
 export default function ExploreCourseDetailPage() {
   const params = useParams<{ courseId: string }>();
   const router = useRouter();
@@ -114,7 +127,7 @@ export default function ExploreCourseDetailPage() {
               </p>
 
               <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
-                <span className="rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-primary capitalize">
+                <span className={`rounded-full border px-2 py-0.5 font-medium capitalize ${getLevelPillClasses(data.course.level)}`}>
                   {data.course.level}
                 </span>
                 <span className="rounded-full border border-border px-2 py-0.5 text-muted-foreground">
@@ -122,9 +135,6 @@ export default function ExploreCourseDetailPage() {
                 </span>
                 <span className="rounded-full border border-border px-2 py-0.5 text-muted-foreground">
                   {data.course.lessonCount} lessons
-                </span>
-                <span className="rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-green-700">
-                  Free (Hackathon)
                 </span>
               </div>
 
@@ -155,7 +165,7 @@ export default function ExploreCourseDetailPage() {
                     disabled={enrolling || isGenerating || isFailed}
                     className="skeuo-gold rounded-full hover:!opacity-100"
                   >
-                    {enrolling ? "Enrolling..." : isGenerating ? "Generating..." : "Enroll for Free"}
+                    {enrolling ? "Enrolling..." : isGenerating ? "Generating..." : "Enroll"}
                   </Button>
                 ) : (
                   <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-2 text-xs text-primary">

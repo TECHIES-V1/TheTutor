@@ -116,7 +116,7 @@ export function CourseWorkspaceSidebar({
       <aside
         className={`neo-surface overflow-y-auto
           fixed inset-x-0 bottom-0 z-50 max-h-[82vh] rounded-t-3xl border-t border-primary/15 p-4 transition-transform duration-300
-          lg:static lg:max-h-[calc(100svh-7rem)] lg:w-full lg:max-w-none lg:self-start lg:rounded-2xl lg:border lg:border-primary/15 lg:translate-y-0 lg:transition-none
+          lg:sticky lg:top-6 lg:max-h-[calc(100svh-3rem)] lg:w-full lg:max-w-none lg:self-start lg:rounded-2xl lg:border lg:border-primary/15 lg:translate-y-0 lg:transition-none
           ${isOpen ? "translate-y-0" : "translate-y-full"}`}
       >
         {/* Drag handle (mobile only) */}

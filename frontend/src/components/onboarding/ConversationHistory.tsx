@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { api } from "@/lib/api";
-import { ArrowLeft, Plus, X, PanelRightClose } from "lucide-react";
+import { Plus, X, PanelRightClose } from "lucide-react";
 
 interface ConvSummary {
   id: string;
@@ -175,17 +174,6 @@ function ConversationList({
             </div>
           </div>
         ))}
-      </div>
-
-      {/* Footer */}
-      <div className="flex-shrink-0 border-t border-border/40 p-3">
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Back to Dashboard
-        </Link>
       </div>
     </div>
   );

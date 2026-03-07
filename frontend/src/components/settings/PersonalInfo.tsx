@@ -1,52 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import Link from "next/link"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Camera } from "lucide-react"
+import { BadgeCheck, ExternalLink, GraduationCap, Mail, UserCircle2 } from "lucide-react"
 import { useAuth } from "@/components/providers/AuthProvider"
 
 export function PersonalInfo() {
     const { user, isLoading: isAuthLoading } = useAuth()
-    const [isLoading, setIsLoading] = useState(false)
-    const [formData, setFormData] = useState({
-        name: "",
-        email: "",
-    })
-
-    useEffect(() => {
-        if (!user) return
-        setFormData({
-            name: user.name ?? "",
-            email: user.email ?? "",
-        })
-    }, [user])
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }))
-    }
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setIsLoading(true)
-        try {
-            console.log("Updating personal info:", formData)
-            // Backend integration coming later
-            await new Promise(resolve => setTimeout(resolve, 500))
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    const handleProfilePictureEdit = async () => {
-        console.log("Edit profile picture")
-        // Backend integration coming later
-    }
 
     if (isAuthLoading) {
         return (
@@ -57,91 +17,86 @@ export function PersonalInfo() {
     }
 
     return (
-        <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_1.2fr] pb-10">
-                {/* Profile Picture Section */}
-                <div className="flex flex-col gap-4">
-                    <div className="neo-surface rounded-2xl p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h4 className="font-semibold text-foreground">Profile Picture</h4>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    Keep your profile polished and recognizable.
-                                </p>
-                            </div>
-                        </div>
-                        <div className="mt-6 flex flex-col items-center gap-4">
-                            <div className="relative">
-                                <Avatar className="h-24 w-24 ring-2 ring-primary/30">
-                                    <AvatarImage src={user?.image ?? ""} alt={user?.name ?? "Profile"} />
-                                    <AvatarFallback className="bg-muted text-lg font-semibold">
-                                        {user?.name?.[0] ?? "U"}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <button
-                                    type="button"
-                                    onClick={handleProfilePictureEdit}
-                                    className="absolute -bottom-2 -right-2 flex h-9 w-9 items-center justify-center rounded-full border border-primary/30 bg-card/90 text-primary transition hover:bg-card"
-                                    aria-label="Change profile picture"
-                                >
-                                    <Camera className="h-4 w-4" />
-                                </button>
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                Your profile photo is managed by your Google account.
-                            </p>
-                        </div>
+        <div className="grid grid-cols-1 gap-6 pb-10 xl:grid-cols-[1.1fr_0.9fr]">
+            <section className="neo-surface rounded-3xl p-6">
+                <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+                    <Avatar className="h-24 w-24 ring-2 ring-primary/20">
+                        <AvatarImage src={user?.image ?? ""} alt={user?.name ?? "Profile"} />
+                        <AvatarFallback className="bg-muted text-lg font-semibold">
+                            {user?.name?.[0] ?? "U"}
+                        </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary/75">
+                            Profile
+                        </p>
+                        <h4 className="mt-2 text-2xl font-semibold text-foreground">
+                            {user?.name ?? "Learner"}
+                        </h4>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Your account identity is synced from your OAuth provider, so the basics stay consistent everywhere you sign in.
+                        </p>
                     </div>
                 </div>
 
-                {/* Form Fields Section */}
-                <div className="neo-surface rounded-2xl p-6">
-                    <h4 className="font-semibold text-foreground">Personal Details</h4>
-                    <p className="text-xs text-muted-foreground mt-1">
-                        Update the information associated with your account.
-                    </p>
-                    <div className="mt-6 space-y-5">
-                        <div>
-                            <label htmlFor="fullName" className="block text-sm font-medium text-foreground mb-2">
-                                Name
-                            </label>
-                            <Input
-                                id="fullName"
-                                name="fullName"
-                                value={formData.name}
-                                onChange={handleInputChange}
-                                className="bg-card border-border/80"
-                                placeholder="Enter your full name"
-                            />
+                <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                    <div className="min-w-0 rounded-2xl border border-primary/12 bg-card/60 p-4">
+                        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                            <UserCircle2 className="h-4 w-4 text-primary" />
+                            Display Name
                         </div>
-
-                        <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-                                Email Address
-                            </label>
-                            <Input
-                                id="email"
-                                name="email"
-                                type="email"
-                                value={formData.email}
-                                onChange={handleInputChange}
-                                className="bg-card border-border/80"
-                                placeholder="Enter your email address"
-                            />
+                        <p className="mt-2 truncate text-sm text-muted-foreground">{user?.name ?? "Not available"}</p>
+                    </div>
+                    <div className="min-w-0 rounded-2xl border border-primary/12 bg-card/60 p-4">
+                        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                            <Mail className="h-4 w-4 text-primary" />
+                            Sign-in Email
                         </div>
-
-                        <div className="pt-2">
-                            <Button
-                                type="submit"
-                                disabled={isLoading || !user}
-                                className="skeuo-gold w-full sm:w-auto"
-                            >
-                                {isLoading ? "Saving..." : "Save Changes"}
-                            </Button>
+                        <p className="mt-2 truncate text-sm text-muted-foreground">{user?.email ?? "Not available"}</p>
+                    </div>
+                    <div className="min-w-0 rounded-2xl border border-primary/12 bg-card/60 p-4">
+                        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                            <BadgeCheck className="h-4 w-4 text-primary" />
+                            Account Status
                         </div>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                            Active and ready for learning.
+                        </p>
+                    </div>
+                    <div className="min-w-0 rounded-2xl border border-primary/12 bg-card/60 p-4">
+                        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                            <GraduationCap className="h-4 w-4 text-primary" />
+                            Onboarding
+                        </div>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                            {user?.onboardingCompleted ? "Completed" : "Still in progress"}
+                        </p>
                     </div>
                 </div>
-            </div>
-        </form>
+            </section>
+
+            <section className="neo-surface rounded-3xl p-6">
+                <h4 className="font-semibold text-foreground">How profile details work</h4>
+                <p className="mt-2 text-sm text-muted-foreground">
+                    TheTutor currently trusts your connected provider for name, email, and avatar. That keeps account identity simple and reduces duplicated account management.
+                </p>
+
+                <div className="mt-6 space-y-3">
+                    <div className="rounded-2xl border border-primary/12 bg-primary/[0.04] p-4">
+                        <p className="text-sm font-medium text-foreground">Managed by your sign-in provider</p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            If you want to change your profile photo or primary account name, update it at the provider level and it will flow back here.
+                        </p>
+                    </div>
+                    <Link
+                        href="/profile"
+                        className="flex items-center justify-between rounded-2xl border border-primary/12 bg-card/60 p-4 text-sm text-foreground transition hover:bg-primary/[0.04]"
+                    >
+                        <span>Open your profile overview</span>
+                        <ExternalLink className="h-4 w-4 text-primary" />
+                    </Link>
+                </div>
+            </section>
+        </div>
     )
 }

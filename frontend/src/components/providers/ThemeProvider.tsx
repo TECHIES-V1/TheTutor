@@ -3,26 +3,41 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 
-type ThemeMode = "light" | "dark";
+export type ThemeMode = "system" | "light" | "dark";
+type ResolvedThemeMode = "light" | "dark";
 
 interface ThemeContextValue {
   theme: ThemeMode;
+  resolvedTheme: ResolvedThemeMode;
   setTheme: (theme: ThemeMode) => void;
 }
 
 const STORAGE_KEY = "thetutor-theme";
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: "light",
+  theme: "system",
+  resolvedTheme: "light",
   setTheme: () => undefined,
 });
 
+function getStoredTheme(): ThemeMode {
+  if (typeof window === "undefined") return "system";
+  const stored = window.localStorage.getItem(STORAGE_KEY);
+  return stored === "dark" || stored === "light" || stored === "system"
+    ? stored
+    : "system";
+}
+
+function getSystemTheme(): ResolvedThemeMode {
+  if (typeof window === "undefined") return "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<ThemeMode>(() => {
-    if (typeof window === "undefined") return "light";
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    return stored === "dark" || stored === "light" ? stored : "light";
+    return getStoredTheme();
   });
+  const [systemTheme, setSystemTheme] = useState<ResolvedThemeMode>(() => getSystemTheme());
   const pathname = usePathname();
 
   const isThemeEnabledRoute = useMemo(() => {
@@ -34,23 +49,41 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   useEffect(() => {
-    document.documentElement.dataset.theme = isThemeEnabledRoute ? theme : "light";
-  }, [isThemeEnabledRoute, theme]);
+    if (typeof window === "undefined") return;
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = (event: MediaQueryListEvent) => {
+      setSystemTheme(event.matches ? "dark" : "light");
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+
+    return () => {
+      mediaQuery.removeEventListener("change", handleChange);
+    };
+  }, []);
+
+  const resolvedTheme = theme === "system" ? systemTheme : theme;
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = isThemeEnabledRoute ? resolvedTheme : "light";
+  }, [isThemeEnabledRoute, resolvedTheme]);
 
   const setTheme = (nextTheme: ThemeMode) => {
     setThemeState(nextTheme);
     if (typeof window !== "undefined") {
       window.localStorage.setItem(STORAGE_KEY, nextTheme);
-      document.documentElement.dataset.theme = nextTheme;
+      document.documentElement.dataset.theme = nextTheme === "system" ? getSystemTheme() : nextTheme;
     }
   };
 
   const value = useMemo(
     () => ({
       theme,
+      resolvedTheme,
       setTheme,
     }),
-    [theme]
+    [resolvedTheme, theme]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

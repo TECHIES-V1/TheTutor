@@ -75,6 +75,10 @@ export function Sidebar({
   const completionHref = activeCourseId
     ? `/learn/${activeCourseId}/complete`
     : "/dashboard";
+  const handleCloseSidebar = () => {
+    setProfileOpen(false);
+    onClose?.();
+  };
   const handleLogoClick = () => {
     if (isCollapsed) {
       onToggleCollapse?.();
@@ -90,9 +94,9 @@ export function Sidebar({
 
   const linkBase = cx(
     "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm",
-    "border transition-all duration-200",
+    "transition-all duration-200",
     isCollapsed
-      ? "lg:justify-center lg:px-0"
+      ? "lg:mx-auto lg:h-10 lg:w-10 lg:justify-center lg:gap-0 lg:px-0"
       : ""
   );
 
@@ -102,12 +106,12 @@ export function Sidebar({
         className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
           isOpen ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
-        onClick={onClose}
+        onClick={handleCloseSidebar}
       />
 
       <aside
         className={cx(
-          "group/sidebar neo-surface fixed bottom-0 left-0 top-0 z-50 flex flex-col border-r border-primary/10 transition-[transform,width] duration-300 ease-in-out lg:translate-x-0",
+          "group/sidebar neo-surface fixed inset-y-0 left-0 z-50 flex h-screen flex-col border-r border-primary/10 transition-[transform,width] duration-300 ease-in-out lg:sticky lg:top-0 lg:z-auto lg:translate-x-0",
           isCollapsed ? "w-72 lg:w-16" : "w-72",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
@@ -145,7 +149,7 @@ export function Sidebar({
             </button>
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleCloseSidebar}
               className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
               aria-label="Close sidebar"
             >
@@ -162,19 +166,24 @@ export function Sidebar({
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={onClose}
+                onClick={handleCloseSidebar}
                 title={isCollapsed ? item.label : undefined}
                 className={cx(
                   linkBase,
                   active
-                    ? "bg-primary/10 text-primary border-[rgba(212,175,55,0.22)] shadow-neo-inset"
-                    : "text-muted-foreground border-transparent hover:bg-primary/5 hover:text-foreground hover:border-[rgba(212,175,55,0.12)]"
+                    ? "text-primary"
+                    : "text-muted-foreground hover:bg-primary/[0.04] hover:text-foreground"
                 )}
               >
                 {active && (
                   <div className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />
                 )}
-                <item.icon className="h-4 w-4 shrink-0" />
+                <item.icon
+                  className={cx(
+                    "h-4 w-4 shrink-0 transition-opacity duration-200",
+                    active ? "opacity-100" : "opacity-75"
+                  )}
+                />
                 <span className={textReveal}>{item.label}</span>
               </Link>
             );
@@ -186,14 +195,14 @@ export function Sidebar({
           {/* Create Course */}
           <Link
             href="/create-course"
-            onClick={onClose}
+            onClick={handleCloseSidebar}
             title={isCollapsed ? "Create Course" : undefined}
             className={cx(
               linkBase,
               "font-medium",
               pathname.startsWith("/create-course")
-                ? "bg-primary/15 text-primary border-[rgba(212,175,55,0.22)] shadow-neo-inset"
-                : "text-primary/70 border-transparent hover:bg-primary/8 hover:text-primary hover:border-[rgba(212,175,55,0.12)]"
+                ? "text-primary"
+                : "text-primary/70 hover:bg-primary/[0.04] hover:text-primary"
             )}
           >
             {pathname.startsWith("/create-course") && (
@@ -218,7 +227,7 @@ export function Sidebar({
               </p>
               <Link
                 href={currentLessonHref}
-                onClick={onClose}
+                onClick={handleCloseSidebar}
                 className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-foreground transition-colors hover:bg-primary/10"
               >
                 <BookOpenCheck className="h-3.5 w-3.5 shrink-0 text-primary/80" />
@@ -226,7 +235,7 @@ export function Sidebar({
               </Link>
               <Link
                 href={currentQuizHref}
-                onClick={onClose}
+                onClick={handleCloseSidebar}
                 className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-foreground transition-colors hover:bg-primary/10"
               >
                 <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary/80" />
@@ -234,7 +243,7 @@ export function Sidebar({
               </Link>
               <Link
                 href={completionHref}
-                onClick={onClose}
+                onClick={handleCloseSidebar}
                 className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-foreground transition-colors hover:bg-primary/10"
               >
                 <LayoutDashboard className="h-3.5 w-3.5 shrink-0 text-primary/80" />
@@ -250,10 +259,10 @@ export function Sidebar({
             <button
               onClick={() => setProfileOpen((p) => !p)}
               className={cx(
-                "flex w-full items-center gap-2.5 rounded-xl px-2 py-2 border border-transparent transition-all duration-200",
-                "hover:bg-primary/5 hover:border-[rgba(212,175,55,0.12)]",
+                "flex w-full items-center gap-2.5 rounded-xl px-2 py-2 transition-all duration-200",
+                "hover:text-foreground",
                 isCollapsed
-                  ? "lg:justify-center lg:px-0"
+                  ? "lg:mx-auto lg:h-10 lg:w-10 lg:justify-center lg:gap-0 lg:px-0"
                   : ""
               )}
             >
@@ -281,18 +290,19 @@ export function Sidebar({
                 className={cx(
                   "h-3.5 w-3.5 shrink-0 text-muted-foreground/50 transition-transform duration-200",
                   textReveal,
+                  isCollapsed && "lg:hidden",
                   !profileOpen && "rotate-180"
                 )}
               />
             </button>
 
-            {profileOpen && (
+            {profileOpen && !isCollapsed && (
               <div className="absolute bottom-full left-2 right-2 mb-2 rounded-xl border border-primary/15 bg-card p-1 shadow-neo-raised">
                 <Link
                   href="/profile"
                   onClick={() => {
                     setProfileOpen(false);
-                    onClose?.();
+                    handleCloseSidebar();
                   }}
                   className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-primary/5"
                 >
@@ -300,7 +310,10 @@ export function Sidebar({
                   Profile
                 </Link>
                 <button
-                  onClick={() => setShowLogoutConfirm(true)}
+                  onClick={() => {
+                    setProfileOpen(false);
+                    setShowLogoutConfirm(true);
+                  }}
                   className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
                   <LogOut className="h-4 w-4" />
@@ -331,7 +344,7 @@ export function Sidebar({
                 onClick={() => {
                   logout();
                   setShowLogoutConfirm(false);
-                  onClose?.();
+                  handleCloseSidebar();
                 }}
                 className="flex-1 rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground transition-colors hover:bg-destructive/90"
               >

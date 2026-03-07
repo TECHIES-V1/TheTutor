@@ -2,8 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import Link from "next/link";
-import { History, ArrowLeft } from "lucide-react";
+import { History } from "lucide-react";
 import { ChatMessage } from "@/components/onboarding/ChatMessage";
 import { ConversationHistory } from "@/components/onboarding/ConversationHistory";
 
@@ -52,13 +51,7 @@ export default function ConversationPage() {
                     <History className="h-3.5 w-3.5" />
                     History
                 </button>
-                <Link
-                    href="/dashboard"
-                    className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-                >
-                    <ArrowLeft className="h-3.5 w-3.5" />
-                    Dashboard
-                </Link>
+                <div className="w-12" aria-hidden="true" />
             </div>
 
             <div className="relative z-10 flex flex-1 min-w-0 pt-10 lg:pt-0">

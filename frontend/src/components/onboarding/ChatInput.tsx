@@ -55,10 +55,10 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
     };
 
     return (
-        <div className="sticky bottom-0 z-20 mt-auto w-full bg-gradient-to-t from-background via-background/95 to-transparent px-3 pt-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] sm:px-4 sm:pt-4">
+        <div className="sticky bottom-0 z-20 mt-auto w-full bg-gradient-to-t from-background via-background/95 to-transparent px-3 pt-2 pb-[max(env(safe-area-inset-bottom),0.6rem)] sm:px-4 sm:pt-4 sm:pb-[max(env(safe-area-inset-bottom),0.75rem)]">
             <form
                 onSubmit={handleSubmit}
-                className="neo-surface flex w-full items-end gap-1.5 rounded-2xl p-2 ring-1 ring-border/50 transition-all focus-within:ring-primary/30"
+                className="neo-surface flex w-full items-end gap-1.5 rounded-2xl p-1.5 ring-1 ring-border/50 transition-all focus-within:ring-primary/30 sm:p-2"
             >
                 {/* Attach button */}
                 <div ref={attachMenuRef} className="relative mb-0.5 shrink-0">
@@ -67,7 +67,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
                         onClick={() => setAttachMenuOpen(v => !v)}
                         disabled={disabled}
                         title="Attach file or image"
-                        className={`flex h-9 w-9 items-center justify-center rounded-xl transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                        className={`flex h-8 w-8 items-center justify-center rounded-xl transition-colors disabled:cursor-not-allowed disabled:opacity-40 sm:h-9 sm:w-9 ${
                             attachMenuOpen
                                 ? "bg-muted text-foreground"
                                 : "text-muted-foreground/50 hover:bg-muted hover:text-foreground"
@@ -108,7 +108,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
                     onKeyDown={handleKeyDown}
                     onTouchStart={() => inputRef.current?.focus()}
                     placeholder="Message The Tutor..."
-                    className="flex-1 min-h-[44px] max-h-32 px-2 py-2.5 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground shadow-none text-[15px] leading-relaxed resize-none overflow-y-auto"
+                    className="flex-1 min-h-[40px] max-h-32 px-2 py-2 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground shadow-none text-[15px] leading-relaxed resize-none overflow-y-auto sm:min-h-[44px] sm:py-2.5"
                     rows={1}
                     disabled={disabled}
                 />
@@ -116,14 +116,14 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
                 <Button
                     type="submit"
                     size="icon"
-                    className="skeuo-gold mb-0.5 h-9 w-9 shrink-0 rounded-xl hover:!opacity-100"
+                    className="skeuo-gold mb-0.5 h-8 w-8 shrink-0 rounded-xl hover:!opacity-100 sm:h-9 sm:w-9"
                     disabled={!input.trim() || disabled}
                 >
                     <ArrowUp className="h-4 w-4" />
                     <span className="sr-only">Send message</span>
                 </Button>
             </form>
-            <div className="mt-3 text-center">
+            <div className="mt-2 text-center sm:mt-3">
                 <span className="text-[11px] text-muted-foreground">The Tutor can make mistakes. Please verify important information.</span>
             </div>
         </div>

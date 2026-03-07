@@ -3,8 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { BookOpen, Clock, Flame, GraduationCap } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { BookOpen, Clock, Flame } from "lucide-react";
 import { useDashboardOverview } from "@/hooks/useDashboardOverview";
 import { PageLoader } from "@/components/ui/PageLoader";
 
@@ -24,7 +23,7 @@ interface StatsCard {
 
 export default function DashboardPage() {
   const { user, isLoading } = useAuth();
-  const { overview, loading: loadingOverview, error } = useDashboardOverview(isLoading);
+  const { overview, error } = useDashboardOverview(isLoading);
 
   const stats = useMemo<StatsCard[]>(() => {
     return [
@@ -74,7 +73,7 @@ export default function DashboardPage() {
 
           <div className="mt-5 grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
             {stats.map(({ label, value, icon: Icon, suffix }) => (
-              <div key={label} className="card-leather rounded-2xl p-4">
+              <div key={label} className="card-leather rounded-2xl border border-primary/12 p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">{label}</p>
                   <div className="neo-inset flex h-8 w-8 items-center justify-center rounded-lg">
@@ -88,13 +87,13 @@ export default function DashboardPage() {
           </div>
 
           <div className="mt-5 grid gap-3 grid-cols-1 md:grid-cols-2">
-            <Link href="/dashboard/courses" className="card-leather motion-card rounded-2xl p-4">
+            <Link href="/dashboard/courses" className="card-leather motion-card rounded-2xl border border-primary/12 p-4">
               <p className="text-xs uppercase tracking-[0.12em] text-primary/75">Created Courses</p>
               <p className="mt-2 text-2xl font-bold text-foreground">{overview?.ownedCourses.length ?? 0}</p>
               <p className="mt-1 text-sm text-muted-foreground">Manage authored courses and publishing.</p>
             </Link>
 
-            <Link href="/dashboard/enrollments" className="card-leather motion-card rounded-2xl p-4">
+            <Link href="/dashboard/enrollments" className="card-leather motion-card rounded-2xl border border-primary/12 p-4">
               <p className="text-xs uppercase tracking-[0.12em] text-primary/75">Enrollments</p>
               <p className="mt-2 text-2xl font-bold text-foreground">{overview?.enrolledCourses.length ?? 0}</p>
               <p className="mt-1 text-sm text-muted-foreground">Continue learner courses and certificates.</p>
@@ -105,28 +104,6 @@ export default function DashboardPage() {
         {error && (
           <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 sm:px-4 py-3 text-sm text-destructive">
             {error}
-          </div>
-        )}
-
-        {loadingOverview ? (
-          <PageLoader
-            title="Refreshing dashboard..."
-            subtitle="Updating progress cards and course summaries."
-          />
-        ) : (
-          <div className="neo-surface rounded-2xl p-4 sm:p-6">
-            <p className="text-sm text-muted-foreground">Open detailed pages:</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button asChild size="sm" variant="ghost" className="rounded-full border border-border">
-                <Link href="/dashboard/courses">Created Courses</Link>
-              </Button>
-              <Button asChild size="sm" variant="ghost" className="rounded-full border border-border">
-                <Link href="/dashboard/enrollments">
-                  <GraduationCap className="h-4 w-4" />
-                  Enrollments
-                </Link>
-              </Button>
-            </div>
           </div>
         )}
       </div>

@@ -73,6 +73,7 @@ export default function DashboardCoursesPage() {
                 key={course.id}
                 course={course}
                 canPublish
+                showVisibility
                 onTogglePublish={handlePublishToggle}
               />
             ))}
