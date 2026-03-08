@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { LaptopMinimal, MoonStar, Sun, UserCircle2, SlidersHorizontal, Shield } from "lucide-react";
+import { MoonStar, Sun, UserCircle2, SlidersHorizontal, Shield } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { ThemeMode, useThemeMode } from "@/components/providers/ThemeProvider";
 import { api } from "@/lib/api";
@@ -22,9 +22,8 @@ interface ProfilePayload {
 const themeOptions: Array<{
   value: ThemeMode;
   label: string;
-  icon: typeof LaptopMinimal;
+  icon: typeof Sun;
 }> = [
-  { value: "system", label: "System", icon: LaptopMinimal },
   { value: "light", label: "Light", icon: Sun },
   { value: "dark", label: "Dark", icon: MoonStar },
 ];
@@ -45,7 +44,7 @@ export default function ProfilePage() {
         if (!cancelled) {
           setProfile(payload);
           const savedTheme = payload.preferences?.theme;
-          if (savedTheme === "dark" || savedTheme === "light" || savedTheme === "system") {
+          if (savedTheme === "dark" || savedTheme === "light") {
             setTheme(savedTheme);
           }
         }
@@ -138,7 +137,7 @@ export default function ProfilePage() {
             <div>
               <h2 className="text-sm sm:text-base font-bold text-foreground">Appearance</h2>
               <p className="text-sm text-muted-foreground">
-                Choose whether the app should follow your device or stay fixed.
+                Choose the app appearance you want to keep active.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">

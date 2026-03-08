@@ -42,10 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           preferences?: { theme?: ThemeMode };
         };
         const savedTheme = profile.preferences?.theme;
-        if (
-          !cancelled &&
-          (savedTheme === "light" || savedTheme === "dark" || savedTheme === "system")
-        ) {
+        if (!cancelled && (savedTheme === "light" || savedTheme === "dark")) {
           setTheme(savedTheme);
         }
       } catch {
