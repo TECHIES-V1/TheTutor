@@ -1,6 +1,6 @@
 "use client"
 
-import { LaptopMinimal, MoonStar, Sparkles, Sun } from "lucide-react"
+import { MoonStar, Sparkles, Sun } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ThemeMode, useThemeMode } from "@/components/providers/ThemeProvider"
 import { api } from "@/lib/api"
@@ -8,9 +8,8 @@ import { api } from "@/lib/api"
 const themeOptions: Array<{
     value: ThemeMode
     label: string
-    icon: typeof LaptopMinimal
+    icon: typeof Sun
 }> = [
-    { value: "system", label: "System", icon: LaptopMinimal },
     { value: "light", label: "Light", icon: Sun },
     { value: "dark", label: "Dark", icon: MoonStar },
 ]
@@ -41,7 +40,7 @@ export function Notifications() {
                         <div>
                             <h5 className="font-medium text-foreground">Theme mode</h5>
                             <p className="mt-1 text-sm text-muted-foreground">
-                                Pick a fixed mode or follow your device automatically.
+                                Pick the app appearance you want to keep active.
                             </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
