@@ -24,6 +24,7 @@ import { CourseLevel, OnboardingPayload } from "../types/courseContract";
 import { aiLimiter } from "../middleware/rateLimiter";
 import { logger } from "../config/logger";
 import { getAssistantSystemPrompt } from "../services/ai/prompts";
+import { generateUniqueSlug } from "../services/slugUtils";
 
 /** Strip trailing Quiz / Exercises / Video Search Queries the AI sometimes bakes into contentMarkdown */
 function stripEmbeddedSections(md: string): string {
@@ -51,9 +52,12 @@ type NormalizedCourseOutline = Array<{
   }>;
 }>;
 
-function toCourseId(param: string): Types.ObjectId | null {
-  if (!Types.ObjectId.isValid(param)) return null;
-  return new Types.ObjectId(param);
+async function resolveCourse(param: string): Promise<ICourse | null> {
+  if (Types.ObjectId.isValid(param)) {
+    const byId = await Course.findById(param);
+    if (byId) return byId;
+  }
+  return Course.findOne({ slug: param });
 }
 
 function toObjectIdSafe(value: string): Types.ObjectId | null {
@@ -281,6 +285,7 @@ function buildCourseSummary(
 
   return {
     id: String(course._id),
+    slug: String((course as any).slug ?? ""),
     title: course.title,
     description: course.description,
     topic: String(readCourseField(course, "topic") ?? readCourseField(course, "subject") ?? ""),
@@ -351,12 +356,14 @@ router.post("/bootstrap", requireAuth, async (req: Request, res: Response) => {
       userName: user.name,
     });
 
+    const slug = await generateUniqueSlug(generated.course.title);
     const course = await Course.create({
       userId: user._id,
       ownerId: user._id,
       ownerName: user.name,
       conversationId: undefined,
       title: generated.course.title,
+      slug,
       description: generated.course.description,
       subject: generated.course.topic,
       topic: generated.course.topic,
@@ -453,13 +460,7 @@ router.get("/explore", optionalAuth, async (req: Request, res: Response) => {
 router.get("/:courseId/preview", optionalAuth, async (req: Request, res: Response) => {
   try {
     const userId = getRequesterUserId(req);
-    const courseId = toCourseId(req.params.courseId);
-    if (!courseId) {
-      res.status(400).json({ error: "Invalid course ID" });
-      return;
-    }
-
-    const course = await Course.findById(courseId);
+    const course = await resolveCourse(req.params.courseId);
     if (!course) {
       res.status(404).json({ error: "Course not found" });
       return;
@@ -495,7 +496,7 @@ router.get("/:courseId/preview", optionalAuth, async (req: Request, res: Respons
     });
 
     // Fire-and-forget view count increment
-    Course.updateOne({ _id: courseId }, { $inc: { viewCount: 1 } }).catch(() => {});
+    Course.updateOne({ _id: course._id }, { $inc: { viewCount: 1 } }).catch(() => {});
   } catch (err) {
     logger.error({ err }, "Failed to get course preview");
     res.status(500).json({ error: "Internal server error" });
@@ -505,13 +506,7 @@ router.get("/:courseId/preview", optionalAuth, async (req: Request, res: Respons
 router.post("/:courseId/enroll", requireAuth, async (req: Request, res: Response) => {
   try {
     const { userId } = req.jwtUser as JwtPayload;
-    const courseId = toCourseId(req.params.courseId);
-    if (!courseId) {
-      res.status(400).json({ error: "Invalid course ID" });
-      return;
-    }
-
-    const course = await Course.findById(courseId);
+    const course = await resolveCourse(req.params.courseId);
     if (!course) {
       res.status(404).json({ error: "Course not found" });
       return;
@@ -550,13 +545,7 @@ router.post("/:courseId/enroll", requireAuth, async (req: Request, res: Response
 router.get("/:courseId/lessons/:lessonId", requireAuth, async (req: Request, res: Response) => {
   try {
     const { userId } = req.jwtUser as JwtPayload;
-    const courseId = toCourseId(req.params.courseId);
-    if (!courseId) {
-      res.status(400).json({ error: "Invalid course ID" });
-      return;
-    }
-
-    const course = await Course.findById(courseId);
+    const course = await resolveCourse(req.params.courseId);
     if (!course) {
       res.status(404).json({ error: "Course not found" });
       return;
@@ -609,6 +598,7 @@ router.get("/:courseId/lessons/:lessonId", requireAuth, async (req: Request, res
     res.json({
       course: {
         id: String(course._id),
+        slug: String((course as any).slug ?? ""),
         title: course.title,
         description: course.description,
       },
@@ -662,13 +652,7 @@ router.get("/:courseId/lessons/:lessonId", requireAuth, async (req: Request, res
 router.post("/:courseId/lessons/:lessonId/assistant", requireAuth, aiLimiter, async (req: Request, res: Response) => {
   try {
     const { userId } = req.jwtUser as JwtPayload;
-    const courseId = toCourseId(req.params.courseId);
-    if (!courseId) {
-      res.status(400).json({ error: "Invalid course ID" });
-      return;
-    }
-
-    const course = await Course.findById(courseId);
+    const course = await resolveCourse(req.params.courseId);
     if (!course) {
       res.status(404).json({ error: "Course not found" });
       return;
@@ -747,13 +731,7 @@ router.post("/:courseId/lessons/:lessonId/assistant", requireAuth, aiLimiter, as
 router.post("/:courseId/lessons/:lessonId/quiz-attempts", requireAuth, aiLimiter, async (req: Request, res: Response) => {
   try {
     const { userId } = req.jwtUser as JwtPayload;
-    const courseId = toCourseId(req.params.courseId);
-    if (!courseId) {
-      res.status(400).json({ error: "Invalid course ID" });
-      return;
-    }
-
-    const course = await Course.findById(courseId);
+    const course = await resolveCourse(req.params.courseId);
     if (!course) {
       res.status(404).json({ error: "Course not found" });
       return;
@@ -848,13 +826,7 @@ router.post("/:courseId/lessons/:lessonId/quiz-attempts", requireAuth, aiLimiter
 router.post("/:courseId/complete", requireAuth, async (req: Request, res: Response) => {
   try {
     const { userId } = req.jwtUser as JwtPayload;
-    const courseId = toCourseId(req.params.courseId);
-    if (!courseId) {
-      res.status(400).json({ error: "Invalid course ID" });
-      return;
-    }
-
-    const course = await Course.findById(courseId);
+    const course = await resolveCourse(req.params.courseId);
     if (!course) {
       res.status(404).json({ error: "Course not found" });
       return;
@@ -919,13 +891,7 @@ router.post("/:courseId/complete", requireAuth, async (req: Request, res: Respon
 router.get("/:courseId/certificate", requireAuth, async (req: Request, res: Response) => {
   try {
     const { userId } = req.jwtUser as JwtPayload;
-    const courseId = toCourseId(req.params.courseId);
-    if (!courseId) {
-      res.status(400).json({ error: "Invalid course ID" });
-      return;
-    }
-
-    const course = await Course.findById(courseId);
+    const course = await resolveCourse(req.params.courseId);
     if (!course) {
       res.status(404).json({ error: "Course not found" });
       return;
@@ -961,13 +927,7 @@ router.get("/:courseId/certificate", requireAuth, async (req: Request, res: Resp
 router.get("/:courseId/certificate/download", requireAuth, async (req: Request, res: Response) => {
   try {
     const { userId } = req.jwtUser as JwtPayload;
-    const courseId = toCourseId(req.params.courseId);
-    if (!courseId) {
-      res.status(400).json({ error: "Invalid course ID" });
-      return;
-    }
-
-    const course = await Course.findById(courseId);
+    const course = await resolveCourse(req.params.courseId);
     if (!course) {
       res.status(404).json({ error: "Course not found" });
       return;
@@ -997,13 +957,7 @@ router.get("/:courseId/certificate/download", requireAuth, async (req: Request, 
 router.patch("/:courseId/publish", requireAuth, async (req: Request, res: Response) => {
   try {
     const { userId } = req.jwtUser as JwtPayload;
-    const courseId = toCourseId(req.params.courseId);
-    if (!courseId) {
-      res.status(400).json({ error: "Invalid course ID" });
-      return;
-    }
-
-    const course = await Course.findById(courseId);
+    const course = await resolveCourse(req.params.courseId);
     if (!course) {
       res.status(404).json({ error: "Course not found" });
       return;
@@ -1075,13 +1029,7 @@ router.get("/mine/list", requireAuth, async (req: Request, res: Response) => {
 router.get("/:courseId/modules/:moduleId/quiz", requireAuth, async (req: Request, res: Response) => {
   try {
     const { userId } = req.jwtUser as JwtPayload;
-    const courseId = toCourseId(req.params.courseId);
-    if (!courseId) {
-      res.status(400).json({ error: "Invalid course ID" });
-      return;
-    }
-
-    const course = await Course.findById(courseId);
+    const course = await resolveCourse(req.params.courseId);
     if (!course) {
       res.status(404).json({ error: "Course not found" });
       return;
@@ -1136,13 +1084,7 @@ router.get("/:courseId/modules/:moduleId/quiz", requireAuth, async (req: Request
 router.post("/:courseId/modules/:moduleId/quiz-attempts", requireAuth, aiLimiter, async (req: Request, res: Response) => {
   try {
     const { userId } = req.jwtUser as JwtPayload;
-    const courseId = toCourseId(req.params.courseId);
-    if (!courseId) {
-      res.status(400).json({ error: "Invalid course ID" });
-      return;
-    }
-
-    const course = await Course.findById(courseId);
+    const course = await resolveCourse(req.params.courseId);
     if (!course) {
       res.status(404).json({ error: "Course not found" });
       return;

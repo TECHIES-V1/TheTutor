@@ -15,6 +15,16 @@ export const aiLimiter = rateLimit({
   message: { error: "Too many requests — please wait a moment.", code: "RATE_LIMITED" },
 });
 
+// Rate limiter for Polly TTS endpoint
+export const pollyLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 30,
+  keyGenerator: userKey,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many TTS requests — please wait a moment.", code: "RATE_LIMITED" },
+});
+
 // Stricter limiter for generation (expensive, long-running)
 export const generateLimiter = rateLimit({
   windowMs: 5 * 60_000, // 5 minutes

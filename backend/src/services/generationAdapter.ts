@@ -1,4 +1,5 @@
 import { GeneratedCoursePayload, OnboardingPayload, CourseLevel } from "../types/courseContract";
+import { slugify } from "./slugUtils";
 
 interface GenerationAdapterInput {
   onboarding: OnboardingPayload;
@@ -13,14 +14,6 @@ interface GenerationAdapterOutput {
 }
 
 const DEFAULT_LEVEL: CourseLevel = "beginner";
-
-function slugify(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
-}
 
 function normalizeLevel(level: string | undefined): CourseLevel {
   const normalized = (level ?? "").trim().toLowerCase();

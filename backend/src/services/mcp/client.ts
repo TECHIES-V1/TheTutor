@@ -74,7 +74,10 @@ export async function keywordSearch(
 ): Promise<MCPSearchResult> {
   const { keywords, limit = 18 } = params;
 
-  const searchParams = new URLSearchParams({ limit: String(limit) });
+  const searchParams = new URLSearchParams({
+    query: keywords.join(" "),
+    limit: String(limit),
+  });
   for (const kw of keywords) {
     searchParams.append("keywords", kw);
   }
@@ -95,9 +98,9 @@ export async function keywordSearch(
 
   const data = await response.json() as Record<string, unknown>;
 
-  // Handle multiple response shapes: { books: [...] }, { results: [...] }, { docs: [...] }, or top-level array
+  // Handle multiple response shapes: { books, results, responses, docs } or top-level array
   const rawBooks: RawSearchResult[] = (
-    (data.books || data.results || data.docs || (Array.isArray(data) ? data : [])) as RawSearchResult[]
+    (data.books || data.results || data.responses || data.docs || (Array.isArray(data) ? data : [])) as RawSearchResult[]
   );
 
   const books: DiscoveredBook[] = rawBooks.map(
@@ -160,7 +163,7 @@ export async function discoverySearch(
   const data = await response.json() as Record<string, unknown>;
   logger.info({ query, responseKeys: Object.keys(data), totalFound: data.totalFound ?? data.total ?? data.numFound }, "[discoverySearch] Raw response shape");
 
-  const rawBooks = (data.books || data.results || []) as RawSearchResult[];
+  const rawBooks = (data.books || data.results || data.responses || []) as RawSearchResult[];
 
   const books: DiscoveredBook[] = rawBooks.map(
     (book: RawSearchResult) => ({

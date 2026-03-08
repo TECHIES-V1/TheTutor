@@ -17,6 +17,7 @@ type ConversationSummary = {
 type CompletionNotice = {
   conversationId: string;
   courseId: string;
+  courseSlug: string | null;
   subject: string | null;
 };
 
@@ -34,7 +35,7 @@ function tryBrowserNotification(notice: CompletionNotice): void {
     });
     notification.onclick = () => {
       window.focus();
-      window.location.href = `/explore/${notice.courseId}`;
+      window.location.href = `/explore/${notice.courseSlug || notice.courseId}`;
     };
   };
 
@@ -95,6 +96,7 @@ export function GenerationNotifier() {
             const completion: CompletionNotice = {
               conversationId: conv.id,
               courseId: conv.courseId,
+              courseSlug: null,
               subject: conv.subject,
             };
             setNotice(completion);
@@ -153,7 +155,7 @@ export function GenerationNotifier() {
               : "Your course has finished generating."}
           </p>
           <Link
-            href={`/explore/${notice.courseId}`}
+            href={`/explore/${notice.courseSlug || notice.courseId}`}
             onClick={dismiss}
             className="mt-3 inline-flex rounded-full border border-[var(--glass-border)] bg-primary/15 px-3 py-1.5 text-xs font-medium text-primary transition hover:bg-primary/20"
           >

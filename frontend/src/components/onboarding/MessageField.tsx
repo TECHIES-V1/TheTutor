@@ -61,7 +61,7 @@ export function MessageField({ role, content, relatedCourses = [] }: MessageProp
                             {relatedCourses.map((course) => (
                                 <Link
                                     key={course.id}
-                                    href={`/explore/${course.id}`}
+                                    href={`/explore/${course.slug || course.id}`}
                                     className="block rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 transition-all hover:border-primary/30 hover:bg-primary/10"
                                 >
                                     <p className="line-clamp-1 text-sm font-semibold text-foreground">{course.title}</p>

@@ -174,11 +174,12 @@ router.get(
 
     // If already completed/failed, send final event and close
     if (job.status === "completed") {
-      const course = await Course.findById(job.courseId).select("title description estimatedHours curriculum");
+      const course = await Course.findById(job.courseId).select("title slug description estimatedHours curriculum");
       const lessonCount = job.completedLessonCount;
       const moduleCount = course?.curriculum?.length ?? 0;
       sendSSE(res, "complete", {
         courseId: job.courseId.toString(),
+        slug: (course as any)?.slug ?? "",
         title: course?.title ?? "",
         description: course?.description ?? "",
         moduleCount,
@@ -238,6 +239,7 @@ router.get(
 
       let status: "pending" | "in_progress" | "completed" | "failed";
       let courseId: string | undefined;
+      let courseSlug: string | undefined;
       let jobId: string | undefined;
 
       switch (conversation.phase) {
@@ -251,12 +253,16 @@ router.get(
         case "completed":
           status = "completed";
           courseId = conversation.courseId?.toString();
+          if (conversation.courseId) {
+            const c = await Course.findById(conversation.courseId).select("slug").lean();
+            courseSlug = (c as any)?.slug ?? "";
+          }
           break;
         default:
           status = "pending";
       }
 
-      res.json({ conversationId, status, phase: conversation.phase, courseId, jobId });
+      res.json({ conversationId, status, phase: conversation.phase, courseId, slug: courseSlug, jobId });
     } catch (error) {
       logger.error({ err: error }, "Generation status error");
       res.status(500).json({ error: "Failed to get status", code: "DB_ERROR" });

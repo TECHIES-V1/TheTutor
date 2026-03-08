@@ -1,5 +1,6 @@
 export function generateCourseJsonLd(course: {
   id: string;
+  slug?: string;
   title: string;
   description: string;
   subject: string;
@@ -30,7 +31,7 @@ export function generateCourseJsonLd(course: {
     ...(course.createdAt && {
       datePublished: course.createdAt,
     }),
-    url: `${baseUrl}/explore/${course.id}`,
+    url: `${baseUrl}/explore/${course.slug || course.id}`,
     isAccessibleForFree: true,
     inLanguage: "en",
   };

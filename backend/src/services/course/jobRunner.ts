@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { Types } from "mongoose";
-import { GenerationJob } from "../../models/GenerationJob";
+import { GenerationJob, type ILessonSlot } from "../../models/GenerationJob";
 import { Course, type IGeneratedLesson, type IGeneratedModule } from "../../models/Course";
 import { Conversation } from "../../models/Conversation";
 import { Enrollment } from "../../models/Enrollment";
@@ -13,6 +13,7 @@ import { fetchVideoReferencesForQueries } from "../youtube/youtube.service";
 import type { SSEBroadcaster } from "../sse/broadcaster";
 import { getBroadcaster, createNoOpBroadcaster } from "../sse/broadcaster";
 import type { OnboardingData, BookContext } from "../../types/index";
+import { generateUniqueSlug } from "../slugUtils";
 import { logger } from "../../config/logger";
 import pLimit from "p-limit";
 
@@ -157,12 +158,14 @@ export async function startGenerationJob(
       return sum + (les?.estimatedMinutes ?? 25);
     }, 0) / 60) * 10) / 10;
 
+  const courseSlug = await generateUniqueSlug(outline.title);
   const course = await Course.create({
     userId: new Types.ObjectId(userId),
     ownerId: new Types.ObjectId(userId),
     ownerName,
     conversationId: new Types.ObjectId(conversationId),
     title: outline.title,
+    slug: courseSlug,
     description: outline.description,
     subject: onboardingData.confirmedSubject || onboardingData.topic || "",
     topic: onboardingData.topic || "",
@@ -296,144 +299,200 @@ export async function runJob(
   await job.save();
 
   // Pre-compute context titles from outline order (known upfront)
-  // Each lesson gets titles of all lessons before it in the outline
   const allSlotTitles = job.lessonSlots.map((s) => s.title);
 
-  const limit = pLimit(LESSON_CONCURRENCY);
+  // Capture non-null refs for the nested closure (TS can't narrow outer-scope vars)
+  const _jobId = job._id;
+  const _courseId = course._id;
+  const _totalLessonCount = job.totalLessonCount;
 
-  const lessonTasks = job.lessonSlots.map((slot, slotIndex) =>
-    limit(async () => {
-      if (slot.status === "done") return;
+  // Helper: generate a single lesson using atomic DB ops only (no job.save()).
+  // Returns true on success.
+  async function generateSlot(
+    slot: ILessonSlot,
+    slotIndex: number
+  ): Promise<boolean> {
+    if (slot.status === "done") return true;
 
-      const mod = outline.modules[slot.moduleIndex];
-      const les = mod?.lessons[slot.lessonIndex];
-      if (!mod || !les) {
-        logger.warn({ lessonId: slot.lessonId }, "[jobRunner] Missing outline data for slot");
-        slot.status = "failed";
-        slot.error = "Missing outline data";
-        return;
-      }
+    const mod = outline.modules[slot.moduleIndex];
+    const les = mod?.lessons[slot.lessonIndex];
+    if (!mod || !les) {
+      logger.warn({ lessonId: slot.lessonId }, "[jobRunner] Missing outline data for slot");
+      slot.status = "failed";
+      slot.error = "Missing outline data";
+      return false;
+    }
 
-      slot.status = "generating";
-      job.lastEventId += 1;
-      await job.save();
+    // Mark generating — atomic update (safe for concurrent calls)
+    const startUpdate = await GenerationJob.findOneAndUpdate(
+      { _id: _jobId },
+      {
+        $set: { [`lessonSlots.${slotIndex}.status`]: "generating" },
+        $inc: { lastEventId: 1 },
+      },
+      { new: true }
+    );
+    slot.status = "generating";
 
-      const progress = Math.round(
-        10 + ((job.completedLessonCount / job.totalLessonCount) * 80)
-      );
+    const currentCompleted = startUpdate?.completedLessonCount ?? 0;
+    const progress = Math.round(10 + ((currentCompleted / _totalLessonCount) * 80));
 
-      broadcast.send(
-        "lesson_started",
-        {
-          lessonId: slot.lessonId,
-          title: slot.title,
-          bloomsLevel: slot.bloomsLevel,
-          moduleIndex: slot.moduleIndex,
-          lessonIndex: slot.lessonIndex,
-          progress,
-        },
-        job.lastEventId
-      );
+    broadcast.send(
+      "lesson_started",
+      {
+        lessonId: slot.lessonId,
+        title: slot.title,
+        bloomsLevel: slot.bloomsLevel,
+        moduleIndex: slot.moduleIndex,
+        lessonIndex: slot.lessonIndex,
+        progress,
+      },
+      startUpdate?.lastEventId ?? 0
+    );
 
-      // Context: titles of all lessons ordered before this one
-      const previousTitles = allSlotTitles.slice(0, slotIndex);
+    const previousTitles = allSlotTitles.slice(0, slotIndex);
 
-      let succeeded = false;
+    for (let attempt = 0; attempt < MAX_LESSON_ATTEMPTS; attempt++) {
+      try {
+        slot.attempts += 1;
+        logger.info(
+          { lessonTitle: les.title, attempt: attempt + 1 },
+          "[jobRunner] Generating lesson"
+        );
 
-      for (let attempt = 0; attempt < MAX_LESSON_ATTEMPTS; attempt++) {
-        try {
-          slot.attempts += 1;
-          logger.info(
-            { lessonTitle: les.title, attempt: attempt + 1 },
-            "[jobRunner] Generating lesson"
-          );
+        const content = await generateLessonContent(
+          les,
+          mod,
+          outline,
+          onboardingData,
+          sourceReferences,
+          previousTitles,
+          preloadedBookContexts
+        );
 
-          const content = await generateLessonContent(
-            les,
-            mod,
-            outline,
-            onboardingData,
-            sourceReferences,
-            previousTitles,
-            preloadedBookContexts
-          );
-
-          // Save lesson content atomically — no full-document reload/save race
-          const prefix = `curriculum.${slot.moduleIndex}.lessons.${slot.lessonIndex}`;
-          await Course.updateOne(
-            { _id: course._id },
-            {
-              $set: {
-                [`${prefix}.contentMarkdown`]: content.contentMarkdown,
-                [`${prefix}.keyTakeaways`]: content.keyTakeaways,
-                [`${prefix}.citations`]: content.citations,
-                [`${prefix}.quiz`]: (content.quiz ?? []).map((q) => ({
-                  questionId: q.questionId,
-                  prompt: q.prompt,
-                  expectedConcepts: q.expectedConcepts,
-                  remediationTip: q.remediationTip,
-                })),
-                [`${prefix}.exercises`]: content.exercises ?? [],
-                [`${prefix}.videoSearchQueries`]: content.videoSearchQueries ?? [],
-                [`${prefix}.estimatedMinutes`]: content.estimatedMinutes,
-                [`${prefix}.status`]: "ready",
-              },
-            }
-          );
-
-          slot.status = "done";
-          job.completedLessonCount += 1;
-          job.lastEventId += 1;
-          await job.save();
-
-          const doneProgress = Math.round(
-            10 + ((job.completedLessonCount / job.totalLessonCount) * 80)
-          );
-
-          broadcast.send(
-            "lesson_done",
-            {
-              lessonId: slot.lessonId,
-              title: slot.title,
-              bloomsLevel: slot.bloomsLevel,
-              completedCount: job.completedLessonCount,
-              totalCount: job.totalLessonCount,
-              progress: doneProgress,
+        // Save lesson content atomically
+        const prefix = `curriculum.${slot.moduleIndex}.lessons.${slot.lessonIndex}`;
+        await Course.updateOne(
+          { _id: _courseId },
+          {
+            $set: {
+              [`${prefix}.contentMarkdown`]: content.contentMarkdown,
+              [`${prefix}.keyTakeaways`]: content.keyTakeaways,
+              [`${prefix}.citations`]: content.citations,
+              [`${prefix}.quiz`]: (content.quiz ?? []).map((q) => ({
+                questionId: q.questionId,
+                prompt: q.prompt,
+                expectedConcepts: q.expectedConcepts,
+                remediationTip: q.remediationTip,
+              })),
+              [`${prefix}.exercises`]: content.exercises ?? [],
+              [`${prefix}.videoSearchQueries`]: content.videoSearchQueries ?? [],
+              [`${prefix}.estimatedMinutes`]: content.estimatedMinutes,
+              [`${prefix}.status`]: "ready",
             },
-            job.lastEventId
-          );
+          }
+        );
 
-          succeeded = true;
-          break;
-        } catch (err) {
-          logger.warn(
-            { err, lessonTitle: les.title, attempt: attempt + 1 },
-            "[jobRunner] Lesson generation attempt failed"
-          );
-          slot.error = err instanceof Error ? err.message : String(err);
-        }
-      }
+        // Mark done — atomic update
+        const doneUpdate = await GenerationJob.findOneAndUpdate(
+          { _id: _jobId },
+          {
+            $set: {
+              [`lessonSlots.${slotIndex}.status`]: "done",
+              [`lessonSlots.${slotIndex}.attempts`]: slot.attempts,
+            },
+            $inc: { completedLessonCount: 1, lastEventId: 1 },
+          },
+          { new: true }
+        );
+        slot.status = "done";
 
-      if (!succeeded) {
-        slot.status = "failed";
-        job.lastEventId += 1;
-        await job.save();
+        const doneCompleted = doneUpdate?.completedLessonCount ?? currentCompleted + 1;
+        const doneProgress = Math.round(10 + ((doneCompleted / _totalLessonCount) * 80));
 
         broadcast.send(
-          "lesson_failed",
+          "lesson_done",
           {
             lessonId: slot.lessonId,
             title: slot.title,
-            error: slot.error ?? "Unknown error",
-            isFatal: false,
+            bloomsLevel: slot.bloomsLevel,
+            completedCount: doneCompleted,
+            totalCount: _totalLessonCount,
+            progress: doneProgress,
           },
-          job.lastEventId
+          doneUpdate?.lastEventId ?? 0
         );
-      }
-    })
-  );
 
+        return true;
+      } catch (err) {
+        logger.warn(
+          { err, lessonTitle: les.title, attempt: attempt + 1 },
+          "[jobRunner] Lesson generation attempt failed"
+        );
+        slot.error = err instanceof Error ? err.message : String(err);
+      }
+    }
+
+    // All attempts exhausted
+    slot.status = "failed";
+    const failUpdate = await GenerationJob.findOneAndUpdate(
+      { _id: _jobId },
+      {
+        $set: {
+          [`lessonSlots.${slotIndex}.status`]: "failed",
+          [`lessonSlots.${slotIndex}.error`]: slot.error ?? "Unknown error",
+        },
+        $inc: { lastEventId: 1 },
+      },
+      { new: true }
+    );
+
+    broadcast.send(
+      "lesson_failed",
+      {
+        lessonId: slot.lessonId,
+        title: slot.title,
+        error: slot.error ?? "Unknown error",
+        isFatal: false,
+      },
+      failUpdate?.lastEventId ?? 0
+    );
+
+    return false;
+  }
+
+  // ── Pass 1: parallel generation ──────────────────────────────────────
+  const limit = pLimit(LESSON_CONCURRENCY);
+  const lessonTasks = job.lessonSlots.map((slot, slotIndex) =>
+    limit(() => generateSlot(slot, slotIndex))
+  );
   await Promise.allSettled(lessonTasks);
+
+  // ── Pass 2: sequential fallback for any lessons that didn't make it ──
+  const incompleteSlots = job.lessonSlots
+    .map((slot, idx) => ({ slot, idx }))
+    .filter(({ slot }) => slot.status !== "done");
+
+  if (incompleteSlots.length > 0) {
+    logger.info(
+      { count: incompleteSlots.length },
+      "[jobRunner] Retrying incomplete lessons sequentially"
+    );
+    for (const { slot, idx } of incompleteSlots) {
+      slot.status = "pending";
+      slot.attempts = 0;
+      slot.error = undefined;
+      await generateSlot(slot, idx);
+    }
+  }
+
+  // Sync in-memory job from DB after all parallel + sequential work
+  const syncedJob = await GenerationJob.findById(_jobId);
+  if (syncedJob) {
+    job.completedLessonCount = syncedJob.completedLessonCount;
+    job.lastEventId = syncedJob.lastEventId;
+    job.lessonSlots = syncedJob.lessonSlots;
+  }
 
   // ── Phase: enrichment (videos — parallel) ───────────────────────────
   job.currentPhase = "enrichment";
@@ -565,6 +624,7 @@ export async function runJob(
 
   const completionData = {
     courseId: course._id.toString(),
+    slug: (course as any).slug ?? "",
     title: course.title,
     description: course.description,
     moduleCount: curriculum.length,

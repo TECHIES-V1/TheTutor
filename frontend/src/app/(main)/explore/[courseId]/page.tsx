@@ -144,7 +144,7 @@ export default function ExploreCourseDetailPage() {
               <div className="mt-5 flex flex-wrap gap-2">
                 {currentLessonId ? (
                   <Button asChild className="skeuo-gold rounded-full hover:!opacity-100">
-                    <Link href={`/learn/${data.course.id}/lessons/${currentLessonId}`}>
+                    <Link href={`/learn/${data.course.slug || data.course.id}/lessons/${currentLessonId}`}>
                       Continue Course
                       <ArrowRight className="h-4 w-4" />
                     </Link>
@@ -230,7 +230,7 @@ export default function ExploreCourseDetailPage() {
           </div>
 
           <CourseWorkspaceSidebar
-            courseId={data.course.id}
+            courseId={data.course.slug || data.course.id}
             title={data.course.title}
             authorName={data.course.author?.name || data.course.ownerName}
             level={data.course.level}
@@ -248,7 +248,7 @@ export default function ExploreCourseDetailPage() {
 
         {/* AI Assistant Button */}
         <AiAssistantButton
-          courseId={data.course.id}
+          courseId={data.course.slug || data.course.id}
           lessonId={data.curriculumOutline[0]?.lessons[0]?.lessonId || ""}
         />
       </div>

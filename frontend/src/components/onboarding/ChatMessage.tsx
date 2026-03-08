@@ -51,6 +51,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [createdCourseId, setCreatedCourseId] = useState<string | null>(null);
+  const [createdCourseSlug, setCreatedCourseSlug] = useState<string | null>(null);
   const [liveTitle, setLiveTitle] = useState<string | null>(null);
   const [curriculumModules, setCurriculumModules] = useState<LiveCurriculumModule[]>([]);
   const [awaitingCourseGenerationDecision, setAwaitingCourseGenerationDecision] = useState(false);
@@ -101,7 +102,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
             courseId?: string;
           };
         };
-        const conv = data.conversation;
+        const conv = data.conversation as typeof data.conversation & { courseSlug?: string };
         setConversationId(conv.id);
         setConversationPhase(conv.phase as ConversationPhase);
 
@@ -137,15 +138,18 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
                 status: string;
                 jobId?: string;
                 courseId?: string;
+                slug?: string;
               };
               if (statusData.jobId) {
                 jobIdRef.current = statusData.jobId;
                 connectToJobStream(statusData.jobId);
               } else if (statusData.courseId) {
                 // Already completed while we were away
+                setCreatedCourseId(statusData.courseId);
+                if (statusData.slug) setCreatedCourseSlug(statusData.slug);
                 setGenerationProgress(100);
                 setConversationPhase("completed");
-                router.push(`/explore/${statusData.courseId}`);
+                router.push(`/explore/${statusData.slug || statusData.courseId}`);
               }
             }
           } catch (err) {
@@ -157,6 +161,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
         if (conv.status === "completed" || conv.courseId) {
           setIsReadOnly(true);
           if (conv.courseId) setCreatedCourseId(conv.courseId);
+          if (conv.courseSlug) setCreatedCourseSlug(conv.courseSlug);
         }
       } catch (err) {
         console.error("[TheTutor] Failed to load conversation:", err);
@@ -308,7 +313,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
 
     es.addEventListener("complete", (e: MessageEvent) => {
       try {
-        const data = JSON.parse(e.data) as { courseId: string };
+        const data = JSON.parse(e.data) as { courseId: string; slug?: string };
         es.close();
         jobStreamRef.current = null;
         setCurriculumModules((prev) =>
@@ -316,7 +321,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
         );
         setGenerationProgress(100);
         setConversationPhase("completed");
-        router.push(`/explore/${data.courseId}`);
+        router.push(`/explore/${data.slug || data.courseId}`);
       } catch (err) { console.error("[TheTutor] SSE parse error:", err); }
     });
 
@@ -326,8 +331,9 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
       if (me.data) {
         // Generation error from server
         try {
-          const data = JSON.parse(me.data) as { courseId?: string };
+          const data = JSON.parse(me.data) as { courseId?: string; slug?: string };
           if (data.courseId) setCreatedCourseId(data.courseId);
+          if (data.slug) setCreatedCourseSlug(data.slug);
         } catch (err) { console.error("[TheTutor] SSE parse error:", err); }
         es.close();
         jobStreamRef.current = null;
@@ -513,6 +519,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
     jobIdRef.current = null;
     setGenerationStatus("Preparing your course...");
     setGenerationProgress(0);
+    setCreatedCourseSlug(null);
   };
 
   const handleCreateCourseAnyway = async () => {
@@ -659,7 +666,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
               <div className="flex items-center justify-center gap-2">
                 {createdCourseId && (
                   <Link
-                    href={`/explore/${createdCourseId}`}
+                    href={`/explore/${createdCourseSlug || createdCourseId}`}
                     className="skeuo-gold inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-medium"
                   >
                     Go to Course <ArrowRight className="h-3.5 w-3.5" />
@@ -819,7 +826,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
               <p className="text-xs text-muted-foreground">{submitError}</p>
               {createdCourseId && (
                 <Link
-                  href={`/explore/${createdCourseId}`}
+                  href={`/explore/${createdCourseSlug || createdCourseId}`}
                   className="skeuo-gold inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition hover:opacity-90"
                 >
                   Go to Course <ArrowRight className="h-4 w-4" />
@@ -840,7 +847,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
           </div>
           {createdCourseId && (
             <Link
-              href={`/explore/${createdCourseId}`}
+              href={`/explore/${createdCourseSlug || createdCourseId}`}
               className="skeuo-gold flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-medium transition-all hover:opacity-90 active:scale-95"
             >
               Go to Course

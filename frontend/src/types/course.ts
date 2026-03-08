@@ -4,6 +4,7 @@ export type EnrollmentStatus = "active" | "completed";
 
 export interface CourseSummary {
   id: string;
+  slug: string;
   title: string;
   description: string;
   topic: string;
@@ -63,6 +64,7 @@ export interface CoursePreviewResponse {
 
 export interface DashboardCourseCard {
   id: string;
+  slug: string;
   title: string;
   description: string;
   topic: string;
@@ -107,6 +109,7 @@ export interface DashboardOverview {
 export interface LessonDetailResponse {
   course: {
     id: string;
+    slug: string;
     title: string;
     description: string;
   };

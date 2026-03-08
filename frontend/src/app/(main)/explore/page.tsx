@@ -116,9 +116,10 @@ export default function ExplorePage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             {filtered.map((course) => {
+              const courseSlug = course.slug || course.id;
               const continueHref = course.enrollment?.currentLessonId
-                ? `/learn/${course.id}/lessons/${course.enrollment.currentLessonId}`
-                : `/explore/${course.id}`;
+                ? `/learn/${courseSlug}/lessons/${course.enrollment.currentLessonId}`
+                : `/explore/${courseSlug}`;
 
               return (
                 <article key={course.id} className="neo-surface flex flex-col rounded-2xl border-0 p-5 sm:border">
@@ -141,7 +142,7 @@ export default function ExplorePage() {
 
                   <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                     <Button asChild size="sm" variant="ghost" className="w-full rounded-full border border-border sm:w-auto">
-                      <Link href={`/explore/${course.id}`}>View Curriculum</Link>
+                      <Link href={`/explore/${courseSlug}`}>View Curriculum</Link>
                     </Button>
                     <Button asChild size="sm" className="skeuo-gold w-full rounded-full hover:!opacity-100 sm:w-auto">
                       <Link href={continueHref}>

@@ -4,6 +4,7 @@
 
 export interface RelatedCoursePreview {
   id: string;
+  slug: string;
   title: string;
   description: string;
   level: string;

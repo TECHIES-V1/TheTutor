@@ -105,6 +105,7 @@ export interface ICourse extends Document {
   conversationId?: Types.ObjectId;
   generationJobId?: Types.ObjectId;
   title: string;
+  slug?: string;
   description: string;
   subject: string;
   topic?: string;
@@ -314,6 +315,7 @@ const CourseSchema = new Schema<ICourse>(
       required: false,
     },
     title: { type: String, required: true },
+    slug: { type: String, unique: true, sparse: true },
     description: { type: String, default: "" },
     subject: { type: String, required: true },
     topic: { type: String, default: "" },

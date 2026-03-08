@@ -17,9 +17,10 @@ export function DashboardCourseCard({
   canPublish,
   onTogglePublish,
 }: DashboardCourseCardProps) {
+  const courseSlug = course.slug || course.id;
   const continueHref = course.currentLessonId
-    ? `/learn/${course.id}/lessons/${course.currentLessonId}`
-    : `/explore/${course.id}`;
+    ? `/learn/${courseSlug}/lessons/${course.currentLessonId}`
+    : `/explore/${courseSlug}`;
 
   return (
     <article className="card-leather motion-card w-full min-w-0 rounded-2xl p-4 sm:p-5">
@@ -91,7 +92,7 @@ export function DashboardCourseCard({
           size="sm"
           className="w-full rounded-full border border-border whitespace-normal sm:w-auto sm:whitespace-nowrap"
         >
-          <Link href={`/explore/${course.id}`}>
+          <Link href={`/explore/${courseSlug}`}>
             <BookOpenCheck className="h-4 w-4" />
             Curriculum
           </Link>
@@ -113,7 +114,7 @@ export function DashboardCourseCard({
             variant="ghost"
             size="sm"
             onClick={() => {
-              window.location.href = `${BACKEND_URL}/courses/${course.id}/certificate/download`;
+              window.location.href = `${BACKEND_URL}/courses/${courseSlug}/certificate/download`;
             }}
             className="w-full rounded-full border border-border whitespace-normal hover:bg-muted sm:w-auto sm:whitespace-nowrap"
           >

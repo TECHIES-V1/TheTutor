@@ -234,7 +234,7 @@ export default function LessonPage() {
           {/* Course sidebar — now inside the grid */}
           {preview && (
             <CourseWorkspaceSidebar
-              courseId={preview.course.id}
+              courseId={preview.course.slug || preview.course.id}
               title={preview.course.title}
               authorName={preview.course.author?.name || preview.course.ownerName}
               level={preview.course.level}

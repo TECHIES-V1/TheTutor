@@ -31,6 +31,7 @@ const MAX_RELATED_COURSES = 5;
 
 type RelatedCoursePreview = {
   id: string;
+  slug: string;
   title: string;
   description: string;
   level: string;
@@ -120,11 +121,12 @@ async function findRelatedPublishedCourses(subject: string): Promise<RelatedCour
   )
     .sort({ score: { $meta: "textScore" } })
     .limit(MAX_RELATED_COURSES)
-    .select("title description level ownerName curriculum modules")
+    .select("title slug description level ownerName curriculum modules")
     .lean();
 
   return related.map((course) => ({
     id: String(course._id),
+    slug: String((course as any).slug ?? ""),
     title: String(course.title ?? "Untitled Course"),
     description: String(course.description ?? ""),
     level: String(course.level ?? ""),

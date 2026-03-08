@@ -91,6 +91,7 @@ function mapDashboardCourse(
 
   return {
     id: String(course._id),
+    slug: String((course as any).slug ?? ""),
     title: course.title,
     description: course.description,
     topic: String(
@@ -135,7 +136,7 @@ router.get("/overview", requireAuth, async (req: Request, res: Response) => {
       ownerMatchFilters.push({ ownerId: userObjectId }, { userId: userObjectId });
     }
 
-    const courseProjection = "title description topic subject level goal ownerId ownerName userId visibility generationStatus accessModel sourceReferences curriculum viewCount enrollmentCount updatedAt";
+    const courseProjection = "title slug description topic subject level goal ownerId ownerName userId visibility generationStatus accessModel sourceReferences curriculum viewCount enrollmentCount updatedAt";
 
     const ownedCourses = await Course.find({
       $or: ownerMatchFilters,
