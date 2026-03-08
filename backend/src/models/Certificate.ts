@@ -8,7 +8,7 @@ export interface ICertificate extends Document {
   pdfPath: string;
   fileName: string;
   createdAt: Date;
-  updatedAt: Date;
+  updatedAt: Date;  
 }
 
 const CertificateSchema = new Schema<ICertificate>(
