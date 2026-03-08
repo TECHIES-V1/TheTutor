@@ -22,7 +22,7 @@ export function ReadAloudButton({ contentMarkdown, contentContainerRef }: ReadAl
     playbackRate,
     setPlaybackRate,
     progress,
-    highlightWordIndex,
+    activeSectionText,
     sectionAnnouncement,
   } = useReadAloud(contentMarkdown);
 
@@ -55,10 +55,10 @@ export function ReadAloudButton({ contentMarkdown, contentContainerRef }: ReadAl
 
   return (
     <>
-      {/* Word highlighter — only active when playing */}
+      {/* Line highlighter — active when playing */}
       <ReadAloudHighlighter
         containerRef={contentContainerRef}
-        highlightWordIndex={highlightWordIndex}
+        activeSectionText={activeSectionText}
         active={status === "playing"}
       />
 

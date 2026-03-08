@@ -2,228 +2,155 @@
 
 import { useEffect, useRef, useCallback } from "react";
 
-interface WordLocation {
-  node: Text;
-  start: number;
-  end: number;
-}
-
 interface ReadAloudHighlighterProps {
   containerRef: React.RefObject<HTMLElement | null>;
-  highlightWordIndex: number | null;
+  activeSectionText: string | null;
   active: boolean;
 }
 
-const supportsCustomHighlight =
-  typeof CSS !== "undefined" && "highlights" in CSS;
+// Block-level tags that can be highlighted
+const BLOCK_SELECTOR = "p, li, h1, h2, h3, h4, h5, h6, blockquote";
 
-// Inject ::highlight(read-aloud) CSS at runtime so it can't be stripped
-// by Tailwind v4 / Lightning CSS during build.
-const HIGHLIGHT_STYLE_ID = "read-aloud-highlight-style";
-function ensureHighlightCSS() {
-  if (document.getElementById(HIGHLIGHT_STYLE_ID)) return;
-  const style = document.createElement("style");
-  style.id = HIGHLIGHT_STYLE_ID;
-  style.textContent = [
-    "::highlight(read-aloud) { background-color: rgba(212, 175, 55, 0.25); color: inherit; }",
-    ".read-aloud-active { background-color: rgba(212, 175, 55, 0.25); color: inherit; border-radius: 2px; padding: 0 1px; }",
-  ].join("\n");
-  document.head.appendChild(style);
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+/** Collapse whitespace and lowercase for fuzzy text comparison. */
+function normalize(text: string): string {
+  return text.toLowerCase().replace(/\s+/g, " ").trim();
 }
 
 /**
- * Word highlighter for read-aloud.
+ * Find the block element whose text best matches the spoken section.
  *
- * Primary path: CSS Custom Highlight API — creates Range objects without
- * touching the DOM, so no MutationObserver feedback loops or normalize() calls.
+ * Strategy: try matching with decreasing key lengths (4 words → 3 → 2 → 1).
+ * Searches forward from `startFrom` first (speech is sequential),
+ * then wraps around as a fallback.
+ */
+function findMatchingBlock(
+  blocks: HTMLElement[],
+  sectionText: string,
+  startFrom: number
+): number {
+  const norm = normalize(sectionText);
+  const words = norm.split(" ");
+
+  // Try progressively shorter prefixes — longer = more specific
+  for (let len = Math.min(5, words.length); len >= 1; len--) {
+    const key = words.slice(0, len).join(" ");
+
+    // Forward search from last position
+    for (let i = startFrom; i < blocks.length; i++) {
+      const blockText = normalize(blocks[i].textContent ?? "");
+      if (blockText.includes(key)) return i;
+    }
+    // Wrap-around fallback
+    for (let i = 0; i < startFrom; i++) {
+      const blockText = normalize(blocks[i].textContent ?? "");
+      if (blockText.includes(key)) return i;
+    }
+  }
+
+  return -1;
+}
+
+// ─── Runtime CSS (bypasses build-time stripping) ────────────────────────────
+
+const STYLE_ID = "read-aloud-highlight-style";
+function ensureCSS() {
+  if (document.getElementById(STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = STYLE_ID;
+  style.textContent = `.read-aloud-line {
+  background-color: rgba(212, 175, 55, 0.10);
+  border-left: 3px solid rgba(212, 175, 55, 0.8);
+  padding-left: 10px;
+  margin-left: -13px;
+  border-radius: 6px;
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}`;
+  document.head.appendChild(style);
+}
+
+// ─── Component ──────────────────────────────────────────────────────────────
+
+/**
+ * Line highlighter for read-aloud.
  *
- * Fallback path: <mark> element wrapping with a mutation guard for older browsers.
+ * Matches the currently spoken section text against DOM block elements
+ * by content comparison — no word-index alignment needed.
+ * Highlights the matching element with a gold accent border.
  */
 export function ReadAloudHighlighter({
   containerRef,
-  highlightWordIndex,
+  activeSectionText,
   active,
 }: ReadAloudHighlighterProps) {
-  const wordMapRef = useRef<WordLocation[]>([]);
-  const builtForRef = useRef<HTMLElement | null>(null);
+  const blocksRef = useRef<HTMLElement[]>([]);
+  const lastMatchRef = useRef(0);
+  const activeElRef = useRef<HTMLElement | null>(null);
 
-  // Fallback refs (only used when Custom Highlight API is unavailable)
-  const activeMarkRef = useRef<HTMLElement | null>(null);
-  const isMutatingRef = useRef(false);
+  useEffect(() => { ensureCSS(); }, []);
 
-  // Inject highlight CSS on mount (runtime, bypasses build-time CSS stripping)
-  useEffect(() => {
-    ensureHighlightCSS();
-  }, []);
-
-  // Build word map from DOM text nodes (one-time per activation).
-  // Skips <pre> blocks to match stripMarkdown() which removes code fences.
-  const buildWordMap = useCallback(() => {
+  // Collect block elements when activated
+  const collectBlocks = useCallback(() => {
     const container = containerRef.current;
-    if (!container || builtForRef.current === container) return;
-
-    const words: WordLocation[] = [];
-    const walker = document.createTreeWalker(
-      container,
-      NodeFilter.SHOW_TEXT,
-      {
-        acceptNode(node: Node) {
-          // Skip text inside <pre> (fenced code blocks are removed by stripMarkdown)
-          let el = node.parentElement;
-          while (el && el !== container) {
-            if (el.tagName === "PRE") return NodeFilter.FILTER_REJECT;
-            el = el.parentElement;
-          }
-          return NodeFilter.FILTER_ACCEPT;
-        },
-      }
-    );
-
-    let textNode: Text | null;
-    while ((textNode = walker.nextNode() as Text | null)) {
-      const text = textNode.textContent ?? "";
-      const regex = /\S+/g;
-      let match: RegExpExecArray | null;
-      while ((match = regex.exec(text)) !== null) {
-        words.push({
-          node: textNode,
-          start: match.index,
-          end: match.index + match[0].length,
-        });
-      }
-    }
-
-    wordMapRef.current = words;
-    builtForRef.current = container;
+    if (!container) return;
+    blocksRef.current = Array.from(container.querySelectorAll(BLOCK_SELECTOR));
+    lastMatchRef.current = 0;
   }, [containerRef]);
 
-  // Build word map once when activated
   useEffect(() => {
-    if (!active) return;
-    buildWordMap();
+    if (active) collectBlocks();
+  }, [active, collectBlocks]);
 
-    // Only observe for external content changes (not needed for Custom Highlight
-    // path, but useful if content is lazy-loaded). Guard against self-mutations.
-    if (!supportsCustomHighlight) {
-      const container = containerRef.current;
-      if (!container) return;
-
-      const observer = new MutationObserver(() => {
-        if (isMutatingRef.current) return;
-        builtForRef.current = null;
-        buildWordMap();
-      });
-      observer.observe(container, { childList: true, subtree: true, characterData: true });
-      return () => observer.disconnect();
-    }
-  }, [active, buildWordMap, containerRef]);
-
-  // Apply highlight using CSS Custom Highlight API (primary path)
+  // Highlight the matching block when section text changes
   useEffect(() => {
-    if (!supportsCustomHighlight) return;
-
-    if (highlightWordIndex === null || !active) {
-      CSS.highlights.delete("read-aloud");
+    if (!activeSectionText || !active) {
+      // Clear highlight
+      if (activeElRef.current) {
+        activeElRef.current.classList.remove("read-aloud-line");
+        activeElRef.current = null;
+      }
       return;
     }
 
-    const words = wordMapRef.current;
-    if (highlightWordIndex >= words.length) return;
+    const blocks = blocksRef.current;
+    if (blocks.length === 0) return;
 
-    const { node, start, end } = words[highlightWordIndex];
-    if (!node.parentNode || !document.contains(node)) return;
+    const idx = findMatchingBlock(blocks, activeSectionText, lastMatchRef.current);
+    if (idx === -1) return;
 
-    try {
-      const range = document.createRange();
-      range.setStart(node, start);
-      range.setEnd(node, end);
+    const el = blocks[idx];
 
-      const highlight = new Highlight(range);
-      CSS.highlights.set("read-aloud", highlight);
+    // Same element — skip
+    if (el === activeElRef.current) return;
 
-      // Scroll the word into view
-      const rect = range.getBoundingClientRect();
-      const viewportH = window.innerHeight;
-      if (rect.top < 80 || rect.bottom > viewportH - 80) {
-        const el = node.parentElement;
-        el?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-    } catch {
-      // Range can fail if DOM changed underneath
-    }
-  }, [highlightWordIndex, active]);
-
-  // Fallback: <mark> wrapping (only for browsers without Custom Highlight API)
-  useEffect(() => {
-    if (supportsCustomHighlight) return;
-
-    // Remove previous mark
-    if (activeMarkRef.current) {
-      const mark = activeMarkRef.current;
-      const parent = mark.parentNode;
-      if (parent) {
-        isMutatingRef.current = true;
-        const textNode = document.createTextNode(mark.textContent ?? "");
-        parent.replaceChild(textNode, mark);
-        parent.normalize();
-        builtForRef.current = null;
-        buildWordMap();
-        isMutatingRef.current = false;
-      }
-      activeMarkRef.current = null;
+    // Remove old
+    if (activeElRef.current) {
+      activeElRef.current.classList.remove("read-aloud-line");
     }
 
-    if (highlightWordIndex === null || !active) return;
+    // Apply new
+    el.classList.add("read-aloud-line");
+    activeElRef.current = el;
+    lastMatchRef.current = idx;
 
-    const words = wordMapRef.current;
-    if (highlightWordIndex >= words.length) return;
-
-    const { node, start, end } = words[highlightWordIndex];
-    if (!node.parentNode || !document.contains(node)) return;
-
-    try {
-      isMutatingRef.current = true;
-      const range = document.createRange();
-      range.setStart(node, start);
-      range.setEnd(node, end);
-
-      const mark = document.createElement("mark");
-      mark.className = "read-aloud-active";
-      range.surroundContents(mark);
-      activeMarkRef.current = mark;
-      isMutatingRef.current = false;
-
-      mark.scrollIntoView({ behavior: "smooth", block: "center" });
-    } catch {
-      isMutatingRef.current = false;
+    // Smart scroll — only when the element is near viewport edges
+    const rect = el.getBoundingClientRect();
+    const vh = window.innerHeight;
+    if (rect.top < 60 || rect.bottom > vh - 60) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
     }
-  }, [highlightWordIndex, active, buildWordMap]);
+  }, [activeSectionText, active]);
 
-  // Cleanup on deactivation or unmount
+  // Cleanup on deactivation / unmount
   useEffect(() => {
     if (active) return;
-
-    // Clean up Custom Highlight API
-    if (supportsCustomHighlight) {
-      CSS.highlights.delete("read-aloud");
+    if (activeElRef.current) {
+      activeElRef.current.classList.remove("read-aloud-line");
+      activeElRef.current = null;
     }
-
-    // Clean up fallback <mark>
-    if (activeMarkRef.current) {
-      const mark = activeMarkRef.current;
-      const parent = mark.parentNode;
-      if (parent) {
-        isMutatingRef.current = true;
-        const textNode = document.createTextNode(mark.textContent ?? "");
-        parent.replaceChild(textNode, mark);
-        parent.normalize();
-        isMutatingRef.current = false;
-      }
-      activeMarkRef.current = null;
-    }
-
-    wordMapRef.current = [];
-    builtForRef.current = null;
+    blocksRef.current = [];
+    lastMatchRef.current = 0;
   }, [active]);
 
   return null;

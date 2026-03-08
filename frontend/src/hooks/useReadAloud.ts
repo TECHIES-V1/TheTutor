@@ -9,7 +9,6 @@ interface Section {
   index: number;
   text: string;
   heading: string | null;
-  wordOffset: number;
 }
 
 export type ReadAloudStatus = "idle" | "loading" | "playing" | "paused";
@@ -23,7 +22,7 @@ export interface UseReadAloudReturn {
   playbackRate: number;
   setPlaybackRate: (rate: number) => void;
   progress: { current: number; total: number; percent: number };
-  highlightWordIndex: number | null;
+  activeSectionText: string | null;
   sectionAnnouncement: string | null;
 }
 
@@ -37,7 +36,6 @@ const MAX_SECTION_LENGTH = 250;
  * Extracts headings before stripping, splits text at paragraph/sentence boundaries.
  */
 function buildSections(markdown: string): Section[] {
-  // Extract headings in order from original markdown
   const headingTexts: string[] = [];
   const headingRegex = /^#{1,6}\s+(.+)$/gm;
   let m: RegExpExecArray | null;
@@ -50,14 +48,12 @@ function buildSections(markdown: string): Section[] {
 
   const paragraphs = plainText.split(/\n\n+/);
   const sections: Section[] = [];
-  let wordOffset = 0;
   let nextHeadingIdx = 0;
 
   for (const para of paragraphs) {
     const trimmed = para.trim();
     if (!trimmed) continue;
 
-    // Check if this paragraph starts with the next heading text
     let heading: string | null = null;
     if (nextHeadingIdx < headingTexts.length) {
       const expected = headingTexts[nextHeadingIdx];
@@ -68,16 +64,8 @@ function buildSections(markdown: string): Section[] {
     }
 
     if (trimmed.length <= MAX_SECTION_LENGTH) {
-      const wordCount = trimmed.split(/\s+/).filter(Boolean).length;
-      sections.push({
-        index: sections.length,
-        text: trimmed,
-        heading,
-        wordOffset,
-      });
-      wordOffset += wordCount;
+      sections.push({ index: sections.length, text: trimmed, heading });
     } else {
-      // Split long paragraph by sentences
       const sentences = trimmed.match(/[^.!?]+[.!?]+\s*/g) || [trimmed];
       let buffer = "";
       let isFirst = true;
@@ -87,39 +75,27 @@ function buildSections(markdown: string): Section[] {
           buffer += sent;
         } else {
           if (buffer.trim()) {
-            const wc = buffer.trim().split(/\s+/).filter(Boolean).length;
             sections.push({
               index: sections.length,
               text: buffer.trim(),
               heading: isFirst ? heading : null,
-              wordOffset,
             });
-            wordOffset += wc;
             isFirst = false;
           }
           buffer = sent;
         }
       }
       if (buffer.trim()) {
-        const wc = buffer.trim().split(/\s+/).filter(Boolean).length;
         sections.push({
           index: sections.length,
           text: buffer.trim(),
           heading: isFirst ? heading : null,
-          wordOffset,
         });
-        wordOffset += wc;
       }
     }
   }
 
   return sections;
-}
-
-/** Count words in text before a given character index. */
-function countWordsBeforeChar(text: string, charIndex: number): number {
-  const before = text.slice(0, charIndex);
-  return before.split(/\s+/).filter(Boolean).length;
 }
 
 // ─── Hook ───────────────────────────────────────────────────────────────────
@@ -128,21 +104,13 @@ export function useReadAloud(contentMarkdown: string): UseReadAloudReturn {
   const [status, setStatus] = useState<ReadAloudStatus>("idle");
   const [sections, setSections] = useState<Section[]>([]);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
-  const [highlightWordIndex, setHighlightWordIndex] = useState<number | null>(null);
   const [sectionAnnouncement, setSectionAnnouncement] = useState<string | null>(null);
   const [playbackRate, setPlaybackRateState] = useState(1);
   const [voicesReady, setVoicesReady] = useState(false);
 
-  const sectionsRef = useRef<Section[]>([]);
-  const currentSectionRef = useRef(0);
-  const lastWordIdxRef = useRef<number | null>(null);
   const stoppedRef = useRef(false);
   const playbackRateRef = useRef(1);
   const pendingPlayRef = useRef(false);
-
-  // Keep refs in sync
-  useEffect(() => { sectionsRef.current = sections; }, [sections]);
-  useEffect(() => { currentSectionRef.current = currentSectionIndex; }, [currentSectionIndex]);
 
   // Wait for browser voices to load
   useEffect(() => {
@@ -154,18 +122,14 @@ export function useReadAloud(contentMarkdown: string): UseReadAloudReturn {
       return;
     }
 
-    const onVoices = () => {
-      setVoicesReady(true);
-    };
+    const onVoices = () => setVoicesReady(true);
     synth.addEventListener("voiceschanged", onVoices);
     return () => synth.removeEventListener("voiceschanged", onVoices);
   }, []);
 
   // Cleanup on unmount
   useEffect(() => {
-    return () => {
-      window.speechSynthesis?.cancel();
-    };
+    return () => { window.speechSynthesis?.cancel(); };
   }, []);
 
   const setPlaybackRate = useCallback((rate: number) => {
@@ -176,45 +140,19 @@ export function useReadAloud(contentMarkdown: string): UseReadAloudReturn {
   const speakSection = useCallback(
     (section: Section): Promise<void> => {
       return new Promise<void>((resolve) => {
-        if (stoppedRef.current) {
-          resolve();
-          return;
-        }
+        if (stoppedRef.current) { resolve(); return; }
 
         const utterance = new SpeechSynthesisUtterance(section.text);
         utterance.rate = playbackRateRef.current;
         utterance.pitch = 1;
         utterance.lang = "en-US";
 
-        // Safety timeout: ~15 chars/sec at 1x, plus 5s buffer.
-        // If onend never fires (Chrome bug), we auto-advance.
+        // Safety timeout — if onend never fires (Chrome bug), auto-advance.
         const estimatedMs = (section.text.length / 15) * 1000 / playbackRateRef.current;
-        const timeout = setTimeout(() => {
-          resolve();
-        }, estimatedMs + 5000);
+        const timeout = setTimeout(() => resolve(), estimatedMs + 5000);
 
-        // Word highlighting via boundary events
-        utterance.onboundary = (event) => {
-          if (event.name === "word") {
-            const localWordIdx = countWordsBeforeChar(section.text, event.charIndex);
-            const globalIdx = section.wordOffset + localWordIdx;
-            if (globalIdx !== lastWordIdxRef.current) {
-              lastWordIdxRef.current = globalIdx;
-              setHighlightWordIndex(globalIdx);
-            }
-          }
-        };
-
-        utterance.onend = () => {
-          clearTimeout(timeout);
-          resolve();
-        };
-
-        utterance.onerror = (event) => {
-          clearTimeout(timeout);
-          // "interrupted" and "canceled" are expected when stopping
-          resolve();
-        };
+        utterance.onend = () => { clearTimeout(timeout); resolve(); };
+        utterance.onerror = () => { clearTimeout(timeout); resolve(); };
 
         window.speechSynthesis.speak(utterance);
       });
@@ -228,11 +166,8 @@ export function useReadAloud(contentMarkdown: string): UseReadAloudReturn {
         if (stoppedRef.current) break;
 
         setCurrentSectionIndex(i);
-        currentSectionRef.current = i;
 
         const section = sectionList[i];
-
-        // Section announcement
         if (section.heading) {
           setSectionAnnouncement(section.heading);
           setTimeout(() => setSectionAnnouncement(null), 3000);
@@ -241,11 +176,9 @@ export function useReadAloud(contentMarkdown: string): UseReadAloudReturn {
         await speakSection(section);
       }
 
-      // Done
       if (!stoppedRef.current) {
-        lastWordIdxRef.current = null;
-        setHighlightWordIndex(null);
         setSectionAnnouncement(null);
+        setCurrentSectionIndex(0);
         setStatus("idle");
       }
     },
@@ -257,13 +190,9 @@ export function useReadAloud(contentMarkdown: string): UseReadAloudReturn {
     stoppedRef.current = false;
 
     const built = buildSections(markdown);
-    if (built.length === 0) {
-      setStatus("idle");
-      return;
-    }
+    if (built.length === 0) { setStatus("idle"); return; }
 
     setSections(built);
-    sectionsRef.current = built;
     setCurrentSectionIndex(0);
     setStatus("playing");
 
@@ -273,7 +202,7 @@ export function useReadAloud(contentMarkdown: string): UseReadAloudReturn {
     });
   }, [playAllSections]);
 
-  // Auto-start when voices become ready (if play was pressed while loading)
+  // Auto-start when voices become ready
   useEffect(() => {
     if (voicesReady && pendingPlayRef.current) {
       pendingPlayRef.current = false;
@@ -286,7 +215,6 @@ export function useReadAloud(contentMarkdown: string): UseReadAloudReturn {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
 
     if (!voicesReady) {
-      // Voices still loading — defer
       pendingPlayRef.current = true;
       setStatus("loading");
       return;
@@ -310,16 +238,12 @@ export function useReadAloud(contentMarkdown: string): UseReadAloudReturn {
     stoppedRef.current = true;
     pendingPlayRef.current = false;
     window.speechSynthesis?.cancel();
-    lastWordIdxRef.current = null;
-    setHighlightWordIndex(null);
     setSectionAnnouncement(null);
     setCurrentSectionIndex(0);
     setStatus("idle");
   }, []);
 
-  useEffect(() => {
-    playbackRateRef.current = playbackRate;
-  }, [playbackRate]);
+  useEffect(() => { playbackRateRef.current = playbackRate; }, [playbackRate]);
 
   const total = sections.length || 1;
   const progress = {
@@ -327,6 +251,12 @@ export function useReadAloud(contentMarkdown: string): UseReadAloudReturn {
     total: sections.length,
     percent: sections.length > 0 ? Math.round(((currentSectionIndex + 1) / total) * 100) : 0,
   };
+
+  // Derive the currently spoken text from section state
+  const activeSectionText =
+    (status === "playing" || status === "paused") && sections.length > 0
+      ? sections[currentSectionIndex]?.text ?? null
+      : null;
 
   return {
     status,
@@ -337,7 +267,7 @@ export function useReadAloud(contentMarkdown: string): UseReadAloudReturn {
     playbackRate,
     setPlaybackRate,
     progress,
-    highlightWordIndex,
+    activeSectionText,
     sectionAnnouncement,
   };
 }
