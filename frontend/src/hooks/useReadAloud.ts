@@ -106,30 +106,44 @@ export function useReadAloud(contentMarkdown: string): UseReadAloudReturn {
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [sectionAnnouncement, setSectionAnnouncement] = useState<string | null>(null);
   const [playbackRate, setPlaybackRateState] = useState(1);
-  const [voicesReady, setVoicesReady] = useState(false);
+  const [voicesReady, setVoicesReady] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return (window.speechSynthesis?.getVoices().length ?? 0) > 0;
+  });
 
   const stoppedRef = useRef(false);
   const playbackRateRef = useRef(1);
   const pendingPlayRef = useRef(false);
 
-  // Wait for browser voices to load
+  // Track contentMarkdown + startPlayback in refs so the voices callback can access them
+  const contentRef = useRef(contentMarkdown);
+  useEffect(() => { contentRef.current = contentMarkdown; }, [contentMarkdown]);
+  const startPlaybackRef = useRef<((md: string) => void) | null>(null);
+
   useEffect(() => {
     const synth = typeof window !== "undefined" ? window.speechSynthesis : null;
-    if (!synth) return;
+    if (!synth || voicesReady) return;
 
-    if (synth.getVoices().length > 0) {
+    const onVoices = () => {
       setVoicesReady(true);
-      return;
-    }
-
-    const onVoices = () => setVoicesReady(true);
+      if (pendingPlayRef.current) {
+        pendingPlayRef.current = false;
+        startPlaybackRef.current?.(contentRef.current);
+      }
+    };
     synth.addEventListener("voiceschanged", onVoices);
     return () => synth.removeEventListener("voiceschanged", onVoices);
-  }, []);
+  }, [voicesReady]);
 
-  // Cleanup on unmount
+  // Inject ::highlight CSS (Turbopack can't parse it in globals.css) + cleanup on unmount
   useEffect(() => {
-    return () => { window.speechSynthesis?.cancel(); };
+    const style = document.createElement("style");
+    style.textContent = "::highlight(read-aloud){background-color:rgba(212,175,55,.25);color:inherit}";
+    document.head.appendChild(style);
+    return () => {
+      window.speechSynthesis?.cancel();
+      style.remove();
+    };
   }, []);
 
   const setPlaybackRate = useCallback((rate: number) => {
@@ -201,14 +215,7 @@ export function useReadAloud(contentMarkdown: string): UseReadAloudReturn {
       setStatus("idle");
     });
   }, [playAllSections]);
-
-  // Auto-start when voices become ready
-  useEffect(() => {
-    if (voicesReady && pendingPlayRef.current) {
-      pendingPlayRef.current = false;
-      startPlayback(contentMarkdown);
-    }
-  }, [voicesReady, contentMarkdown, startPlayback]);
+  useEffect(() => { startPlaybackRef.current = startPlayback; }, [startPlayback]);
 
   const play = useCallback(() => {
     if (status === "playing") return;

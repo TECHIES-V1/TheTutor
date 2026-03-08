@@ -523,12 +523,6 @@ html.no-transitions *::after {
   transition-duration: 0s !important;
 }
 
-/* Read-aloud word highlighting — CSS Custom Highlight API (primary) */
-::highlight(read-aloud) {
-  background-color: rgba(212, 175, 55, 0.25);
-  color: inherit;
-}
-
 /* Fallback for browsers without Custom Highlight API */
 .read-aloud-active {
   background-color: rgba(212, 175, 55, 0.25);

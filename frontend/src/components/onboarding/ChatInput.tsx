@@ -13,8 +13,12 @@ export function ChatInput({ onSend, disabled, confirmation }: ChatInputProps) {
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const attachMenuRef = useRef<HTMLDivElement>(null);
 
-    // Reset busy when confirmation changes (action completed or cancelled)
-    useEffect(() => { setBusy(false); }, [confirmation?.type]);
+    // Reset busy when confirmation changes (render-time reset avoids setState-in-effect)
+    const prevConfType = useRef(confirmation?.type);
+    if (prevConfType.current !== confirmation?.type) {
+        prevConfType.current = confirmation?.type;
+        setBusy(false);
+    }
 
     const guard = (fn?: () => void) => () => {
         if (busy || !fn) return;

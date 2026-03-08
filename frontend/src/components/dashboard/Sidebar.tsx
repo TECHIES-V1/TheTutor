@@ -50,7 +50,9 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
-  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileState, setProfileState] = useState<{ open: boolean; path: string }>({ open: false, path: "" });
+  const profileOpen = profileState.open && profileState.path === pathname;
+  const setProfileOpen = (open: boolean) => setProfileState({ open, path: pathname });
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -88,17 +90,12 @@ export function Sidebar({
     if (!profileOpen) return;
     function handleClick(e: MouseEvent) {
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
-        setProfileOpen(false);
+        setProfileState({ open: false, path: "" });
       }
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [profileOpen]);
-
-  // Close profile popup on route change
-  useEffect(() => {
-    setProfileOpen(false);
-  }, [pathname]);
 
   const textReveal = cx(
     "overflow-hidden whitespace-nowrap transition-all duration-300",
@@ -125,7 +122,7 @@ export function Sidebar({
 
       <aside
         className={cx(
-          "group/sidebar neo-surface fixed bottom-0 left-0 top-0 z-50 flex flex-col border-r border-[var(--glass-border)] transition-[transform,width] duration-300 ease-in-out lg:translate-x-0",
+          "group/sidebar fixed bottom-0 left-0 top-0 z-50 flex flex-col border-r border-[var(--glass-border)] bg-background lg:neo-surface lg:bg-transparent transition-[transform,width] duration-300 ease-in-out lg:translate-x-0",
           isCollapsed ? "w-72 lg:w-[4.5rem]" : "w-72",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
@@ -264,7 +261,7 @@ export function Sidebar({
         {user && (
           <div ref={profileRef} className="relative border-t border-[var(--glass-border)] px-2 pb-3 pt-2">
             <button
-              onClick={() => setProfileOpen((p) => !p)}
+              onClick={() => setProfileOpen(!profileOpen)}
               className={cx(
                 "flex w-full items-center rounded-xl px-2.5 py-2 border border-transparent transition-all duration-200",
                 "hover:bg-primary/5 hover:border-[var(--glass-border)]",

@@ -361,7 +361,6 @@ export function ConversationHistory({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
     api
       .get("/chat/conversations")
       .then((r) => (r.ok ? r.json() : null))
