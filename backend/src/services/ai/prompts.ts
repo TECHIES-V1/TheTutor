@@ -487,18 +487,18 @@ CRITICAL RULES:
 - These are OLD-SCHOOL digital libraries — they have classic textbooks, not modern tutorials
 - ${hint}
 - ${levelHint}
-- Each query must be exactly ONE word — library search engines return the best results with a single broad keyword
+- Each query should be 1-3 words — use the most natural library catalog term (e.g. "figures of speech", not just "figures"). Single words are fine when unambiguous (e.g. "rhetoric", "calculus").
 - Order from most specific to broadest (first query closest to topic, last query = parent discipline)
 - NEVER use branded names, framework versions, or marketing phrases
-- Think: "What single word would a university librarian use to catalog this?"
+- Think: "What subject heading would a university librarian use to catalog this?"
 
 Examples:
-- Topic "neumorphism" → ["design", "CSS", "interface", "typography", "graphics"]
-- Topic "React hooks" → ["JavaScript", "programming", "engineering", "computing"]
-- Topic "machine learning" → ["intelligence", "learning", "statistics", "probability", "algorithms"]
-- Topic "anxiety management" → ["anxiety", "therapy", "psychology", "psychiatry", "neuroscience"]
-- Topic "stock trading" → ["investing", "finance", "economics", "markets", "trading"]
-- Topic "guitar" → ["guitar", "music", "instruments", "harmony", "theory"]
+- Topic "neumorphism" → ["UI design", "CSS", "interface design", "typography", "graphic design"]
+- Topic "React hooks" → ["JavaScript", "web programming", "software engineering", "computing"]
+- Topic "machine learning" → ["machine learning", "artificial intelligence", "statistics", "pattern recognition", "algorithms"]
+- Topic "anxiety management" → ["anxiety", "cognitive therapy", "psychology", "psychiatry", "mental health"]
+- Topic "stock trading" → ["stock trading", "investing", "finance", "economics", "financial markets"]
+- Topic "guitar" → ["guitar", "music theory", "musical instruments", "harmony"]
 
 Respond with ONLY a JSON array of search query strings. No explanation, no markdown.`;
 }

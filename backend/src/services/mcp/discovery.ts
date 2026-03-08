@@ -97,8 +97,8 @@ export async function* discoverAndParseBooks(
     },
   };
 
-  // Try first 2 keywords via /discovery/search (aggregates Gutendex + OpenLibrary + Standard Ebooks)
-  const primaryKeywords = keywords.slice(0, 2);
+  // Try first 4 keywords via /discovery/search (aggregates Gutendex + OpenLibrary + Standard Ebooks)
+  const primaryKeywords = keywords.slice(0, 4);
   for (const keyword of primaryKeywords) {
     try {
       searchResult = await discoverySearch({ query: keyword, limit: 18 });
@@ -110,7 +110,7 @@ export async function* discoverAndParseBooks(
     }
   }
 
-  // Fallback: keyword search via /search (wider OpenLibrary, may lack download URLs)
+  // Fallback: try individual keywords via /search (wider OpenLibrary, may lack download URLs)
   if (searchResult.books.length === 0) {
     yield {
       type: "status",
@@ -121,11 +121,15 @@ export async function* discoverAndParseBooks(
       },
     };
 
-    try {
-      searchResult = await keywordSearch({ keywords, limit: 18 });
-      logger.info({ keywords, bookCount: searchResult.books.length }, "[discovery] Keyword search fallback results");
-    } catch (err) {
-      logger.warn({ keywords, err }, "[discovery] Keyword search fallback failed");
+    for (const keyword of keywords.slice(0, 4)) {
+      try {
+        searchResult = await keywordSearch({ keywords: [keyword], limit: 18 });
+        logger.info({ keyword, bookCount: searchResult.books.length }, "[discovery] Keyword search fallback results");
+        if (searchResult.books.length > 0) break;
+      } catch (err) {
+        logger.warn({ keyword, err }, "[discovery] Keyword search fallback failed");
+        continue;
+      }
     }
   }
 

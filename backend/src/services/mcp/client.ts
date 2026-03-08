@@ -91,7 +91,7 @@ export async function keywordSearch(
     {
       method: "GET",
       headers: { "Content-Type": "application/json" },
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(20000),
     }
   );
 
@@ -155,7 +155,7 @@ export async function discoverySearch(
     {
       method: "GET",
       headers: { "Content-Type": "application/json" },
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(30000),
     }
   );
 
