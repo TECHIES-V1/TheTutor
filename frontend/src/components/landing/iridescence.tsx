@@ -36,9 +36,7 @@ uniform float uSpeed;
 uniform vec3 uBaseLow;
 uniform vec3 uBaseHigh;
 uniform vec3 uGold;
-uniform vec3 uBlue;
 uniform float uGoldStrength;
-uniform float uBlueStrength;
 
 varying vec2 vUv;
 
@@ -61,38 +59,30 @@ void main() {
   float intensity = clamp(wave * 0.72 + grain * 0.28, 0.0, 1.0);
   float glow = smoothstep(0.58, 0.92, intensity);
 
-  float blueWave = sin(uv.y * (1.4 + d * 0.06) - uv.x * 0.9 + a * 0.18) * 0.5 + 0.5;
-  float blueGlow = smoothstep(0.52, 0.88, blueWave);
-
   vec3 base  = mix(uBaseLow, uBaseHigh, intensity);
   vec3 col   = mix(base, uGold, glow * uGoldStrength);
-  col        = mix(col, uBlue, blueGlow * uBlueStrength);
   col       *= uColor;
 
   gl_FragColor = vec4(col, 1.0);
 }
 `;
 
-// Light mode: warm beige base with gold + blue iridescence
+// Light mode: warm beige base with gold iridescence
 const LIGHT_PALETTE = {
-  clearColor: [0.94, 0.91, 0.87] as [number, number, number],    // #f0e9dd
-  baseLow: [0.92, 0.90, 0.85],                                     // warm beige
-  baseHigh: [0.96, 0.94, 0.89],                                    // lighter beige
+  clearColor: [0.97, 0.96, 0.94] as [number, number, number],    // #f8f5f0
+  baseLow: [0.96, 0.95, 0.93],                                     // off-white
+  baseHigh: [0.99, 0.98, 0.96],                                    // near-white
   gold: [0.83, 0.69, 0.23],                                        // #D4AF37
-  blue: [0.18, 0.42, 0.85],                                        // royal blue
   goldStrength: 0.55,
-  blueStrength: 0.38,
 };
 
-// Dark mode: deep warm black base with subdued gold + blue glow
+// Dark mode: deep black base with gold glow (#0a0a0a theme)
 const DARK_PALETTE = {
-  clearColor: [0.067, 0.063, 0.051] as [number, number, number],  // #11100d
-  baseLow: [0.055, 0.051, 0.040],                                  // near-black warm
-  baseHigh: [0.11, 0.095, 0.075],                                  // dark surface
-  gold: [0.83, 0.69, 0.23],                                        // same gold
-  blue: [0.22, 0.46, 0.88],                                        // slightly brighter blue
-  goldStrength: 0.40,                                               // subtler in dark
-  blueStrength: 0.28,
+  clearColor: [0.027, 0.025, 0.020] as [number, number, number],  // #070605
+  baseLow: [0.022, 0.020, 0.016],                                  // deep black
+  baseHigh: [0.055, 0.048, 0.035],                                 // very dark brown
+  gold: [0.83, 0.69, 0.23],                                        // #D4AF37
+  goldStrength: 0.45,
 };
 
 function getTheme(): "light" | "dark" {
@@ -138,9 +128,7 @@ export function Iridescence({
         uBaseLow: { value: new Color(...palette.baseLow) },
         uBaseHigh: { value: new Color(...palette.baseHigh) },
         uGold: { value: new Color(...palette.gold) },
-        uBlue: { value: new Color(...palette.blue) },
         uGoldStrength: { value: palette.goldStrength },
-        uBlueStrength: { value: palette.blueStrength },
       },
     });
 
@@ -167,9 +155,7 @@ export function Iridescence({
       (program.uniforms.uBaseLow.value as Color).set(...p.baseLow);
       (program.uniforms.uBaseHigh.value as Color).set(...p.baseHigh);
       (program.uniforms.uGold.value as Color).set(...p.gold);
-      (program.uniforms.uBlue.value as Color).set(...p.blue);
       program.uniforms.uGoldStrength.value = p.goldStrength;
-      program.uniforms.uBlueStrength.value = p.blueStrength;
     });
     observer.observe(document.documentElement, {
       attributes: true,

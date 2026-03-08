@@ -36,11 +36,11 @@ export function NavBar() {
           initial={false}
           animate={{
             backgroundColor: isScrolled
-              ? "rgba(245, 239, 228, 0.92)"
-              : "rgba(245, 239, 228, 0.6)",
+              ? "rgba(250, 250, 248, 0.92)"
+              : "rgba(250, 250, 248, 0.6)",
             boxShadow: isScrolled
-              ? "4px 4px 12px rgba(180, 165, 140, 0.4), -4px -4px 12px rgba(255, 253, 248, 0.65), 0 0 0 1.5px rgba(201, 162, 39, 0.7)"
-              : "2px 2px 8px rgba(180, 165, 140, 0.2), -2px -2px 8px rgba(255, 253, 248, 0.4), 0 0 0 1px rgba(201, 162, 39, 0.3)",
+              ? "4px 4px 12px rgba(200, 200, 195, 0.4), -4px -4px 12px rgba(255, 255, 255, 0.65), 0 0 0 1.5px rgba(201, 162, 39, 0.7)"
+              : "2px 2px 8px rgba(200, 200, 195, 0.2), -2px -2px 8px rgba(255, 255, 255, 0.4), 0 0 0 1px rgba(201, 162, 39, 0.3)",
           }}
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
           className="relative flex w-full max-w-3xl items-center justify-between rounded-full px-3 py-2 backdrop-blur-lg sm:px-5"
@@ -52,7 +52,7 @@ export function NavBar() {
               alt="TheTutor"
               className="h-8 w-8 rounded-lg object-contain"
             />
-            <p className="font-playfair text-base font-bold text-[#4a3728] sm:text-lg">
+            <p className="font-playfair text-base font-bold text-[#1a1a1a] sm:text-lg">
               TheTutor
             </p>
           </Link>
@@ -62,7 +62,7 @@ export function NavBar() {
               <a
                 key={link.href}
                 href={link.href}
-                className="rounded-full px-4 py-1.5 text-sm font-medium text-[#5c4a2a] transition-all hover:bg-[#e6ded0] hover:text-[#b48b1d]"
+                className="rounded-full px-4 py-1.5 text-sm font-medium text-[#333333] transition-all hover:bg-[#f0f0ee] hover:text-[#b48b1d]"
               >
                 {link.label}
               </a>
@@ -83,7 +83,7 @@ export function NavBar() {
             variant="ghost"
             size="icon"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="h-8 w-8 rounded-full text-[#4a3728] hover:bg-[#e6ded0] hover:text-[#8a6a09] md:hidden"
+            className="h-8 w-8 rounded-full text-[#1a1a1a] hover:bg-[#f0f0ee] hover:text-[#8a6a09] md:hidden"
           >
             <AnimatePresence mode="wait" initial={false}>
               <motion.span
@@ -118,7 +118,7 @@ export function NavBar() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.97 }}
               transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-              className="fixed left-4 right-4 top-[4.5rem] z-50 mx-auto max-w-3xl rounded-2xl border-[1.5px] border-[#c9a227] bg-[#f5efe4]/95 p-5 shadow-[6px_6px_14px_rgba(180,165,140,0.45),-6px_-6px_14px_rgba(255,253,248,0.7)] backdrop-blur-xl md:hidden"
+              className="fixed left-4 right-4 top-[4.5rem] z-50 mx-auto max-w-3xl rounded-2xl border-[1.5px] border-[#c9a227] bg-[#fafaf8]/95 p-5 shadow-[6px_6px_14px_rgba(200,200,195,0.45),-6px_-6px_14px_rgba(255,255,255,0.7)] backdrop-blur-xl md:hidden"
             >
               <div className="flex flex-col gap-2">
                 {navLinks.map((link) => (
@@ -126,7 +126,7 @@ export function NavBar() {
                     key={link.href}
                     href={link.href}
                     onClick={() => setIsSidebarOpen(false)}
-                    className="rounded-xl px-4 py-3 text-base font-medium text-[#5c4a2a] transition-all hover:bg-[#e6ded0] hover:text-[#b48b1d]"
+                    className="rounded-xl px-4 py-3 text-base font-medium text-[#333333] transition-all hover:bg-[#f0f0ee] hover:text-[#b48b1d]"
                   >
                     {link.label}
                   </a>

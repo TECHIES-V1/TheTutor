@@ -16,7 +16,7 @@ export const metadata: Metadata = generateMetadata({
 
 export default function Home() {
   return (
-    <div className="neu-shell min-h-screen text-[#4a3728] selection:bg-[#d4af37]/30 selection:text-[#4a3728]">
+    <div className="neu-shell min-h-screen text-[#1a1a1a] selection:bg-[#d4af37]/30 selection:text-[#1a1a1a]">
       <NavBar />
       <main>
         <Hero />

@@ -4,50 +4,50 @@
 :root {
   --primary: #9a7519;
   --primary-foreground: #fff7e0;
-  --secondary: #4a3728;
+  --secondary: #1a1a1a;
   --secondary-foreground: #f7f2e5;
-  --background: #f0e9dd;
-  --foreground: #4a3728;
-  --card: #f5efe4;
-  --card-foreground: #4a3728;
-  --popover: #f5efe4;
-  --popover-foreground: #4a3728;
-  --muted: #e6ded0;
-  --muted-foreground: #7a6644;
+  --background: #fafaf8;
+  --foreground: #1a1a1a;
+  --card: #f5f5f3;
+  --card-foreground: #1a1a1a;
+  --popover: #f5f5f3;
+  --popover-foreground: #1a1a1a;
+  --muted: #f0f0ee;
+  --muted-foreground: #555555;
   --accent: #d4af37;
-  --accent-foreground: #4a3728;
+  --accent-foreground: #1a1a1a;
   --destructive: #c54848;
   --destructive-foreground: #ffffff;
   --border: #c9a227;
-  --input: #e6ded0;
+  --input: #f0f0ee;
   --ring: #b48b1d;
   --radius: 0.75rem;
-  --background-soft: #ebe4d6;
-  --surface: #f2ebe0;
-  --surface-raised: #f7f1e6;
-  --surface-pressed: #e0d7c5;
+  --background-soft: #f2f2f0;
+  --surface: #f5f5f3;
+  --surface-raised: #f8f8f6;
+  --surface-pressed: #e8e8e6;
   --accent-strong: #8a6a09;
   --shadow-light: none;
   --shadow-dark: none;
-  --shadow-raised: 6px 6px 14px rgba(180, 165, 140, 0.45), -6px -6px 14px rgba(255, 253, 248, 0.7);
-  --shadow-inset: inset 3px 3px 8px rgba(180, 165, 140, 0.4), inset -3px -3px 8px rgba(255, 253, 248, 0.5);
-  --shadow-card: 3px 3px 8px rgba(180, 165, 140, 0.35), -3px -3px 8px rgba(255, 253, 248, 0.6);
-  --shadow-modal: 8px 8px 20px rgba(180, 165, 140, 0.5), -8px -8px 20px rgba(255, 253, 248, 0.75);
-  --shadow-float: 4px 4px 12px rgba(180, 165, 140, 0.4), -4px -4px 12px rgba(255, 253, 248, 0.65);
+  --shadow-raised: 6px 6px 14px rgba(200, 200, 195, 0.45), -6px -6px 14px rgba(255, 255, 255, 0.7);
+  --shadow-inset: inset 3px 3px 8px rgba(200, 200, 195, 0.4), inset -3px -3px 8px rgba(255, 255, 255, 0.5);
+  --shadow-card: 3px 3px 8px rgba(200, 200, 195, 0.35), -3px -3px 8px rgba(255, 255, 255, 0.6);
+  --shadow-modal: 8px 8px 20px rgba(200, 200, 195, 0.5), -8px -8px 20px rgba(255, 255, 255, 0.75);
+  --shadow-float: 4px 4px 12px rgba(200, 200, 195, 0.4), -4px -4px 12px rgba(255, 255, 255, 0.65);
   --shadow-focus: 0 0 0 2px rgba(180, 139, 29, 0.15);
 
   /* Landing neumorphic tokens */
-  --landing-bg: #f0e9dd;
-  --landing-surface-bg: #f5efe4;
-  --landing-inset-bg: #e6ded0;
-  --landing-heading: #4a3728;
-  --landing-body: #5c4a2a;
-  --landing-secondary: #7a6644;
+  --landing-bg: #fafaf8;
+  --landing-surface-bg: #f5f5f3;
+  --landing-inset-bg: #f0f0ee;
+  --landing-heading: #1a1a1a;
+  --landing-body: #333333;
+  --landing-secondary: #555555;
   --landing-border-gold: #c9a227;
-  --landing-shadow-raised: 6px 6px 14px rgba(180, 165, 140, 0.45), -6px -6px 14px rgba(255, 253, 248, 0.7);
-  --landing-shadow-subtle: 3px 3px 8px rgba(180, 165, 140, 0.35), -3px -3px 8px rgba(255, 253, 248, 0.6);
-  --landing-shadow-inset: inset 3px 3px 8px rgba(180, 165, 140, 0.4), inset -3px -3px 8px rgba(255, 253, 248, 0.5);
-  --landing-shadow-pressed: inset 2px 2px 5px rgba(180, 165, 140, 0.4), inset -2px -2px 5px rgba(255, 253, 248, 0.4);
+  --landing-shadow-raised: 6px 6px 14px rgba(200, 200, 195, 0.45), -6px -6px 14px rgba(255, 255, 255, 0.7);
+  --landing-shadow-subtle: 3px 3px 8px rgba(200, 200, 195, 0.35), -3px -3px 8px rgba(255, 255, 255, 0.6);
+  --landing-shadow-inset: inset 3px 3px 8px rgba(200, 200, 195, 0.4), inset -3px -3px 8px rgba(255, 255, 255, 0.5);
+  --landing-shadow-pressed: inset 2px 2px 5px rgba(200, 200, 195, 0.4), inset -2px -2px 5px rgba(255, 255, 255, 0.4);
 }
 
 :root[data-theme="dark"] {
@@ -215,13 +215,13 @@ html[data-theme="dark"] .neo-inset {
 }
 
 .skeuo-gold {
-  background: linear-gradient(145deg, #5c4a2a, #4a3728);
+  background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
   border: 2px solid #d4af37;
-  color: #ede6da;
+  color: #f0f0ee;
   box-shadow:
     0 0 0 1px rgba(212, 175, 55, 0.6),
-    4px 4px 10px rgba(180, 165, 140, 0.45),
-    -4px -4px 10px rgba(255, 253, 248, 0.6);
+    4px 4px 10px rgba(200, 200, 195, 0.45),
+    -4px -4px 10px rgba(255, 255, 255, 0.6);
   transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
 
@@ -230,13 +230,13 @@ html[data-theme="dark"] .neo-inset {
   transform: translateY(-2px);
   box-shadow:
     0 0 0 1px rgba(212, 175, 55, 0.7),
-    6px 6px 16px rgba(180, 165, 140, 0.5),
-    -6px -6px 16px rgba(255, 253, 248, 0.7);
+    6px 6px 16px rgba(200, 200, 195, 0.5),
+    -6px -6px 16px rgba(255, 255, 255, 0.7);
 }
 
 .skeuo-gold:active {
   transform: translateY(0);
-  box-shadow: inset 2px 2px 5px rgba(180, 165, 140, 0.4), inset -2px -2px 5px rgba(255, 253, 248, 0.4);
+  box-shadow: inset 2px 2px 5px rgba(200, 200, 195, 0.4), inset -2px -2px 5px rgba(255, 255, 255, 0.4);
 }
 
 html[data-theme="dark"] .skeuo-gold {
@@ -272,7 +272,7 @@ html[data-theme="dark"] .skeuo-gold:active {
 
 .skeuo-outline:active {
   transform: translateY(0);
-  box-shadow: inset 2px 2px 5px rgba(180, 165, 140, 0.4), inset -2px -2px 5px rgba(255, 253, 248, 0.4);
+  box-shadow: inset 2px 2px 5px rgba(200, 200, 195, 0.4), inset -2px -2px 5px rgba(255, 255, 255, 0.4);
 }
 
 html[data-theme="dark"] .skeuo-outline {
@@ -309,13 +309,13 @@ html[data-theme="dark"] .skeuo-outline:active {
 }
 
 .landing-gold {
-  background: linear-gradient(145deg, #5c4a2a, #4a3728);
+  background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
   border: 2px solid #d4af37;
-  color: #ede6da;
+  color: #f0f0ee;
   box-shadow:
     0 0 0 1px rgba(212, 175, 55, 0.6),
-    4px 4px 10px rgba(180, 165, 140, 0.45),
-    -4px -4px 10px rgba(255, 253, 248, 0.6);
+    4px 4px 10px rgba(200, 200, 195, 0.45),
+    -4px -4px 10px rgba(255, 255, 255, 0.6);
   transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
 
@@ -324,8 +324,8 @@ html[data-theme="dark"] .skeuo-outline:active {
   transform: translateY(-2px);
   box-shadow:
     0 0 0 1px rgba(212, 175, 55, 0.7),
-    6px 6px 16px rgba(180, 165, 140, 0.5),
-    -6px -6px 16px rgba(255, 253, 248, 0.7);
+    6px 6px 16px rgba(200, 200, 195, 0.5),
+    -6px -6px 16px rgba(255, 255, 255, 0.7);
 }
 
 .landing-gold:active {
