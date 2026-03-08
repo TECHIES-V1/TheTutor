@@ -5,15 +5,20 @@ import { Course, type IGeneratedLesson, type IGeneratedModule } from "../../mode
 import { Conversation } from "../../models/Conversation";
 import { Enrollment } from "../../models/Enrollment";
 import { User } from "../../models/User";
-import { discoverSourceReferences } from "../ai/nova";
 import { generateCourseOutline, type CourseOutline, type OutlineLesson, type OutlineModule } from "./outline";
 import { generateLessonContent } from "./lessonGen";
+import { buildGenerationContext } from "./contextBuilder";
+import { discoverAndParseBooks } from "../mcp/discovery";
 import { fetchVideoReferencesForQueries } from "../youtube/youtube.service";
 import type { SSEBroadcaster } from "../sse/broadcaster";
 import { getBroadcaster, createNoOpBroadcaster } from "../sse/broadcaster";
-import type { OnboardingData } from "../../types/index";
+import type { OnboardingData, BookContext } from "../../types/index";
+import { logger } from "../../config/logger";
+import pLimit from "p-limit";
 
 const MAX_LESSON_ATTEMPTS = 2;
+const LESSON_CONCURRENCY = 4;
+const VIDEO_CONCURRENCY = 6;
 
 // ── Start a new generation job ────────────────────────────────────────────
 // Validates conversation, runs MCP discovery, creates outline skeleton,
@@ -24,18 +29,26 @@ export async function startGenerationJob(
   conversationId: string,
   userId: string
 ): Promise<string> {
-  const conversation = await Conversation.findOne({
-    _id: conversationId,
-    userId: new Types.ObjectId(userId),
-  });
+  // Atomic phase lock — prevents duplicate generation from concurrent requests
+  const conversation = await Conversation.findOneAndUpdate(
+    {
+      _id: conversationId,
+      userId: new Types.ObjectId(userId),
+      phase: "resource_retrieval",
+    },
+    { $set: { phase: "course_generation" } },
+    { new: true }
+  );
 
   if (!conversation) {
-    throw new Error("Conversation not found");
-  }
-
-  if (conversation.phase !== "resource_retrieval") {
+    // Either not found, wrong user, or already generating
+    const exists = await Conversation.findOne({
+      _id: conversationId,
+      userId: new Types.ObjectId(userId),
+    });
+    if (!exists) throw new Error("Conversation not found");
     throw new Error(
-      `Conversation must be in resource_retrieval phase. Current: ${conversation.phase}`
+      `Conversation must be in resource_retrieval phase. Current: ${exists.phase}`
     );
   }
 
@@ -50,27 +63,49 @@ export async function startGenerationJob(
   const owner = await User.findById(userId).select("name");
   const ownerName = owner?.name ?? "Course Creator";
 
-  // Phase 1: Discover source references via MCP
-  // Uses confirmedSubject (e.g. "British History") as a single focused search term
-  const mcpKeyword = onboardingData.confirmedSubject || onboardingData.topic || "";
-  console.log(`[jobRunner] Discovering source references with keyword: "${mcpKeyword}"`);
+  // Phase 1: Discover and parse book content via MCP
+  // Searches, filters, downloads, and parses real textbook content
+  logger.info({ topic: onboardingData.confirmedSubject || onboardingData.topic }, "[jobRunner] Discovering and parsing book content");
   let sourceReferences: Array<{ title: string; authors: string[]; source: string }> = [];
+  let bookContexts: BookContext[] = [];
   try {
-    sourceReferences = await discoverSourceReferences(onboardingData);
-    console.log(`[jobRunner] Found ${sourceReferences.length} source references`);
+    const gen = discoverAndParseBooks(onboardingData);
+    let iterResult = await gen.next();
+    while (!iterResult.done) {
+      if (iterResult.value.type === "status") {
+        logger.info({ data: iterResult.value.data }, "[jobRunner] MCP progress");
+      }
+      iterResult = await gen.next();
+    }
+    const discovery = iterResult.value;
+    bookContexts = discovery.bookContexts;
+    sourceReferences = discovery.selectedBooks.map((b) => ({
+      title: b.title,
+      authors: b.authors,
+      source: b.source,
+    }));
+    logger.info(
+      { sources: sourceReferences.length, bookContexts: bookContexts.length },
+      "[jobRunner] MCP discovery complete"
+    );
   } catch (err) {
-    console.warn("[jobRunner] MCP discovery failed, continuing without sources:", err);
+    logger.warn({ err }, "[jobRunner] MCP discovery failed, continuing without sources");
   }
 
+  // Trim book content to fit within prompt limits
+  const trimmedBooks = bookContexts.length > 0
+    ? buildGenerationContext(onboardingData, bookContexts).books
+    : [];
+
   // Phase 2: Generate course outline (fast, structured JSON — retry up to 2×)
-  console.log("[jobRunner] Generating course outline...");
+  logger.info("[jobRunner] Generating course outline...");
   let outline: CourseOutline | undefined;
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       outline = await generateCourseOutline(onboardingData, sourceReferences);
       break;
     } catch (err) {
-      console.warn(`[jobRunner] Outline generation attempt ${attempt} failed:`, err);
+      logger.warn({ err, attempt }, "[jobRunner] Outline generation attempt failed");
       if (attempt === 2) throw err;
     }
   }
@@ -170,12 +205,11 @@ export async function startGenerationJob(
   course.generationJobId = job._id;
   await course.save();
 
-  // Update conversation
-  conversation.phase = "course_generation";
+  // Update conversation (phase already set atomically above)
   conversation.activeJobId = job._id;
   await conversation.save();
 
-  console.log(`[jobRunner] Created job ${jobId} for course ${course._id.toString()}`);
+  logger.info({ jobId, courseId: course._id.toString() }, "[jobRunner] Created job for course");
 
   // Fire generation in background — do NOT await
   const broadcaster = getBroadcaster(jobId);
@@ -196,8 +230,8 @@ export async function startGenerationJob(
   await job.save();
   broadcaster.send("outline_done", outlineEvent, job.lastEventId);
 
-  runJob(jobId, broadcaster, outline, onboardingData).catch((err) => {
-    console.error(`[jobRunner] Unhandled error in background job ${jobId}:`, err);
+  runJob(jobId, broadcaster, outline, onboardingData, trimmedBooks).catch((err) => {
+    logger.error({ err, jobId }, "[jobRunner] Unhandled error in background job");
   });
 
   return jobId;
@@ -209,16 +243,17 @@ export async function runJob(
   jobId: string,
   broadcast: SSEBroadcaster,
   preloadedOutline?: CourseOutline,
-  preloadedOnboardingData?: OnboardingData
+  preloadedOnboardingData?: OnboardingData,
+  preloadedBookContexts?: BookContext[]
 ): Promise<void> {
   const job = await GenerationJob.findById(jobId);
   if (!job) {
-    console.error(`[jobRunner] Job ${jobId} not found`);
+    logger.error({ jobId }, "[jobRunner] Job not found");
     return;
   }
 
   if (job.status === "completed" || job.status === "failed") {
-    console.log(`[jobRunner] Job ${jobId} already ${job.status}, skipping`);
+    logger.info({ jobId, status: job.status }, "[jobRunner] Job already completed/failed, skipping");
     return;
   }
 
@@ -256,188 +291,203 @@ export async function runJob(
   // Rebuild outline from course curriculum if not preloaded (crash recovery)
   const outline: CourseOutline = preloadedOutline ?? rebuildOutlineFromCourse(course, job);
 
-  // ── Phase: lessons ────────────────────────────────────────────────────
+  // ── Phase: lessons (parallel with p-limit) ──────────────────────────
   job.currentPhase = "lessons";
   await job.save();
 
-  const previousLessonTitles: string[] = [];
+  // Pre-compute context titles from outline order (known upfront)
+  // Each lesson gets titles of all lessons before it in the outline
+  const allSlotTitles = job.lessonSlots.map((s) => s.title);
 
-  for (const slot of job.lessonSlots) {
-    if (slot.status === "done") {
-      // Already completed — collect title for context
-      const les = outline.modules[slot.moduleIndex]?.lessons[slot.lessonIndex];
-      if (les) previousLessonTitles.push(les.title);
-      continue;
-    }
+  const limit = pLimit(LESSON_CONCURRENCY);
 
-    const mod = outline.modules[slot.moduleIndex];
-    const les = mod?.lessons[slot.lessonIndex];
-    if (!mod || !les) {
-      console.warn(`[jobRunner] Missing outline data for slot ${slot.lessonId}`);
-      slot.status = "failed";
-      slot.error = "Missing outline data";
-      continue;
-    }
+  const lessonTasks = job.lessonSlots.map((slot, slotIndex) =>
+    limit(async () => {
+      if (slot.status === "done") return;
 
-    slot.status = "generating";
-    job.lastEventId += 1;
-    await job.save();
-
-    const progress = Math.round(
-      10 + ((job.completedLessonCount / job.totalLessonCount) * 80)
-    );
-
-    broadcast.send(
-      "lesson_started",
-      {
-        lessonId: slot.lessonId,
-        title: slot.title,
-        bloomsLevel: slot.bloomsLevel,
-        moduleIndex: slot.moduleIndex,
-        lessonIndex: slot.lessonIndex,
-        progress,
-      },
-      job.lastEventId
-    );
-
-    let succeeded = false;
-
-    for (let attempt = 0; attempt < MAX_LESSON_ATTEMPTS; attempt++) {
-      try {
-        slot.attempts += 1;
-        console.log(
-          `[jobRunner] Generating lesson "${les.title}" (attempt ${attempt + 1})`
-        );
-
-        const content = await generateLessonContent(
-          les,
-          mod,
-          outline,
-          onboardingData,
-          sourceReferences,
-          [...previousLessonTitles]
-        );
-
-        // Save lesson content to course immediately
-        const curriculum = course.curriculum as IGeneratedModule[];
-        const targetModule = curriculum[slot.moduleIndex];
-        if (targetModule) {
-          const targetLesson = targetModule.lessons[slot.lessonIndex] as IGeneratedLesson;
-          if (targetLesson) {
-            targetLesson.contentMarkdown = content.contentMarkdown;
-            targetLesson.keyTakeaways = content.keyTakeaways;
-            targetLesson.citations = content.citations;
-            targetLesson.quiz = (content.quiz ?? []).map((q) => ({
-              questionId: q.questionId,
-              prompt: q.prompt,
-              expectedConcepts: q.expectedConcepts,
-              remediationTip: q.remediationTip,
-            }));
-            targetLesson.exercises = content.exercises ?? [];
-            targetLesson.videoSearchQueries = content.videoSearchQueries ?? [];
-            targetLesson.estimatedMinutes = content.estimatedMinutes;
-            targetLesson.status = "ready";
-          }
-        }
-
-        course.markModified("curriculum");
-        await course.save();
-
-        slot.status = "done";
-        job.completedLessonCount += 1;
-        job.lastEventId += 1;
-        await job.save();
-
-        const doneProgress = Math.round(
-          10 + ((job.completedLessonCount / job.totalLessonCount) * 80)
-        );
-
-        broadcast.send(
-          "lesson_done",
-          {
-            lessonId: slot.lessonId,
-            title: slot.title,
-            bloomsLevel: slot.bloomsLevel,
-            completedCount: job.completedLessonCount,
-            totalCount: job.totalLessonCount,
-            progress: doneProgress,
-          },
-          job.lastEventId
-        );
-
-        previousLessonTitles.push(les.title);
-        succeeded = true;
-        break;
-      } catch (err) {
-        console.warn(
-          `[jobRunner] Lesson "${les.title}" attempt ${attempt + 1} failed:`,
-          err
-        );
-        slot.error = err instanceof Error ? err.message : String(err);
+      const mod = outline.modules[slot.moduleIndex];
+      const les = mod?.lessons[slot.lessonIndex];
+      if (!mod || !les) {
+        logger.warn({ lessonId: slot.lessonId }, "[jobRunner] Missing outline data for slot");
+        slot.status = "failed";
+        slot.error = "Missing outline data";
+        return;
       }
-    }
 
-    if (!succeeded) {
-      slot.status = "failed";
+      slot.status = "generating";
       job.lastEventId += 1;
       await job.save();
 
+      const progress = Math.round(
+        10 + ((job.completedLessonCount / job.totalLessonCount) * 80)
+      );
+
       broadcast.send(
-        "lesson_failed",
+        "lesson_started",
         {
           lessonId: slot.lessonId,
           title: slot.title,
-          error: slot.error ?? "Unknown error",
-          isFatal: false,
+          bloomsLevel: slot.bloomsLevel,
+          moduleIndex: slot.moduleIndex,
+          lessonIndex: slot.lessonIndex,
+          progress,
         },
         job.lastEventId
       );
 
-      // Continue with remaining lessons — non-fatal
-      previousLessonTitles.push(les.title);
-    }
-  }
+      // Context: titles of all lessons ordered before this one
+      const previousTitles = allSlotTitles.slice(0, slotIndex);
 
-  // ── Phase: enrichment (videos — soft dependency) ──────────────────────
+      let succeeded = false;
+
+      for (let attempt = 0; attempt < MAX_LESSON_ATTEMPTS; attempt++) {
+        try {
+          slot.attempts += 1;
+          logger.info(
+            { lessonTitle: les.title, attempt: attempt + 1 },
+            "[jobRunner] Generating lesson"
+          );
+
+          const content = await generateLessonContent(
+            les,
+            mod,
+            outline,
+            onboardingData,
+            sourceReferences,
+            previousTitles,
+            preloadedBookContexts
+          );
+
+          // Save lesson content atomically — no full-document reload/save race
+          const prefix = `curriculum.${slot.moduleIndex}.lessons.${slot.lessonIndex}`;
+          await Course.updateOne(
+            { _id: course._id },
+            {
+              $set: {
+                [`${prefix}.contentMarkdown`]: content.contentMarkdown,
+                [`${prefix}.keyTakeaways`]: content.keyTakeaways,
+                [`${prefix}.citations`]: content.citations,
+                [`${prefix}.quiz`]: (content.quiz ?? []).map((q) => ({
+                  questionId: q.questionId,
+                  prompt: q.prompt,
+                  expectedConcepts: q.expectedConcepts,
+                  remediationTip: q.remediationTip,
+                })),
+                [`${prefix}.exercises`]: content.exercises ?? [],
+                [`${prefix}.videoSearchQueries`]: content.videoSearchQueries ?? [],
+                [`${prefix}.estimatedMinutes`]: content.estimatedMinutes,
+                [`${prefix}.status`]: "ready",
+              },
+            }
+          );
+
+          slot.status = "done";
+          job.completedLessonCount += 1;
+          job.lastEventId += 1;
+          await job.save();
+
+          const doneProgress = Math.round(
+            10 + ((job.completedLessonCount / job.totalLessonCount) * 80)
+          );
+
+          broadcast.send(
+            "lesson_done",
+            {
+              lessonId: slot.lessonId,
+              title: slot.title,
+              bloomsLevel: slot.bloomsLevel,
+              completedCount: job.completedLessonCount,
+              totalCount: job.totalLessonCount,
+              progress: doneProgress,
+            },
+            job.lastEventId
+          );
+
+          succeeded = true;
+          break;
+        } catch (err) {
+          logger.warn(
+            { err, lessonTitle: les.title, attempt: attempt + 1 },
+            "[jobRunner] Lesson generation attempt failed"
+          );
+          slot.error = err instanceof Error ? err.message : String(err);
+        }
+      }
+
+      if (!succeeded) {
+        slot.status = "failed";
+        job.lastEventId += 1;
+        await job.save();
+
+        broadcast.send(
+          "lesson_failed",
+          {
+            lessonId: slot.lessonId,
+            title: slot.title,
+            error: slot.error ?? "Unknown error",
+            isFatal: false,
+          },
+          job.lastEventId
+        );
+      }
+    })
+  );
+
+  await Promise.allSettled(lessonTasks);
+
+  // ── Phase: enrichment (videos — parallel) ───────────────────────────
   job.currentPhase = "enrichment";
   await job.save();
 
+  // Re-read course to get latest videoSearchQueries written during parallel lesson gen
+  const freshCourse = await Course.findById(job.courseId);
+  const curriculum = (freshCourse?.curriculum ?? course.curriculum) as IGeneratedModule[];
+
   let enrichedCount = 0;
-  const curriculum = course.curriculum as IGeneratedModule[];
+  const videoLimit = pLimit(VIDEO_CONCURRENCY);
 
-  for (const slot of job.lessonSlots) {
-    if (slot.status !== "done") continue;
+  const videoTasks = job.lessonSlots
+    .filter((slot) => slot.status === "done")
+    .map((slot) =>
+      videoLimit(async () => {
+        const targetModule = curriculum[slot.moduleIndex];
+        if (!targetModule) return;
+        const targetLesson = targetModule.lessons[slot.lessonIndex];
+        if (!targetLesson) return;
 
-    const targetModule = curriculum[slot.moduleIndex];
-    if (!targetModule) continue;
-    const targetLesson = targetModule.lessons[slot.lessonIndex];
-    if (!targetLesson) continue;
+        const queries: string[] = (targetLesson.videoSearchQueries as string[] | undefined) ?? [];
+        if (queries.length === 0) {
+          const fallback = `${onboardingData.confirmedSubject || onboardingData.topic || ""} ${targetLesson.title} tutorial`.trim();
+          queries.push(fallback);
+        }
 
-    const queries: string[] = (targetLesson.videoSearchQueries as string[] | undefined) ?? [];
-    if (queries.length === 0) {
-      const fallback = `${onboardingData.confirmedSubject || onboardingData.topic || ""} ${targetLesson.title} tutorial`.trim();
-      queries.push(fallback);
-    }
+        try {
+          const refs = await fetchVideoReferencesForQueries(queries);
+          if (refs.length > 0) {
+            const prefix = `curriculum.${slot.moduleIndex}.lessons.${slot.lessonIndex}`;
+            await Course.updateOne(
+              { _id: course._id },
+              {
+                $set: {
+                  [`${prefix}.videoReferences`]: refs.map((r) => ({
+                    url: r.url,
+                    title: r.title,
+                    channelName: r.channelName,
+                    queryUsed: r.queryUsed,
+                  })),
+                  [`${prefix}.videoUrl`]: refs[0].url,
+                },
+              }
+            );
+            enrichedCount += 1;
+          }
+        } catch (err) {
+          logger.warn({ err, lessonTitle: targetLesson.title }, "[jobRunner] Video fetch skipped for lesson");
+        }
+      })
+    );
 
-    try {
-      const refs = await fetchVideoReferencesForQueries(queries);
-      if (refs.length > 0) {
-        targetLesson.videoReferences = refs.map((r) => ({
-          url: r.url,
-          title: r.title,
-          channelName: r.channelName,
-          queryUsed: r.queryUsed,
-        }));
-        targetLesson.videoUrl = refs[0].url;
-        enrichedCount += 1;
-      }
-    } catch (err) {
-      console.warn(`[jobRunner] Video fetch skipped for "${targetLesson.title}":`, err);
-    }
-  }
-
-  course.markModified("curriculum");
-  await course.save();
+  await Promise.allSettled(videoTasks);
 
   job.lastEventId += 1;
   await job.save();
@@ -477,32 +527,22 @@ export async function runJob(
   course.sourceReferences = sourceReferences;
   await course.save();
 
-  // Create enrollment
+  // Create or update enrollment atomically — prevents duplicate-insert race
   const firstLesson = findFirstReadyLesson(curriculum);
-  const existingEnrollment = await Enrollment.findOne({
-    userId: job.userId,
-    courseId: course._id,
-  });
-
-  if (!existingEnrollment && firstLesson) {
-    try {
-      await Enrollment.create({
-        userId: job.userId,
-        courseId: course._id,
-        status: "active",
-        progressPercent: 0,
-        currentLessonId: firstLesson,
-        completedLessonIds: [],
-        completedModuleQuizIds: [],
-      });
-    } catch (enrollErr: unknown) {
-      const mongoErr = enrollErr as { code?: number };
-      if (mongoErr.code !== 11000) throw enrollErr;
-      // Duplicate key — enrollment already exists, continue
-    }
-  } else if (existingEnrollment && !existingEnrollment.currentLessonId && firstLesson) {
-    existingEnrollment.currentLessonId = firstLesson;
-    await existingEnrollment.save();
+  if (firstLesson) {
+    await Enrollment.findOneAndUpdate(
+      { userId: job.userId, courseId: course._id },
+      {
+        $setOnInsert: {
+          status: "active",
+          progressPercent: 0,
+          currentLessonId: firstLesson,
+          completedLessonIds: [],
+          completedModuleQuizIds: [],
+        },
+      },
+      { upsert: true, new: true }
+    );
   }
 
   // Update user onboarding status
@@ -533,7 +573,7 @@ export async function runJob(
     failedLessonCount: failedCount,
   };
 
-  console.log("[jobRunner] Completed", completionData);
+  logger.info({ completionData }, "[jobRunner] Completed");
 
   broadcast.send("complete", completionData, job.lastEventId);
 }
@@ -550,12 +590,12 @@ export async function resumeOrphanedJobs(): Promise<void> {
 
   if (orphans.length === 0) return;
 
-  console.log(`[jobRunner] Resuming ${orphans.length} orphaned job(s)...`);
+  logger.info({ count: orphans.length }, "[jobRunner] Resuming orphaned job(s)");
 
   for (const job of orphans) {
-    console.log(`[jobRunner] Resuming job ${job._id.toString()}`);
+    logger.info({ jobId: job._id.toString() }, "[jobRunner] Resuming job");
     runJob(job._id.toString(), createNoOpBroadcaster()).catch((err) => {
-      console.error(`[jobRunner] Failed to resume job ${job._id.toString()}:`, err);
+      logger.error({ err, jobId: job._id.toString() }, "[jobRunner] Failed to resume job");
     });
   }
 }

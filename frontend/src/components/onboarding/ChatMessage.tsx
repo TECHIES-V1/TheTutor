@@ -6,6 +6,7 @@ import Link from "next/link";
 import { AlertTriangle, ArrowRight, RotateCcw } from "lucide-react";
 import { ChatInput } from "./ChatInput";
 import { MessageField } from "./MessageField";
+import { Iridescence } from "@/components/landing/iridescence";
 import { Message, RelatedCoursePreview } from "@/types";
 import { api } from "@/lib/api";
 import { BACKEND_URL } from "@/lib/backendUrl";
@@ -524,6 +525,13 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
   };
 
   const startGeneration = async (convId: string) => {
+    // Close any existing EventSource before starting a new one
+    if (jobStreamRef.current) {
+      jobStreamRef.current.close();
+      jobStreamRef.current = null;
+    }
+    jobIdRef.current = null;
+
     try {
       setConversationPhase("course_generation");
       setGenerationStatus("Discovering learning resources...");
@@ -568,15 +576,18 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
     const courseTitle = liveTitle || suggestedSubject || null;
 
     return (
-      <div className="relative flex h-full w-full overflow-hidden bg-background">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_30%_50%,rgba(212,175,55,0.07),transparent)]" />
+      <div className="relative flex h-full w-full flex-col overflow-hidden lg:flex-row">
+        {/* Iridescent WebGL background */}
+        <div className="pointer-events-none absolute inset-0 z-0">
+          <Iridescence speed={0.6} amplitude={0.08} mouseReact={false} />
+        </div>
 
-        {/* Left — main progress */}
-        <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-7 px-8 py-10">
+        {/* Main progress */}
+        <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-5 px-4 py-8 sm:gap-7 sm:px-8 sm:py-10">
 
           {/* SVG circular progress */}
-          <div className="relative flex h-28 w-28 shrink-0 items-center justify-center animate-in fade-in duration-700">
-            <svg viewBox="0 0 120 120" className="h-28 w-28 -rotate-90" aria-hidden="true">
+          <div className="relative flex h-24 w-24 shrink-0 items-center justify-center animate-in fade-in duration-700 sm:h-28 sm:w-28">
+            <svg viewBox="0 0 120 120" className="h-24 w-24 -rotate-90 sm:h-28 sm:w-28" aria-hidden="true">
               <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(212,175,55,0.12)" strokeWidth="8" />
               <circle
                 cx="60" cy="60" r="52" fill="none"
@@ -593,29 +604,29 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
               </defs>
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-2xl font-bold text-primary">{Math.round(generationProgress)}%</span>
-              <span className="text-[9px] uppercase tracking-widest text-muted-foreground/50">building</span>
+              <span className="text-xl font-bold text-primary sm:text-2xl">{Math.round(generationProgress)}%</span>
+              <span className="text-[8px] uppercase tracking-widest text-muted-foreground/50 sm:text-[9px]">building</span>
             </div>
           </div>
 
           {/* Course title + status */}
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-center space-y-1.5">
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-center space-y-1.5 px-2">
             {courseTitle ? (
-              <h2 className="text-xl font-semibold text-foreground">
+              <h2 className="text-lg font-semibold text-foreground sm:text-xl">
                 &ldquo;{courseTitle}&rdquo;
               </h2>
             ) : (
-              <h2 className="text-xl font-semibold text-foreground">Building your course</h2>
+              <h2 className="text-lg font-semibold text-foreground sm:text-xl">Building your course</h2>
             )}
-            <p className="text-sm text-muted-foreground">{generationStatus}</p>
+            <p className="text-xs text-muted-foreground sm:text-sm">{generationStatus}</p>
           </div>
 
           {/* Phase tracker */}
-          <div className="flex items-center gap-0 animate-in fade-in duration-700 delay-200">
+          <div className="flex flex-wrap items-center justify-center gap-1.5 animate-in fade-in duration-700 delay-200 sm:gap-0 sm:flex-nowrap">
             {genPhases.map((phase, i) => (
               <div key={phase.label} className="flex items-center">
                 <div
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition-all duration-500 ${
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-medium transition-all duration-500 sm:px-3 sm:py-1 sm:text-xs ${
                     i < activePhase
                       ? "bg-primary/15 text-primary border border-primary/25"
                       : i === activePhase
@@ -627,7 +638,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
                   {phase.label}
                 </div>
                 {i < genPhases.length - 1 && (
-                  <div className={`h-px w-4 shrink-0 transition-colors duration-500 ${i < activePhase ? "bg-primary/30" : "bg-border/20"}`} />
+                  <div className={`hidden h-px w-4 shrink-0 transition-colors duration-500 sm:block ${i < activePhase ? "bg-primary/30" : "bg-border/20"}`} />
                 )}
               </div>
             ))}
@@ -661,7 +672,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
         </div>
 
         {/* Right — curriculum panel (desktop) */}
-        <div className="relative z-10 hidden w-72 shrink-0 flex-col border-l border-border/40 bg-card/50 backdrop-blur-sm lg:flex">
+        <div className="relative z-10 hidden w-72 shrink-0 flex-col border-l border-border/40 bg-card/60 backdrop-blur-md lg:flex">
           <div className="flex-shrink-0 border-b border-border/40 px-5 py-4">
             <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-muted-foreground/50">Course Outline</p>
           </div>
@@ -716,7 +727,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
 
         {/* Mobile curriculum chips */}
         {curriculumModules.length > 0 && (
-          <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-border/40 bg-card/80 backdrop-blur-sm px-4 py-3 lg:hidden">
+          <div className="relative z-20 border-t border-border/40 bg-card/80 backdrop-blur-md px-4 py-3 lg:hidden">
             <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground/50">Course Outline</p>
             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
               {curriculumModules.map((mod) => (

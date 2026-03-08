@@ -1,4 +1,5 @@
 import { getUpstashRedisClient } from "../../config/upstashRedis";
+import { logger } from "../../config/logger";
 
 const CACHE_PREFIX = "thetutor:chat:v1";
 
@@ -31,7 +32,7 @@ async function getJSON<T>(key: string): Promise<T | null> {
   try {
     return (await redis.get<T>(key)) ?? null;
   } catch (error) {
-    console.error(`[cache] Failed to read key "${key}"`, error);
+    logger.error({ err: error, key }, "[cache] Failed to read key");
     return null;
   }
 }
@@ -43,7 +44,7 @@ async function setJSON<T>(key: string, value: T, ttlSeconds: number): Promise<vo
   try {
     await redis.set(key, value, { ex: ttlSeconds });
   } catch (error) {
-    console.error(`[cache] Failed to write key "${key}"`, error);
+    logger.error({ err: error, key }, "[cache] Failed to write key");
   }
 }
 
@@ -54,7 +55,7 @@ async function deleteKeys(keys: string[]): Promise<void> {
   try {
     await redis.del(...keys);
   } catch (error) {
-    console.error("[cache] Failed to delete keys", keys, error);
+    logger.error({ err: error, keys }, "[cache] Failed to delete keys");
   }
 }
 

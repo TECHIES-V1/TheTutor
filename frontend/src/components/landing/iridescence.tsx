@@ -33,6 +33,10 @@ uniform vec3 uResolution;
 uniform vec2 uMouse;
 uniform float uAmplitude;
 uniform float uSpeed;
+uniform vec3 uBaseLow;
+uniform vec3 uBaseHigh;
+uniform vec3 uGold;
+uniform float uGoldStrength;
 
 varying vec2 vUv;
 
@@ -73,6 +77,29 @@ void main() {
 }
 `;
 
+// Light mode: warm beige base with gold iridescence
+const LIGHT_PALETTE = {
+  clearColor: [0.97, 0.96, 0.94] as [number, number, number],    // #f8f5f0
+  baseLow: [0.96, 0.95, 0.93],                                     // off-white
+  baseHigh: [0.99, 0.98, 0.96],                                    // near-white
+  gold: [0.83, 0.69, 0.23],                                        // #D4AF37
+  goldStrength: 0.55,
+};
+
+// Dark mode: deep black base with gold glow (#0a0a0a theme)
+const DARK_PALETTE = {
+  clearColor: [0.027, 0.025, 0.020] as [number, number, number],  // #070605
+  baseLow: [0.022, 0.020, 0.016],                                  // deep black
+  baseHigh: [0.055, 0.048, 0.035],                                 // very dark brown
+  gold: [0.83, 0.69, 0.23],                                        // #D4AF37
+  goldStrength: 0.45,
+};
+
+function getTheme(): "light" | "dark" {
+  if (typeof document === "undefined") return "light";
+  return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+}
+
 export function Iridescence({
   color = [1, 1, 1],
   speed = 1.0,
@@ -90,19 +117,11 @@ export function Iridescence({
 
     const renderer = new Renderer();
     const gl = renderer.gl;
-    gl.clearColor(1, 1, 1, 1);
+
+    const palette = getTheme() === "dark" ? DARK_PALETTE : LIGHT_PALETTE;
+    gl.clearColor(...palette.clearColor, 1);
 
     const geometry = new Triangle(gl);
-
-    function resize() {
-      const scale = 1;
-      renderer.setSize(containerEl.offsetWidth * scale, containerEl.offsetHeight * scale);
-      program.uniforms.uResolution.value = new Color(
-        gl.canvas.width,
-        gl.canvas.height,
-        gl.canvas.width / gl.canvas.height
-      );
-    }
 
     const program = new Program(gl, {
       vertex: vertexShader,
@@ -116,14 +135,42 @@ export function Iridescence({
         uMouse: { value: new Float32Array([mouseRef.current.x, mouseRef.current.y]) },
         uAmplitude: { value: amplitude },
         uSpeed: { value: speed },
+        uBaseLow: { value: new Color(...palette.baseLow) },
+        uBaseHigh: { value: new Color(...palette.baseHigh) },
+        uGold: { value: new Color(...palette.gold) },
+        uGoldStrength: { value: palette.goldStrength },
       },
     });
+
+    function resize() {
+      const scale = 1;
+      renderer.setSize(containerEl.offsetWidth * scale, containerEl.offsetHeight * scale);
+      program.uniforms.uResolution.value = new Color(
+        gl.canvas.width,
+        gl.canvas.height,
+        gl.canvas.width / gl.canvas.height
+      );
+    }
 
     const mesh = new Mesh(gl, { geometry, program });
     resize();
 
     const handleResize = () => resize();
     window.addEventListener("resize", handleResize);
+
+    // Watch for theme changes via MutationObserver
+    const observer = new MutationObserver(() => {
+      const p = getTheme() === "dark" ? DARK_PALETTE : LIGHT_PALETTE;
+      gl.clearColor(...p.clearColor, 1);
+      (program.uniforms.uBaseLow.value as Color).set(...p.baseLow);
+      (program.uniforms.uBaseHigh.value as Color).set(...p.baseHigh);
+      (program.uniforms.uGold.value as Color).set(...p.gold);
+      program.uniforms.uGoldStrength.value = p.goldStrength;
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
 
     let frame = 0;
     const animate = (time: number) => {
@@ -150,6 +197,7 @@ export function Iridescence({
 
     return () => {
       cancelAnimationFrame(frame);
+      observer.disconnect();
       window.removeEventListener("resize", handleResize);
       if (mouseReact) {
         containerEl.removeEventListener("mousemove", handleMouseMove);

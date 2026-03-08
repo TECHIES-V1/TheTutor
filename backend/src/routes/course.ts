@@ -8,8 +8,10 @@ import { GenerationJob } from "../models/GenerationJob";
 import "../models/Resource"; // Ensure it is registered for population
 import { startGenerationJob } from "../services/course/jobRunner";
 import { registerClient, unregisterClient, getBroadcaster } from "../services/sse/broadcaster";
+import { generateLimiter } from "../middleware/rateLimiter";
 import { gradeOpenEndedAnswer } from "../services/ai/grader";
 import type { GenerateCourseRequest, UpdateProgressRequest } from "../types";
+import { logger } from "../config/logger";
 
 const router = Router();
 
@@ -19,6 +21,7 @@ const router = Router();
 router.post(
   "/generate",
   requireAuth,
+  generateLimiter,
   async (req: Request, res: Response) => {
     try {
       const { conversationId } = req.body as GenerateCourseRequest;
@@ -29,12 +32,12 @@ router.post(
         return;
       }
 
-      console.log("[course/generate] conversationId:", conversationId, "userId:", userId);
+      logger.info({ conversationId, userId }, "[course/generate] Starting generation");
 
       const jobId = await startGenerationJob(conversationId, userId);
       res.json({ jobId });
     } catch (error) {
-      console.error("[course/generate] Error:", error);
+      logger.error({ err: error }, "[course/generate] Error");
       const message = error instanceof Error ? error.message : "Failed to start generation";
       const status = message.includes("not found") ? 404 : message.includes("phase") ? 400 : 500;
       res.status(status).json({ error: message, code: "AI_ERROR" });
@@ -90,7 +93,7 @@ router.get(
         errorMessage: job.errorMessage,
       });
     } catch (error) {
-      console.error("[jobs/status] Error:", error);
+      logger.error({ err: error }, "[jobs/status] Error");
       res.status(500).json({ error: "Failed to get job status", code: "DB_ERROR" });
     }
   }
@@ -247,7 +250,7 @@ router.get(
 
       res.json({ conversationId, status, phase: conversation.phase, courseId, jobId });
     } catch (error) {
-      console.error("Generation status error:", error);
+      logger.error({ err: error }, "Generation status error");
       res.status(500).json({ error: "Failed to get status", code: "DB_ERROR" });
     }
   }
@@ -299,7 +302,7 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
       offset: offsetNum,
     });
   } catch (error) {
-    console.error("List courses error:", error);
+    logger.error({ err: error }, "List courses error");
     res.status(500).json({ error: "Failed to list courses", code: "DB_ERROR" });
   }
 });
@@ -377,7 +380,7 @@ router.get("/:id", requireAuth, async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("Get course error:", error);
+    logger.error({ err: error }, "Get course error");
     res.status(500).json({ error: "Failed to get course", code: "DB_ERROR" });
   }
 });
@@ -469,7 +472,7 @@ router.post(
         quizCompleted: quiz.isCompleted,
       });
     } catch (error) {
-      console.error("Answer question error:", error);
+      logger.error({ err: error }, "Answer question error");
       res.status(500).json({ error: "Failed to answer question", code: "DB_ERROR" });
     }
   }
@@ -593,7 +596,7 @@ router.put("/:id/progress", requireAuth, async (req: Request, res: Response) => 
       courseCompleted,
     });
   } catch (error) {
-    console.error("Update progress error:", error);
+    logger.error({ err: error }, "Update progress error");
     res.status(500).json({ error: "Failed to update progress", code: "DB_ERROR" });
   }
 });

@@ -1,3 +1,5 @@
+import { logger } from "./logger";
+
 interface CacheSetOptions {
   ex?: number;
 }
@@ -77,7 +79,7 @@ function buildRedisClient(): UpstashRedisClient | null {
 
   if (!url || !token) {
     if (!hasWarnedAboutRedisConfig) {
-      console.warn(
+      logger.warn(
         "[cache] Upstash Redis is not configured. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN to enable cache."
       );
       hasWarnedAboutRedisConfig = true;

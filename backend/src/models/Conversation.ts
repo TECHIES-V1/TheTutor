@@ -101,6 +101,9 @@ const ConversationSchema = new Schema<IConversation>(
 );
 
 ConversationSchema.index({ userId: 1, status: 1 });
+ConversationSchema.index({ userId: 1, phase: 1 });
+ConversationSchema.index({ activeJobId: 1 });
+ConversationSchema.index({ courseId: 1 });
 
 export const Conversation = mongoose.model<IConversation>(
   "Conversation",

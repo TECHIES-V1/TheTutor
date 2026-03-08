@@ -125,7 +125,7 @@ export default function ModuleQuizPage() {
               <div className="flex items-start gap-3">
                 <div className="min-w-0 flex-1">
                   <p className="text-xs uppercase tracking-wide text-primary/80">Module Checkpoint</p>
-                  <h1 className="mt-2 text-2xl font-bold text-foreground sm:text-3xl">{quizData.title}</h1>
+                  <h1 className="mt-2 text-xl font-bold text-foreground sm:text-2xl">{quizData.title}</h1>
                 </div>
                 <button
                   onClick={toggleCoursePanel}
@@ -186,7 +186,7 @@ export default function ModuleQuizPage() {
             {result && (
               <section className="neo-surface rounded-3xl p-6 border-0 sm:border">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="text-2xl font-bold text-foreground">Module Feedback</h2>
+                  <h2 className="text-xl font-bold text-foreground">Module Feedback</h2>
                   <span
                     className={`rounded-full border px-3 py-1 text-sm ${
                       result.passed

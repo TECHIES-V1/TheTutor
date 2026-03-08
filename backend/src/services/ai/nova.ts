@@ -4,6 +4,7 @@ import { getModel, GENERATION_CONFIG, STREAMING_CONFIG, MCP_DISCOVERY_CONFIG } f
 import {
   getOnboardingSystemPrompt,
   getBookFilteringPrompt,
+  getTextbookSearchQueriesPrompt,
   getSubjectFromConversationPrompt,
   getOnboardingDataExtractionPrompt,
   getToolAwareGenerationPrompt,
@@ -16,6 +17,7 @@ import type {
 } from "../../types";
 import type { IMessage } from "../../models/Conversation";
 import { getMCPTools, closeMCPClient } from "../mcp/mcpClient";
+import { logger } from "../../config/logger";
 
 // ── Chat (Non-streaming for onboarding) ───────────────────────────────────
 
@@ -73,7 +75,7 @@ export async function extractOnboardingDataFromConversation(messages: IMessage[]
     const match = result.text.match(/\{[\s\S]*\}/);
     if (match) return JSON.parse(match[0]);
   } catch {
-    console.error("Failed to parse onboarding data extraction:", result.text);
+    logger.error({ text: result.text }, "Failed to parse onboarding data extraction");
   }
 
   return { level: "beginner", hoursPerWeek: 5, goal: "build practical skills" };
@@ -113,7 +115,33 @@ export async function filterBooks(
     }
     return [];
   } catch {
-    console.error("Failed to parse book filter result:", result.text);
+    logger.error({ text: result.text }, "Failed to parse book filter result");
+    return [];
+  }
+}
+
+// ── Generate Textbook Search Queries ──────────────────────────────────────
+
+export async function generateTextbookSearchQueries(
+  topic: string,
+  level: string
+): Promise<string[]> {
+  try {
+    const result = await generateText({
+      model: getModel(),
+      prompt: getTextbookSearchQueriesPrompt(topic, level),
+      maxOutputTokens: 256,
+      temperature: 0.7,
+    });
+
+    const jsonMatch = result.text.match(/\[[\s\S]*\]/);
+    if (jsonMatch) {
+      const queries = JSON.parse(jsonMatch[0]) as string[];
+      return queries.filter((q) => typeof q === "string" && q.trim().length > 0).map((q) => q.trim());
+    }
+    return [];
+  } catch (err) {
+    logger.error({ err }, "Failed to generate textbook search queries");
     return [];
   }
 }

@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { generateText } from "ai";
 import { getModel, OUTLINE_CONFIG } from "../../config/ai";
 import type { OnboardingData } from "../../types/index";
+import { logger } from "../../config/logger";
 
 export interface OutlineLesson {
   lessonId: string;
@@ -156,13 +157,13 @@ export async function generateCourseOutline(
     // Try extracting JSON object from response
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      console.error("[outline] Raw AI response:", result.text.slice(0, 500));
+      logger.error({ text: result.text.slice(0, 500) }, "[outline] Raw AI response");
       throw new Error("outline_parse_failed: No JSON object found in response");
     }
     try {
       parsed = JSON.parse(jsonMatch[0]);
     } catch (e) {
-      console.error("[outline] JSON parse error:", e);
+      logger.error({ err: e }, "[outline] JSON parse error");
       throw new Error("outline_parse_failed: Invalid JSON in response");
     }
   }
@@ -208,9 +209,9 @@ export async function generateCourseOutline(
     }),
   };
 
-  console.log(
-    `[outline] Generated: "${outline.title}" — ${outline.modules.length} modules, ` +
-    `${outline.modules.reduce((sum, m) => sum + m.lessons.length, 0)} lessons`
+  logger.info(
+    { title: outline.title, moduleCount: outline.modules.length, lessonCount: outline.modules.reduce((sum, m) => sum + m.lessons.length, 0) },
+    "[outline] Generated outline"
   );
 
   return outline;

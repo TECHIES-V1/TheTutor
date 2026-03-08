@@ -10,6 +10,7 @@ import {
   extractOnboardingDataFromConversation,
 } from "../services/ai/nova";
 import type { ModelMessage } from "ai";
+import { aiLimiter } from "../middleware/rateLimiter";
 import {
   cacheActiveConversation,
   cacheConversationById,
@@ -21,6 +22,7 @@ import {
   invalidateConversationCaches,
   invalidateUserConversationCaches,
 } from "../services/cache/chatCache";
+import { logger } from "../config/logger";
 
 const router = Router();
 
@@ -70,10 +72,6 @@ type ConversationsListResponse = {
   }>;
 };
 
-function escapeRegex(input: string): string {
-  return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 function toSearchTerms(subject: string): string[] {
   const normalized = subject.trim();
   if (!normalized) return [];
@@ -110,52 +108,38 @@ async function findRelatedPublishedCourses(subject: string): Promise<RelatedCour
   const terms = toSearchTerms(subject);
   if (terms.length === 0) return [];
 
-  const searchConditions = terms.flatMap((term) => {
-    const pattern = escapeRegex(term);
-    return [
-      { title: { $regex: pattern, $options: "i" } },
-      { subject: { $regex: pattern, $options: "i" } },
-      { topic: { $regex: pattern, $options: "i" } },
-      { description: { $regex: pattern, $options: "i" } },
-    ];
-  });
+  const searchText = terms.join(" ");
 
-  const related = await Course.find({
-    visibility: "published",
-    status: { $in: ["active", "completed"] },
-    $and: [
-      {
-        $or: [
-          { generationStatus: "ready" },
-          { generationStatus: { $exists: false } },
-        ],
-      },
-      {
-        $or: searchConditions,
-      },
-    ],
-  })
-    .sort({ updatedAt: -1 })
+  const related = await Course.find(
+    {
+      $text: { $search: searchText },
+      visibility: "published",
+      generationStatus: "ready",
+    },
+    { score: { $meta: "textScore" } }
+  )
+    .sort({ score: { $meta: "textScore" } })
     .limit(MAX_RELATED_COURSES)
-    .select("title description level ownerName curriculum modules");
+    .select("title description level ownerName curriculum modules")
+    .lean();
 
   return related.map((course) => ({
-    id: course._id.toString(),
+    id: String(course._id),
     title: String(course.title ?? "Untitled Course"),
     description: String(course.description ?? ""),
     level: String(course.level ?? ""),
-    authorName: String(course.ownerName ?? "Unknown Author"),
+    authorName: String((course as any).ownerName ?? "Unknown Author"),
     moduleCount: Array.isArray(course.curriculum) && course.curriculum.length > 0
       ? course.curriculum.length
-      : Array.isArray(course.modules)
-        ? course.modules.length
+      : Array.isArray((course as any).modules)
+        ? (course as any).modules.length
         : 0,
-    lessonCount: countLessons(course),
+    lessonCount: countLessons(course as any),
   }));
 }
 
 function toAIMessages(messages: IMessage[]): ModelMessage[] {
-  return messages.map((m) => ({
+  return messages.slice(-20).map((m) => ({
     role: m.role,
     content: m.content,
   }));
@@ -181,7 +165,7 @@ function toConversationPayload(conversation: IConversation): ConversationPayload
 
 // ── POST /chat/message ────────────────────────────────────────────────────
 
-router.post("/message", requireAuth, async (req: Request, res: Response) => {
+router.post("/message", requireAuth, aiLimiter, async (req: Request, res: Response) => {
   try {
     const { message, conversationId } = req.body as { message?: string; conversationId?: string };
     const userId = req.jwtUser!.userId;
@@ -201,7 +185,7 @@ router.post("/message", requireAuth, async (req: Request, res: Response) => {
       : null;
 
     if (!conversationId) {
-      console.log("[chat/message] No conversationId provided. Starting a fresh onboarding chat.");
+      logger.info("[chat/message] No conversationId provided. Starting a fresh onboarding chat.");
       await Conversation.updateMany(
         {
           userId: new Types.ObjectId(userId),
@@ -322,7 +306,7 @@ router.post("/message", requireAuth, async (req: Request, res: Response) => {
       suggestedSubject,
     });
   } catch (error) {
-    console.error("Chat error:", error);
+    logger.error({ err: error }, "Chat error");
     res.status(500).json({ error: "Failed to process message", code: "AI_ERROR" });
   }
 });
@@ -359,7 +343,7 @@ router.get("/conversations", requireAuth, async (req: Request, res: Response) =>
     await cacheConversationsList(userId, payload);
     res.json(payload);
   } catch (error) {
-    console.error("List conversations error:", error);
+    logger.error({ err: error }, "List conversations error");
     res.status(500).json({ error: "Failed to list conversations", code: "DB_ERROR" });
   }
 });
@@ -393,7 +377,7 @@ router.get("/conversation", requireAuth, async (req: Request, res: Response) => 
 
     res.json(payload);
   } catch (error) {
-    console.error("Get conversation error:", error);
+    logger.error({ err: error }, "Get conversation error");
     res.status(500).json({ error: "Failed to get conversation", code: "DB_ERROR" });
   }
 });
@@ -436,7 +420,7 @@ router.get("/conversation/:id", requireAuth, async (req: Request, res: Response)
 
     res.json(payload);
   } catch (error) {
-    console.error("Get conversation error:", error);
+    logger.error({ err: error }, "Get conversation error");
     res.status(500).json({ error: "Failed to get conversation", code: "DB_ERROR" });
   }
 });
@@ -478,7 +462,7 @@ router.post("/confirm-subject", requireAuth, async (req: Request, res: Response)
       conversation.markModified("onboardingData");
       conversation.phase = "resource_retrieval";
 
-      console.log("[confirm-subject] Saving phase=resource_retrieval for conversation", conversation._id.toString(), "subject:", subject);
+      logger.info({ conversationId: conversation._id.toString(), subject }, "[confirm-subject] Saving phase=resource_retrieval for conversation");
       const relatedCourses = await findRelatedPublishedCourses(subject);
       const discoveryMessage =
         relatedCourses.length > 0
@@ -506,12 +490,7 @@ router.post("/confirm-subject", requireAuth, async (req: Request, res: Response)
         cacheActiveConversation(userId, payload),
         cacheConversationById(userId, savedConversationId, payload),
       ]);
-      console.log(
-        "[confirm-subject] Saved. Phase is now:",
-        conversation.phase,
-        "relatedCourses:",
-        relatedCourses.length
-      );
+      logger.info({ phase: conversation.phase, relatedCoursesCount: relatedCourses.length }, "[confirm-subject] Saved");
 
       res.json({
         success: true,
@@ -544,7 +523,7 @@ router.post("/confirm-subject", requireAuth, async (req: Request, res: Response)
       });
     }
   } catch (error) {
-    console.error("Confirm subject error:", error);
+    logger.error({ err: error }, "Confirm subject error");
     res.status(500).json({ error: "Failed to confirm subject", code: "DB_ERROR" });
   }
 });
@@ -608,7 +587,7 @@ router.post("/restart", requireAuth, async (req: Request, res: Response) => {
       message: "Conversation restarted",
     });
   } catch (error) {
-    console.error("Restart error:", error);
+    logger.error({ err: error }, "Restart error");
     res.status(500).json({ error: "Failed to restart conversation", code: "DB_ERROR" });
   }
 });

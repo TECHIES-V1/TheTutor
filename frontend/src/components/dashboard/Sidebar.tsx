@@ -17,7 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -52,6 +52,7 @@ export function Sidebar({
   const { user, logout } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   const isCourseWorkspace =
     pathname.startsWith("/learn/") || /^\/explore\/[^/]+$/.test(pathname);
@@ -85,11 +86,28 @@ export function Sidebar({
     }
   };
 
+  // Close profile popup when clicking outside
+  useEffect(() => {
+    if (!profileOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [profileOpen]);
+
+  // Close profile popup on route change
+  useEffect(() => {
+    setProfileOpen(false);
+  }, [pathname]);
+
   const textReveal = cx(
     "overflow-hidden whitespace-nowrap transition-all duration-300",
     isCollapsed
-      ? "lg:max-w-0 lg:opacity-0"
-      : "max-w-[10rem] opacity-100"
+      ? "lg:max-w-0 lg:opacity-0 lg:pointer-events-none"
+      : "max-w-[12rem] opacity-100"
   );
 
   const linkBase = cx(
@@ -102,6 +120,7 @@ export function Sidebar({
 
   return (
     <>
+      {/* Mobile overlay */}
       <div
         className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
           isOpen ? "opacity-100" : "pointer-events-none opacity-0"
@@ -116,15 +135,18 @@ export function Sidebar({
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* Header */}
-        <div className="flex items-center gap-3 px-3 pt-5 pb-4">
+        {/* ── Header ── */}
+        <div className={cx(
+          "flex items-center border-b border-primary/10 pb-4 pt-5 transition-all duration-300",
+          isCollapsed ? "lg:justify-center lg:px-0 lg:gap-0 gap-3 px-3" : "gap-3 px-3"
+        )}>
           <button
             type="button"
             onClick={handleLogoClick}
             className={cx(
               "flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-primary/15 bg-primary/5 shadow-neo-card transition-all duration-300",
               isCollapsed
-                ? "h-10 w-10 cursor-pointer lg:h-9 lg:w-9"
+                ? "h-9 w-9 cursor-pointer"
                 : "h-9 w-9 cursor-default"
             )}
             aria-label={isCollapsed ? "Expand sidebar" : "Sidebar logo"}
@@ -132,17 +154,14 @@ export function Sidebar({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="TheTutor" className="h-full w-full object-contain p-1.5" />
           </button>
-          <span className={cx("font-playfair text-base font-bold text-primary", textReveal)}>
+          <span className={cx("font-playfair text-base font-bold text-primary", textReveal, isCollapsed && "lg:hidden")}>
             TheTutor
           </span>
-          <div className="ml-auto flex items-center gap-1">
+          <div className={cx("ml-auto flex items-center gap-1", textReveal, isCollapsed && "lg:hidden")}>
             <button
               type="button"
               onClick={onToggleCollapse}
-              className={cx(
-                "hidden rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-                isCollapsed ? "lg:hidden" : "lg:inline-flex"
-              )}
+              className="hidden rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:inline-flex"
               aria-label="Collapse sidebar"
             >
               <PanelLeftClose className="h-4 w-4" />
@@ -158,8 +177,8 @@ export function Sidebar({
           </div>
         </div>
 
-        {/* Nav */}
-        <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2 py-2">
+        {/* ── Nav ── */}
+        <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 py-3">
           {navItems.map((item) => {
             const active = isActive(pathname, item.href, item.exact);
             return (
@@ -190,7 +209,7 @@ export function Sidebar({
           })}
 
           {/* Separator */}
-          <div className="my-2 h-px bg-border/40" />
+          <div className="my-1.5 h-px bg-border/40" />
 
           {/* Create Course */}
           <Link
@@ -208,7 +227,7 @@ export function Sidebar({
             {pathname.startsWith("/create-course") && (
               <div className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />
             )}
-            <Plus className="h-4 w-4 shrink-0 text-primary" />
+            <Plus className="h-[1.125rem] w-[1.125rem] shrink-0 text-primary" />
             <span className={textReveal}>Create Course</span>
           </Link>
 
@@ -217,9 +236,7 @@ export function Sidebar({
             <div
               className={cx(
                 "mt-3 space-y-0.5 rounded-xl border border-primary/20 bg-primary/8 p-2 shadow-neo-inset",
-                isCollapsed
-                  ? "lg:hidden"
-                  : ""
+                isCollapsed ? "lg:hidden" : ""
               )}
             >
               <p className={cx("mb-1 px-2 text-[10px] font-semibold uppercase tracking-widest text-primary/60", textReveal)}>
@@ -253,9 +270,9 @@ export function Sidebar({
           )}
         </nav>
 
-        {/* Footer */}
+        {/* ── Footer ── */}
         {user && (
-          <div className="relative px-2 pb-3">
+          <div ref={profileRef} className="relative border-t border-primary/10 px-2 pb-3 pt-2">
             <button
               onClick={() => setProfileOpen((p) => !p)}
               className={cx(
@@ -325,9 +342,9 @@ export function Sidebar({
         )}
       </aside>
 
-      {/* Logout Confirmation Modal */}
+      {/* Logout Confirmation Modal — z-[60] to sit above sidebar z-50 */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="neo-surface mx-4 w-full max-w-sm rounded-2xl p-6">
             <h3 className="text-lg font-semibold text-foreground">Sign Out</h3>
             <p className="mt-2 text-sm text-muted-foreground">

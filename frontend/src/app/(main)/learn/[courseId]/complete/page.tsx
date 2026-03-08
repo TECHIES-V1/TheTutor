@@ -95,7 +95,7 @@ export default function CourseCompletePage() {
               <Award className="h-7 w-7 text-primary" />
             </div>
 
-            <h1 className="mt-4 text-center text-3xl font-bold text-foreground">Course Completion</h1>
+            <h1 className="mt-4 text-center text-2xl font-bold text-foreground">Course Completion</h1>
             <p className="mt-2 text-center text-sm text-muted-foreground">
               Finish the course and generate your completion certificate.
             </p>

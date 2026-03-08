@@ -1,8 +1,9 @@
 import { randomUUID } from "crypto";
 import { generateText } from "ai";
 import { getModel, LESSON_CONFIG } from "../../config/ai";
-import type { OnboardingData } from "../../types/index";
+import type { OnboardingData, BookContext } from "../../types/index";
 import type { OutlineLesson, OutlineModule, CourseOutline } from "./outline";
+import { logger } from "../../config/logger";
 
 export interface LessonContent {
   contentMarkdown: string;
@@ -120,7 +121,8 @@ function buildLessonPrompt(
   outline: CourseOutline,
   onboardingData: OnboardingData,
   sourceReferences: Array<{ title: string; authors: string[]; source: string }>,
-  previousLessonTitles: string[]
+  previousLessonTitles: string[],
+  bookContexts?: BookContext[]
 ): string {
   const { level, goal } = onboardingData;
   const genre = detectGenre(onboardingData.topic || "", goal || "");
@@ -139,6 +141,19 @@ function buildLessonPrompt(
     previousLessonTitles.length > 0
       ? `Previously covered: ${previousLessonTitles.join(", ")}.`
       : "This is the first lesson in the course.";
+
+  // Build reference material block from actual parsed book content
+  const referenceBlock =
+    bookContexts && bookContexts.length > 0
+      ? bookContexts
+          .map((book) => {
+            const chapters = book.relevantChapters
+              .map((ch) => `### ${ch.title}\n${ch.contentSnippet}`)
+              .join("\n\n");
+            return `## "${book.title}" by ${book.authors.join(", ") || "Unknown"}\n${chapters}`;
+          })
+          .join("\n\n---\n\n")
+      : "";
 
   return `You are an expert educator writing lesson content. Respond ONLY with a valid JSON object — no markdown fences, no explanation.
 
@@ -164,14 +179,28 @@ ${bloomsGuide}
 
 AVAILABLE SOURCES (for citations):
 ${sourcesBlock}
+${referenceBlock ? `
+REFERENCE MATERIAL FROM TEXTBOOKS:
+${referenceBlock}
 
+TEXTBOOK USAGE REQUIREMENT:
+You MUST incorporate content from the textbook excerpts above into your lesson. Specifically:
+- Draw facts, definitions, and explanations directly from the provided textbook material
+- Reference specific concepts, examples, or data points from the excerpts
+- Your citations MUST reference the textbook titles listed above
+- If the textbook content covers this lesson's topic, it should form the backbone of your explanation
+- Supplement with your own knowledge only where the textbook excerpts have gaps
+` : `
+NOTE: No textbook reference material is available. Generate from your own knowledge but do not fabricate citations to non-existent textbooks.
+`}
 CONTENT REQUIREMENTS:
 1. contentMarkdown: Minimum 1500 words. ${contentStructure}
    Use appropriate ## and ### headings. Write for the "${level || "beginner"}" level.
 
 2. keyTakeaways: 3-5 bullet points summarizing the most important concepts.
 
-3. citations: 1-3 citations from the sources list above (use real titles from the list).
+3. citations: 1-3 APA 7th edition citations from the sources list above (use real titles from the list).
+   Format: Author, A. B. (Year). *Title of work*. Publisher. https://doi.org/xxxxx
    If no sources available, use an empty array.
 
 4. quiz: 2-3 open-ended questions aligned to Bloom's Level ${lesson.bloomsLevel} (${bloomsName}).
@@ -225,7 +254,8 @@ export async function generateLessonContent(
   outline: CourseOutline,
   onboardingData: OnboardingData,
   sourceReferences: Array<{ title: string; authors: string[]; source: string }>,
-  previousLessonTitles: string[]
+  previousLessonTitles: string[],
+  bookContexts?: BookContext[]
 ): Promise<LessonContent> {
   const prompt = buildLessonPrompt(
     lesson,
@@ -233,7 +263,8 @@ export async function generateLessonContent(
     outline,
     onboardingData,
     sourceReferences,
-    previousLessonTitles
+    previousLessonTitles,
+    bookContexts
   );
 
   const result = await generateText({
@@ -271,13 +302,13 @@ export async function generateLessonContent(
   } catch {
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      console.error("[lessonGen] Raw response (first 500):", result.text.slice(0, 500));
+      logger.error({ text: result.text.slice(0, 500) }, "[lessonGen] Raw response (first 500)");
       throw new Error(`lesson_parse_failed: No JSON in response for "${lesson.title}"`);
     }
     try {
       parsed = JSON.parse(jsonMatch[0]);
     } catch (e) {
-      console.error("[lessonGen] JSON parse error:", e);
+      logger.error({ err: e }, "[lessonGen] JSON parse error");
       throw new Error(`lesson_parse_failed: Invalid JSON for "${lesson.title}"`);
     }
   }

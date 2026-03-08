@@ -442,6 +442,67 @@ Important: Never ask more than one question at a time. Never list your questions
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// TEXTBOOK SEARCH QUERY GENERATION — AI-powered query expansion
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function getTextbookSearchQueriesPrompt(
+  topic: string,
+  level: string
+): string {
+  const profile = classifySubject(topic);
+
+  const levelGuidance: Record<string, string> = {
+    beginner: "Include introductory and fundamentals-level queries. Prefer terms like 'introduction to', 'fundamentals', 'beginner', 'essentials'.",
+    intermediate: "Include both foundational and applied queries. Prefer terms like 'applied', 'practical', 'handbook', 'guide'.",
+    advanced: "Include specialised and research-level queries. Prefer terms like 'advanced', 'theory', 'analysis', 'comprehensive'.",
+  };
+
+  const domainSearchHints: Record<string, string> = {
+    "Programming & Software Development": "Open libraries rarely have books on specific frameworks (React, Next.js). Broaden to the parent language or paradigm (JavaScript, web development, software engineering). Classic CS textbooks work well.",
+    "Web Development": "Search for 'web design', 'HTML CSS', 'web development', 'internet programming'. Avoid framework-specific names.",
+    "AI & Machine Learning": "Search for 'artificial intelligence', 'machine learning', 'statistical learning', 'neural networks', 'pattern recognition', 'data science'.",
+    "Cybersecurity": "Search for 'computer security', 'network security', 'information security', 'cryptography'. Avoid tool-specific names.",
+    "Data Science & Analytics": "Search for 'statistics', 'data analysis', 'probability', 'data mining'. Broader math/stats terms work best.",
+    "Cloud & DevOps": "Search for 'operating systems', 'computer networks', 'systems administration', 'distributed systems'. Cloud-specific books are rare in open libraries.",
+    "Medicine & Clinical Sciences": "Search for 'medicine', 'anatomy', 'physiology', 'pathology'. Standard medical textbook terms work well.",
+    "Psychology & Mental Health": "Search for 'psychology', 'cognitive psychology', 'behavioural science', 'mental health', 'psychotherapy'.",
+    "Engineering": "Search for 'engineering', field-specific terms like 'electrical engineering', 'mechanics', 'thermodynamics'. Textbook language is very standard.",
+    "Mathematics": "Search for the exact branch: 'calculus', 'linear algebra', 'abstract algebra', 'real analysis', 'probability theory'.",
+    "Finance & Investment": "Search for 'finance', 'economics', 'accounting', 'investment', 'financial analysis'.",
+    "Marketing": "Search for 'marketing', 'advertising', 'consumer behaviour', 'public relations', 'business communication'.",
+    "Writing & Literature": "Search for 'writing', 'rhetoric', 'composition', 'literature', 'creative writing', 'english language'.",
+    "History": "Search for the specific era or region plus 'history'. General terms like 'world history', 'civilisation' also work.",
+    "Philosophy": "Search for the branch: 'ethics', 'logic', 'metaphysics', 'philosophy'. Philosopher names also work as queries.",
+    "default": "Use the broadest academic discipline name. Open libraries catalog books by traditional subject headings, not modern jargon.",
+  };
+
+  const hint = domainSearchHints[profile.domain] || domainSearchHints["default"];
+  const levelHint = levelGuidance[level] || levelGuidance["beginner"];
+
+  return `You are an expert research librarian specialising in ${profile.domain}. A student wants to learn "${topic}" at the "${level}" level.
+
+Your task: generate 5-8 search queries that will find relevant textbooks in Open Library, Project Gutenberg, and Standard Ebooks.
+
+CRITICAL RULES:
+- These are OLD-SCHOOL digital libraries — they have classic textbooks, not modern tutorials
+- ${hint}
+- ${levelHint}
+- Each query should be 1-3 words maximum — library search engines work best with short queries
+- Order from most specific to broadest (first query closest to topic, last query = parent discipline)
+- NEVER use branded names, framework versions, or marketing phrases
+- Think: "What would this topic be called in a university library catalog?"
+
+Examples:
+- Topic "neumorphism" → ["user interface design", "CSS design", "web design", "graphic design", "human computer interaction"]
+- Topic "React hooks" → ["JavaScript programming", "web development", "software engineering", "computer programming"]
+- Topic "machine learning" → ["machine learning", "artificial intelligence", "statistical learning", "pattern recognition", "data science", "probability statistics"]
+- Topic "anxiety management" → ["anxiety disorders", "cognitive therapy", "mental health", "psychology", "behavioural science"]
+- Topic "stock trading" → ["stock market", "investment", "financial analysis", "economics", "finance"]
+- Topic "guitar" → ["guitar instruction", "music theory", "musical instruments", "music education"]
+
+Respond with ONLY a JSON array of search query strings. No explanation, no markdown.`;
+}
+
 // BOOK FILTERING PROMPT — Subject-aware selection
 // ─────────────────────────────────────────────────────────────────────────────
 

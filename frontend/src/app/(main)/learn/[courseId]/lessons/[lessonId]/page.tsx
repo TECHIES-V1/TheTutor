@@ -10,8 +10,8 @@ import { ArrowRight, ArrowLeft, ChevronDown, PanelRightClose, PanelRightOpen } f
 import { useCoursePreview } from "@/hooks/useCoursePreview";
 import { CourseWorkspaceSidebar } from "@/components/course/CourseWorkspaceSidebar";
 import { useCoursePanelState } from "@/hooks/useCoursePanelState";
-import ReactMarkdown from "react-markdown";
 import { AiAssistantButton } from "@/components/course/AiAssistantButton";
+import { MarkdownContent } from "@/components/ui/markdown-content";
 import { PageLoader } from "@/components/ui/PageLoader";
 
 function toEmbedUrl(url: string) {
@@ -99,7 +99,7 @@ export default function LessonPage() {
                   <p className="text-xs font-medium uppercase tracking-widest text-primary/70">
                     {data.course.title}
                   </p>
-                  <h1 className="mt-1.5 text-2xl font-bold text-foreground sm:text-3xl">
+                  <h1 className="mt-1.5 text-xl font-bold text-foreground sm:text-2xl">
                     {data.lesson.title}
                   </h1>
                   {data.lesson.summary && (
@@ -120,35 +120,21 @@ export default function LessonPage() {
               </div>
 
               {/* Video */}
-              <div className="mt-5 overflow-hidden rounded-2xl border border-border/60">
-                <iframe
-                  src={toEmbedUrl(data.lesson.videoUrl)}
-                  title={data.lesson.title}
-                  className="aspect-video w-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
+              {data.lesson.videoUrl && (
+                <div className="mt-5 overflow-hidden rounded-2xl border border-border/60">
+                  <iframe
+                    src={toEmbedUrl(data.lesson.videoUrl)}
+                    title={data.lesson.title}
+                    className="aspect-video w-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              )}
 
               {/* Content */}
-              <div className="mt-6 space-y-4 text-sm leading-relaxed text-muted-foreground">
-                <ReactMarkdown
-                  components={{
-                    h1: (props) => <h1 className="mt-6 mb-2 font-playfair text-xl font-bold text-foreground" {...props} />,
-                    h2: (props) => <h2 className="mt-5 mb-2 font-playfair text-lg font-bold text-foreground" {...props} />,
-                    h3: (props) => <h3 className="mt-4 mb-2 text-base font-semibold text-foreground" {...props} />,
-                    h4: (props) => <h4 className="mt-3 mb-1 text-sm font-semibold text-foreground" {...props} />,
-                    p: (props) => <p className="mb-4" {...props} />,
-                    ul: (props) => <ul className="mb-4 ml-6 list-disc space-y-1" {...props} />,
-                    ol: (props) => <ol className="mb-4 ml-6 list-decimal space-y-1" {...props} />,
-                    li: (props) => <li {...props} />,
-                    blockquote: (props) => (
-                      <blockquote className="border-l-4 border-primary/50 pl-4 italic text-muted-foreground" {...props} />
-                    ),
-                  }}
-                >
-                  {data.lesson.contentMarkdown}
-                </ReactMarkdown>
+              <div className="mt-6 text-sm leading-relaxed text-muted-foreground">
+                <MarkdownContent>{data.lesson.contentMarkdown}</MarkdownContent>
               </div>
 
               {/* Video References */}

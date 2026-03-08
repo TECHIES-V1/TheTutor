@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import passport from "passport";
+import mongoose from "mongoose";
 
 import { connectDatabase } from "./config/database";
 import { configurePassport } from "./config/passport";
@@ -14,6 +15,8 @@ import courseRoutes from "./routes/course";
 import coursesRoutes from "./routes/courses";
 import dashboardRoutes from "./routes/dashboard";
 import { getFrontendBaseUrl } from "./config/publicUrls";
+import { requestLogger } from "./middleware/requestLogger";
+import { logger } from "./config/logger";
 
 const app = express();
 const PORT = process.env.PORT ?? 5000;
@@ -35,8 +38,9 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json());
+app.use(express.json({ limit: "50kb" }));
 app.use(cookieParser());
+app.use(requestLogger);
 
 // ── Passport (no sessions — JWT only) ──────────────────────────────────────
 configurePassport();
@@ -50,18 +54,25 @@ app.use("/course", courseRoutes);
 app.use("/courses", coursesRoutes);
 app.use("/dashboard", dashboardRoutes);
 
-app.get("/health", (_req, res) => res.json({ status: "ok" }));
+app.get("/health", (_req, res) => {
+  const dbState = mongoose.connection.readyState; // 1 = connected
+  res.status(dbState === 1 ? 200 : 503).json({
+    status: dbState === 1 ? "ok" : "degraded",
+    db: dbState === 1 ? "connected" : "disconnected",
+    uptime: process.uptime(),
+  });
+});
 
 // ── Start ───────────────────────────────────────────────────────────────────
 connectDatabase()
   .then(async () => {
     app.listen(PORT, () => {
-      console.log(`🚀 Backend running on http://localhost:${PORT}`);
+      logger.info(`Backend running on http://localhost:${PORT}`);
     });
     // Resume any generation jobs that were interrupted by a server restart
     await resumeOrphanedJobs();
   })
   .catch((err) => {
-    console.error("❌ MongoDB connection failed:", err.message);
+    logger.error({ err }, "MongoDB connection failed");
     process.exit(1);
   });

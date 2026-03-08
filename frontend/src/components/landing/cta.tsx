@@ -7,7 +7,7 @@ import Link from "next/link";
 
 export function CTA() {
   return (
-    <section id="cta" className="relative overflow-hidden border-y border-[#d4af37]/25 py-20 md:py-28">
+    <section id="cta" className="relative overflow-hidden border-y border-[#c9a227] py-20 md:py-28">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#0a0a0a] to-[#121212]" />
       <div className="pointer-events-none absolute inset-0 bg-[url('https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1400&q=80')] bg-cover bg-center opacity-15" />
 
@@ -20,8 +20,8 @@ export function CTA() {
           className="landing-surface mx-auto max-w-4xl rounded-3xl p-8 backdrop-blur-md md:p-12"
         >
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#b48b1d]">Ready To Begin</p>
-            <h2 className="mt-3 text-[25px] font-bold text-[#111111] md:text-5xl text-balance leading-tight">Build A Personalized Study Path Today</h2>
-          <p className="mx-auto mt-4 max-w-2xl text-base text-[#4f4f4f] md:text-[16px] text-[14px]">
+            <h2 className="mt-3 text-[25px] font-bold text-[#1a1a1a] md:text-5xl text-balance leading-tight">Build A Personalized Study Path Today</h2>
+          <p className="mx-auto mt-4 max-w-2xl text-base text-[#333333] md:text-[16px] text-[14px]">
             Ask your first question, get a tailored plan, and keep learning with a tutor that adapts to you.
           </p>
 

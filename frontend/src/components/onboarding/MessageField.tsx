@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { MessageProps } from "@/types";
 import { useAuth } from "@/components/providers/AuthProvider";
 import Link from "next/link";
+import { MarkdownContent } from "@/components/ui/markdown-content";
 
 export function MessageField({ role, content, relatedCourses = [] }: MessageProps) {
     const isUser = role === "user";
@@ -54,7 +55,7 @@ export function MessageField({ role, content, relatedCourses = [] }: MessageProp
                             : "rounded-2xl rounded-tl-sm border border-primary/15 bg-gradient-to-br from-card/80 to-card/40 px-3.5 py-2.5 text-foreground backdrop-blur-sm sm:px-4 sm:py-3"
                     )}
                 >
-                    {content}
+                    {isUser ? content : <MarkdownContent compact>{content}</MarkdownContent>}
                     {!isUser && relatedCourses.length > 0 && (
                         <div className="mt-3 space-y-2">
                             {relatedCourses.map((course) => (

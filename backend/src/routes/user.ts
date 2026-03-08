@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { User } from "../models/User";
 import { requireAuth, JwtPayload } from "../middleware/auth";
+import { logger } from "../config/logger";
 
 const router = Router();
 
@@ -43,7 +44,7 @@ router.put("/complete-onboarding", requireAuth, async (req: Request, res: Respon
     res.cookie("token", token, COOKIE_OPTIONS);
     res.json({ success: true });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Failed to complete onboarding");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -61,7 +62,7 @@ router.get("/profile", requireAuth, async (req: Request, res: Response) => {
 
     res.json(user);
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Failed to get user profile");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -93,7 +94,7 @@ router.patch("/preferences", requireAuth, async (req: Request, res: Response) =>
       preferences: user.preferences,
     });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Failed to update user preferences");
     res.status(500).json({ error: "Internal server error" });
   }
 });

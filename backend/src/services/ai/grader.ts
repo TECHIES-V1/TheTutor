@@ -1,6 +1,7 @@
 import { generateObject } from "ai";
 import { z } from "zod";
 import { getModel } from "../../config/ai";
+import { logger } from "../../config/logger";
 
 export async function gradeOpenEndedAnswer({
     question,
@@ -54,14 +55,10 @@ Evaluate the student's answer.`,
 
         return object;
     } catch (error) {
-        console.error("AI Grading Error:", error);
-        // Fallback if AI fails: naive check
-        const expected = (expectedAnswer || "").toLowerCase().trim();
-        const provided = (studentAnswer || "").toLowerCase().trim();
-        const isCorrect = expected === provided || provided.includes(expected);
+        logger.error({ err: error }, "AI Grading Error");
         return {
-            isCorrect,
-            feedback: "Answer recorded. (AI evaluation temporarily unavailable)",
+            isCorrect: false,
+            feedback: "Could not grade answer — please try again.",
         };
     }
 }

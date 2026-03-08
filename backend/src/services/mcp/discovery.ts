@@ -3,7 +3,7 @@ import {
   discoverySearch,
   fetchAndParse,
 } from "./client";
-import { filterBooks } from "../ai/nova";
+import { filterBooks, generateTextbookSearchQueries } from "../ai/nova";
 import { Resource } from "../../models/Resource";
 import type {
   DiscoveredBook,
@@ -11,6 +11,7 @@ import type {
   SSEEvent,
   OnboardingData,
 } from "../../types";
+import { logger } from "../../config/logger";
 
 // ── Discovery Pipeline ────────────────────────────────────────────────────
 
@@ -24,7 +25,35 @@ export async function* discoverAndParseBooks(
   onboardingData: OnboardingData
 ): AsyncGenerator<SSEEvent, DiscoveryResult> {
   const { topic, level, confirmedSubject } = onboardingData;
-  const searchQuery = confirmedSubject || topic || "";
+  // Use topic (what the user typed) for book search, NOT confirmedSubject (AI-generated course title)
+  const rawQuery = topic || confirmedSubject || "";
+
+  // Use AI to generate proper textbook search queries (e.g., "neumorphism" → ["CSS design patterns", "UI design", ...])
+  yield {
+    type: "status",
+    data: {
+      phase: "resource_retrieval",
+      message: "Generating textbook search queries...",
+    },
+  };
+
+  let aiQueries: string[] = [];
+  try {
+    aiQueries = await generateTextbookSearchQueries(rawQuery, level || "beginner");
+    logger.info({ aiQueries }, "[discovery] AI-generated search queries");
+  } catch (err) {
+    logger.warn({ err }, "[discovery] AI query generation failed, using raw topic");
+  }
+
+  // Build search attempts: AI queries first, then raw topic as fallback
+  const uniqueAttempts: string[] = [];
+  const seen = new Set<string>();
+  for (const q of [rawQuery, ...aiQueries]) {
+    const lower = q.toLowerCase().trim();
+    if (!lower || seen.has(lower)) continue;
+    seen.add(lower);
+    uniqueAttempts.push(q.trim());
+  }
 
   // Check MCP health first
   yield {
@@ -49,20 +78,26 @@ export async function* discoverAndParseBooks(
     throw new Error("MCP service unavailable");
   }
 
-  // Search for books
-  yield {
-    type: "status",
-    data: {
-      phase: "resource_retrieval",
-      message: `Searching for textbooks about "${searchQuery}"...`,
-      progress: 10,
-    },
-  };
+  // Search for books, retrying with broader keywords if no results
+  let searchResult = { books: [] as DiscoveredBook[] };
 
-  const searchResult = await discoverySearch({
-    query: searchQuery,
-    limit: 18,
-  });
+  for (const attempt of uniqueAttempts) {
+
+    yield {
+      type: "status",
+      data: {
+        phase: "resource_retrieval",
+        message: `Searching for textbooks about "${attempt}"...`,
+        progress: 10,
+      },
+    };
+
+    searchResult = await discoverySearch({ query: attempt, limit: 18 });
+
+    if (searchResult.books.length > 0) break;
+
+    logger.info({ query: attempt }, "[discovery] No results, retrying with broader keywords");
+  }
 
   yield {
     type: "resources",
@@ -97,7 +132,7 @@ export async function* discoverAndParseBooks(
   };
 
   const selectedIndices = await filterBooks(
-    searchQuery,
+    rawQuery,
     level || "beginner",
     searchResult.books
   );
@@ -267,7 +302,7 @@ export async function* discoverAndParseBooks(
         };
       }
     } catch (error) {
-      console.error(`Failed to parse ${book.title}:`, error);
+      logger.error({ err: error, bookTitle: book.title }, "Failed to parse book");
       yield {
         type: "parsing_progress",
         data: {

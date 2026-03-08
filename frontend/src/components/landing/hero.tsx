@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { Iridescence } from "./iridescence";
+import Squares from "@/components/Squares";
 
 const heroImages = [
   {
@@ -44,19 +44,19 @@ export function Hero() {
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           className="text-center lg:text-left"
         >
-          <div className="landing-inset inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#111111]">
+          <div className="landing-inset inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#1a1a1a]">
             AI Tutor
             <span className="rounded-full bg-[#d4af37]/20 px-2 py-0.5 text-[#8a6a09]">Personalized</span>
           </div>
 
-          <h1 className="mt-6 text-balance font-playfair text-3xl font-bold leading-tight text-[#111111] md:text-6xl lg:text-[3.25rem]">
+          <h1 className="mt-6 text-balance font-playfair text-3xl font-bold leading-tight text-[#1a1a1a] md:text-6xl lg:text-[3.25rem]">
             Learn Smarter With
-            <span className="block text-[#111111]">
+            <span className="block text-[#1a1a1a]">
               TheTutor
             </span>
           </h1>
 
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-[#3f3f3f] md:text-xl lg:mx-0">
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-[#333333] md:text-xl lg:mx-0">
             Build a learning plan that fits your pace, your goals, and your schedule. Learn with tutor guidance, structured modules, and instant feedback in one clean, calm learning workspace.
           </p>
 
@@ -79,7 +79,7 @@ export function Hero() {
             </Button>
           </div>
 
-          <div className="mt-9 grid grid-cols-1 gap-3 text-sm text-[#525252] sm:grid-cols-3">
+          <div className="mt-9 grid grid-cols-1 gap-3 text-sm text-[#333333] sm:grid-cols-3">
             {["Adaptive paths", "Live feedback", "Course certificates"].map((item) => (
               <div key={item} className="landing-inset motion-card flex items-center justify-center gap-2 rounded-xl px-3 py-2 lg:justify-start">
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-[#b48b1d]" />
@@ -96,7 +96,7 @@ export function Hero() {
           className="relative"
         >
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
-            <article className="landing-surface motion-card col-span-2 overflow-hidden rounded-3xl ring-1 ring-[#d4af37]/20 sm:col-span-1 sm:row-span-2">
+            <article className="landing-surface motion-card col-span-2 overflow-hidden rounded-3xl ring-1 ring-[#c9a227] sm:col-span-1 sm:row-span-2">
               <div className="relative h-48 sm:h-full sm:min-h-[26rem]">
                 <Image
                   src={heroImages[0].src}
@@ -107,7 +107,7 @@ export function Hero() {
                 />
               </div>
             </article>
-            <article className="landing-surface motion-card overflow-hidden rounded-3xl ring-1 ring-[#d4af37]/20">
+            <article className="landing-surface motion-card overflow-hidden rounded-3xl ring-1 ring-[#c9a227]">
               <div className="relative h-28 sm:h-52">
                 <Image
                   src={heroImages[1].src}
@@ -118,7 +118,7 @@ export function Hero() {
                 />
               </div>
             </article>
-            <article className="landing-surface motion-card overflow-hidden rounded-3xl ring-1 ring-[#d4af37]/20">
+            <article className="landing-surface motion-card overflow-hidden rounded-3xl ring-1 ring-[#c9a227]">
               <div className="relative h-28 sm:h-52">
                 <Image
                   src={heroImages[2].src}

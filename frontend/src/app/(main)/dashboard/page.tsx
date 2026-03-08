@@ -64,7 +64,7 @@ export default function DashboardPage() {
 
       <div className="relative z-10 mx-auto w-full max-w-7xl space-y-7 px-4 sm:px-6">
         <section className="neo-surface rounded-3xl p-4 sm:p-6">
-          <h3 className="text-xl sm:text-2xl font-bold text-foreground">
+          <h3 className="text-lg sm:text-xl font-bold text-foreground">
             {getTimeGreeting(overview?.greetingName ?? user?.name)}
           </h3>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -80,7 +80,7 @@ export default function DashboardPage() {
                     <Icon className="h-4 w-4 text-primary" />
                   </div>
                 </div>
-                <p className="mt-3 text-3xl font-bold text-foreground">{value}</p>
+                <p className="mt-3 text-2xl font-bold text-foreground">{value}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">{suffix}</p>
               </div>
             ))}
@@ -89,13 +89,13 @@ export default function DashboardPage() {
           <div className="mt-5 grid gap-3 grid-cols-1 md:grid-cols-2">
             <Link href="/dashboard/courses" className="card-leather motion-card rounded-2xl border border-primary/12 p-4">
               <p className="text-xs uppercase tracking-[0.12em] text-primary/75">Created Courses</p>
-              <p className="mt-2 text-2xl font-bold text-foreground">{overview?.ownedCourses.length ?? 0}</p>
+              <p className="mt-2 text-xl font-bold text-foreground">{overview?.ownedCourses.length ?? 0}</p>
               <p className="mt-1 text-sm text-muted-foreground">Manage authored courses and publishing.</p>
             </Link>
 
             <Link href="/dashboard/enrollments" className="card-leather motion-card rounded-2xl border border-primary/12 p-4">
               <p className="text-xs uppercase tracking-[0.12em] text-primary/75">Enrollments</p>
-              <p className="mt-2 text-2xl font-bold text-foreground">{overview?.enrolledCourses.length ?? 0}</p>
+              <p className="mt-2 text-xl font-bold text-foreground">{overview?.enrolledCourses.length ?? 0}</p>
               <p className="mt-1 text-sm text-muted-foreground">Continue learner courses and certificates.</p>
             </Link>
           </div>

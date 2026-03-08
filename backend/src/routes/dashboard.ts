@@ -6,6 +6,7 @@ import { Enrollment, IEnrollment } from "../models/Enrollment";
 import { Certificate } from "../models/Certificate";
 import { User } from "../models/User";
 import { flattenLessons, getTotalLessonCount } from "../services/courseUtils";
+import { logger } from "../config/logger";
 
 const router = Router();
 
@@ -132,9 +133,11 @@ router.get("/overview", requireAuth, async (req: Request, res: Response) => {
       ownerMatchFilters.push({ ownerId: userObjectId }, { userId: userObjectId });
     }
 
+    const courseProjection = "title description topic subject level goal ownerId ownerName userId visibility generationStatus accessModel sourceReferences curriculum updatedAt";
+
     const ownedCourses = await Course.find({
       $or: ownerMatchFilters,
-    }).sort({ updatedAt: -1 });
+    }).select(courseProjection).sort({ updatedAt: -1 });
     const ownedCourseIds = ownedCourses.map((course) => course._id);
 
     const ownedEnrollments = await Enrollment.find({
@@ -152,7 +155,7 @@ router.get("/overview", requireAuth, async (req: Request, res: Response) => {
     }).sort({ updatedAt: -1 });
     const externalCourseIds = externalEnrollments.map((enrollment) => enrollment.courseId);
     const externalCourses = externalCourseIds.length
-      ? await Course.find({ _id: { $in: externalCourseIds } })
+      ? await Course.find({ _id: { $in: externalCourseIds } }).select(courseProjection)
       : [];
     const externalCourseById = new Map<string, ICourse>();
     for (const course of externalCourses) {
@@ -161,7 +164,7 @@ router.get("/overview", requireAuth, async (req: Request, res: Response) => {
 
     const ownerNameById = await buildOwnerNameMap([...ownedCourses, ...externalCourses]);
 
-    const certificates = await Certificate.find({ userId });
+    const certificates = await Certificate.find({ userId }).select("courseId");
     const certificateCourseIds = new Set<string>(certificates.map((item) => String(item.courseId)));
 
     const ownedCards = ownedCourses.map((course) =>
@@ -214,7 +217,7 @@ router.get("/overview", requireAuth, async (req: Request, res: Response) => {
       enrolledCourses: enrolledCards,
     });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Failed to get dashboard overview");
     res.status(500).json({ error: "Internal server error" });
   }
 });
