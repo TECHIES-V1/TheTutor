@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 
 const navLinks = [
@@ -32,11 +31,10 @@ export function NavBar() {
   return (
     <>
       <nav
-        className={`fixed left-0 right-0 top-0 z-50 transition-all duration-300 ${
-          isScrolled
+        className={`fixed left-0 right-0 top-0 z-50 transition-all duration-300 ${isScrolled
             ? "bg-white/92 shadow-[0_10px_30px_-22px_rgba(17,17,17,0.35)] backdrop-blur-md"
             : "bg-transparent"
-        }`}
+          }`}
       >
         <div className="container flex items-center justify-between py-4">
           <Link href="/" className="flex items-center gap-2.5">
@@ -44,26 +42,28 @@ export function NavBar() {
             <img
               src="/logo.png"
               alt="TheTutor"
-              className="h-8 w-8 rounded-lg object-contain"
+              className="h-10 w-10 rounded-xl object-contain"
             />
-            <p className="font-playfair text-base font-bold text-[#1a1a1a] sm:text-lg">
-              TheTutor
-            </p>
+            <div>
+              <p className="font-playfair text-xl font-bold text-[#111111]">
+                TheTutor
+              </p>
+              <p className="text-[11px] uppercase tracking-[0.14em] text-[#595959]">
+                AI-Powered Learning Coach
+              </p>
+            </div>
           </Link>
 
-          <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 md:flex">
+          <div className="hidden items-center gap-8 lg:flex">
             {navLinks.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                className="rounded-full px-4 py-1.5 text-sm font-medium text-[#333333] transition-all hover:bg-[#f0f0ee] hover:text-[#b48b1d]"
+                className="text-sm font-semibold text-[#525252] transition-colors hover:text-[#b48b1d]"
               >
                 {link.label}
               </a>
             ))}
-          </div>
-
-          <div className="hidden md:flex">
             <Button
               asChild
               size="sm"
@@ -76,75 +76,79 @@ export function NavBar() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="h-8 w-8 rounded-full text-[#1a1a1a] hover:bg-[#f0f0ee] hover:text-[#8a6a09] md:hidden"
+            onClick={() => setIsSidebarOpen(true)}
+            className="text-[#111111] hover:bg-[#d4af37]/15 hover:text-[#8a6a09] lg:hidden"
           >
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.span
-                key={isSidebarOpen ? "close" : "open"}
-                initial={{ opacity: 0, rotate: -90 }}
-                animate={{ opacity: 1, rotate: 0 }}
-                exit={{ opacity: 0, rotate: 90 }}
-                transition={{ duration: 0.15 }}
-                className="flex items-center justify-center"
-              >
-                {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </motion.span>
-            </AnimatePresence>
+            <Menu className="h-6 w-6" />
           </Button>
-        </motion.div>
+        </div>
       </nav>
 
-      <AnimatePresence>
-        {isSidebarOpen && (
-          <>
-            <motion.button
-              type="button"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+      {isSidebarOpen && (
+        <>
+          <button
+            type="button"
+            onClick={() => setIsSidebarOpen(false)}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm lg:hidden"
+            aria-label="Close menu"
+          />
+          <div className="landing-surface fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-[85vw] flex-col border-l border-[#d4af37]/35 p-6 sm:max-w-sm lg:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setIsSidebarOpen(false)}
-              className="fixed inset-0 z-50 md:hidden"
-              aria-label="Close menu"
-            />
-            <motion.div
-              initial={{ opacity: 0, y: -12, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.97 }}
-              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-              className="fixed left-4 right-4 top-[4.5rem] z-50 mx-auto max-w-3xl rounded-2xl border-[1.5px] border-[#c9a227] bg-[#fafaf8]/95 p-5 shadow-[6px_6px_14px_rgba(200,200,195,0.45),-6px_-6px_14px_rgba(255,255,255,0.7)] backdrop-blur-xl md:hidden"
+              className="absolute top-2 right-4 text-[#595959] hover:bg-[#d4af37]/15 hover:text-[#8a6a09]"
             >
-              <div className="flex flex-col gap-2">
-                {navLinks.map((link) => (
-                  <a
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setIsSidebarOpen(false)}
-                    className="rounded-xl px-4 py-3 text-base font-medium text-[#333333] transition-all hover:bg-[#f0f0ee] hover:text-[#b48b1d]"
-                  >
-                    {link.label}
-                  </a>
-                ))}
-              </div>
+              <X className="h-8 w-6" />
+            </Button>
 
-              <div className="mt-3 border-t border-[#c9a227]/30 pt-4">
-                <Button
-                  asChild
-                  size="lg"
-                  className="landing-gold w-full rounded-full hover:!opacity-100"
-                >
-                  <Link
-                    href="/auth/signin"
-                    onClick={() => setIsSidebarOpen(false)}
-                  >
-                    Start Learning
-                  </Link>
-                </Button>
+            <div className="mb-10 mt-5 flex items-center gap-2.5">
+              <div className="flex items-center gap-2.5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/logo.png"
+                  alt="TheTutor"
+                  className="h-10 w-10 rounded-xl object-contain"
+                />
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+              <div>
+                <p className="font-playfair text-xl font-bold text-[#111111]">
+                  TheTutor
+                </p>
+                <p className="text-[11px] uppercase tracking-[0.14em] text-[#595959]">
+                  AI-Powered Learning Coach
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-5">
+              {navLinks.map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setIsSidebarOpen(false)}
+                  className="border-b border-[#d4af37]/25 pb-4 text-base font-semibold text-[#525252] transition-colors hover:text-[#b48b1d]"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+
+            <Button
+              asChild
+              size="lg"
+              className="landing-gold mt-8 rounded-full hover:!opacity-100"
+            >
+              <Link
+                href="/auth/signin"
+                onClick={() => setIsSidebarOpen(false)}
+              >
+                Start Learning
+              </Link>
+            </Button>
+          </div>
+        </>
+      )}
     </>
   );
 }
