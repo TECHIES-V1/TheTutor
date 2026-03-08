@@ -34,11 +34,11 @@ const config: Config = {
         },
         // Gold scale
         gold: {
-          300: "#F5D868",
-          400: "#d4b85c",
-          500: "#D4AF37",
-          600: "#C9A227",
-          700: "#A67C00",
+          300: "#e8c84a",
+          400: "#d4af37",
+          500: "#b8920e",
+          600: "#a07a0a",
+          700: "#8a6d0a",
         },
         // Cream text scale
         cream: {

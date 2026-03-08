@@ -2,8 +2,8 @@
 @config "../../tailwind.config.ts";
 
 :root {
-  --primary: #c9a832;
-  --primary-foreground: #faf5ea;
+  --primary: #b8920e;
+  --primary-foreground: #fff8e6;
   --secondary: #3d3428;
   --secondary-foreground: #f7f2e5;
   --background: #e8e0d4;
@@ -13,24 +13,24 @@
   --popover: rgba(255, 255, 255, 0.6);
   --popover-foreground: #3d3428;
   --muted: #d9d0c3;
-  --muted-foreground: #6b5b3e;
-  --accent: #d4b85c;
+  --muted-foreground: #5a4d3a;
+  --accent: #c9a227;
   --accent-foreground: #3d3428;
   --destructive: #c54848;
   --destructive-foreground: #ffffff;
-  --border: rgba(220, 192, 95, 0.35);
+  --border: rgba(185, 146, 14, 0.45);
   --input: rgba(255, 255, 255, 0.45);
-  --ring: #d4b85c;
+  --ring: #b8920e;
   --radius: 0.75rem;
   --background-soft: #ddd5c8;
   --surface: rgba(255, 255, 255, 0.45);
   --surface-raised: rgba(255, 255, 255, 0.65);
   --surface-pressed: rgba(255, 255, 255, 0.3);
-  --accent-strong: #a07a12;
+  --accent-strong: #8a6d0a;
   --glass-blur: 12px;
   --glass-bg: rgba(255, 255, 255, 0.55);
-  --glass-border: rgba(220, 192, 95, 0.38);
-  --icon-color: #6b5b3e;
+  --glass-border: rgba(185, 146, 14, 0.50);
+  --icon-color: #8a6d0a;
   --shadow-light: none;
   --shadow-dark: none;
   --shadow-raised: 4px 4px 16px rgba(180, 165, 140, 0.3), -4px -4px 16px rgba(255, 255, 255, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.5);
@@ -47,7 +47,7 @@
   --landing-heading: #3d3428;
   --landing-body: #5a4d3a;
   --landing-secondary: #6b5b3e;
-  --landing-border-gold: rgba(220, 192, 95, 0.38);
+  --landing-border-gold: rgba(212, 175, 55, 0.45);
   --landing-shadow-raised: 4px 4px 16px rgba(180, 165, 140, 0.3), -4px -4px 16px rgba(255, 255, 255, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.5);
   --landing-shadow-subtle: 3px 3px 12px rgba(180, 165, 140, 0.25), -3px -3px 12px rgba(255, 255, 255, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4);
   --landing-shadow-inset: inset 2px 2px 8px rgba(180, 165, 140, 0.25), inset -2px -2px 8px rgba(255, 255, 255, 0.45);
@@ -55,34 +55,34 @@
 }
 
 :root[data-theme="dark"] {
-  --primary: #f5da88;
-  --primary-foreground: #17140c;
-  --secondary: #dbbe4a;
-  --secondary-foreground: #1c170c;
-  --background: #1a1611;
-  --foreground: #f0ead6;
-  --card: rgba(40, 34, 25, 0.7);
-  --card-foreground: #f0ead6;
-  --popover: rgba(40, 34, 25, 0.75);
-  --popover-foreground: #f0ead6;
-  --muted: #2a2419;
-  --muted-foreground: #b5a484;
-  --accent: #dbbe4a;
-  --accent-foreground: #19160f;
+  --primary: #e8b930;
+  --primary-foreground: #12100a;
+  --secondary: #d4af37;
+  --secondary-foreground: #12100a;
+  --background: #0c0a07;
+  --foreground: #f5f0e3;
+  --card: rgba(22, 18, 12, 0.85);
+  --card-foreground: #f5f0e3;
+  --popover: rgba(22, 18, 12, 0.9);
+  --popover-foreground: #f5f0e3;
+  --muted: #1a1610;
+  --muted-foreground: #c9b88a;
+  --accent: #d4af37;
+  --accent-foreground: #12100a;
   --destructive: #f07d7d;
   --destructive-foreground: #251010;
-  --border: rgba(220, 192, 95, 0.28);
-  --input: #2e271c;
-  --ring: #dbbe4a;
-  --background-soft: #1f1b14;
-  --surface: rgba(35, 30, 22, 0.65);
-  --surface-raised: #221e17;
-  --surface-pressed: #15120e;
-  --accent-strong: #f5da88;
+  --border: rgba(212, 175, 55, 0.35);
+  --input: #1a1610;
+  --ring: #d4af37;
+  --background-soft: #110e0a;
+  --surface: rgba(20, 16, 10, 0.75);
+  --surface-raised: #161210;
+  --surface-pressed: #0a0907;
+  --accent-strong: #e8b930;
   --glass-blur: 12px;
-  --glass-bg: rgba(40, 34, 25, 0.7);
-  --glass-border: rgba(220, 192, 95, 0.28);
-  --icon-color: #b5a484;
+  --glass-bg: rgba(18, 15, 10, 0.80);
+  --glass-border: rgba(212, 175, 55, 0.35);
+  --icon-color: #d4af37;
   --shadow-light: none;
   --shadow-dark: none;
   --shadow-raised: 3px 3px 12px rgba(0, 0, 0, 0.4), -3px -3px 12px rgba(50, 42, 30, 0.15);
@@ -199,7 +199,7 @@ input[type="radio"]:not(:disabled) {
   box-shadow:
     var(--shadow-raised),
     inset 0 0.5px 0 rgba(255, 248, 220, 0.45),
-    0 0 0 0.5px rgba(225, 200, 110, 0.12);
+    0 0 0 0.5px rgba(185, 146, 14, 0.15);
 }
 
 .neo-inset {
@@ -246,16 +246,16 @@ html[data-theme="dark"] .neo-inset {
 .skeuo-gold {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(145deg, #faf7f0, #f2ece0);
+  background: linear-gradient(145deg, #f7f0dc, #ede3c4);
   border: 1.5px solid var(--accent);
   color: var(--icon-color);
   box-shadow:
-    0 0 0 0.5px rgba(220, 192, 95, 0.45),
-    0 0 14px rgba(220, 192, 95, 0.18),
-    3px 3px 10px rgba(180, 165, 140, 0.28),
+    0 0 0 0.5px rgba(185, 146, 14, 0.50),
+    0 0 14px rgba(185, 146, 14, 0.20),
+    3px 3px 10px rgba(160, 140, 110, 0.30),
     -3px -3px 10px rgba(255, 255, 255, 0.55),
     inset 0 1px 0 rgba(255, 255, 255, 0.75),
-    inset 0 -1px 2px rgba(220, 192, 95, 0.1);
+    inset 0 -1px 2px rgba(185, 146, 14, 0.12);
   transition: transform 0.15s ease, box-shadow 0.3s ease, filter 0.2s ease;
 }
 
@@ -276,10 +276,10 @@ html[data-theme="dark"] .neo-inset {
   filter: brightness(1.06);
   transform: translateY(-2px);
   box-shadow:
-    0 0 0 0.5px rgba(220, 192, 95, 0.6),
-    0 0 22px rgba(220, 192, 95, 0.3),
-    0 4px 24px rgba(220, 192, 95, 0.15),
-    4px 4px 14px rgba(180, 165, 140, 0.3),
+    0 0 0 0.5px rgba(185, 146, 14, 0.65),
+    0 0 22px rgba(185, 146, 14, 0.32),
+    0 4px 24px rgba(185, 146, 14, 0.18),
+    4px 4px 14px rgba(160, 140, 110, 0.32),
     -4px -4px 14px rgba(255, 255, 255, 0.65),
     inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
@@ -293,33 +293,33 @@ html[data-theme="dark"] .neo-inset {
 }
 
 html[data-theme="dark"] .skeuo-gold {
-  background: linear-gradient(145deg, var(--primary), #e0c565);
-  border: 1.5px solid rgba(255, 235, 165, 0.45);
-  color: #1a1408;
+  background: linear-gradient(145deg, #e8b930, #d4af37);
+  border: 1.5px solid rgba(232, 185, 48, 0.6);
+  color: #0c0a07;
   box-shadow:
-    0 0 0 0.5px rgba(225, 195, 70, 0.4),
-    0 0 18px rgba(225, 195, 70, 0.25),
-    2px 2px 8px rgba(0, 0, 0, 0.3),
-    -2px -2px 8px rgba(50, 42, 30, 0.1),
-    inset 0 1px 0 rgba(255, 235, 165, 0.4);
+    0 0 0 0.5px rgba(212, 175, 55, 0.5),
+    0 0 20px rgba(212, 175, 55, 0.30),
+    2px 2px 8px rgba(0, 0, 0, 0.4),
+    -2px -2px 8px rgba(30, 25, 15, 0.15),
+    inset 0 1px 0 rgba(255, 230, 130, 0.5);
 }
 
 html[data-theme="dark"] .skeuo-gold:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.12);
   box-shadow:
-    0 0 0 0.5px rgba(225, 195, 70, 0.55),
-    0 0 28px rgba(225, 195, 70, 0.35),
-    0 4px 22px rgba(225, 195, 70, 0.18),
-    3px 3px 10px rgba(0, 0, 0, 0.35),
-    -3px -3px 10px rgba(50, 42, 30, 0.12),
-    inset 0 1px 0 rgba(255, 235, 165, 0.5);
+    0 0 0 0.5px rgba(212, 175, 55, 0.65),
+    0 0 32px rgba(212, 175, 55, 0.40),
+    0 4px 24px rgba(212, 175, 55, 0.22),
+    3px 3px 12px rgba(0, 0, 0, 0.4),
+    -3px -3px 12px rgba(30, 25, 15, 0.15),
+    inset 0 1px 0 rgba(255, 230, 130, 0.6);
 }
 
 html[data-theme="dark"] .skeuo-gold:active {
   box-shadow:
-    0 0 12px rgba(225, 195, 70, 0.15),
-    inset 2px 2px 5px rgba(0, 0, 0, 0.25),
-    inset -2px -2px 5px rgba(50, 42, 30, 0.08);
+    0 0 14px rgba(212, 175, 55, 0.20),
+    inset 2px 2px 5px rgba(0, 0, 0, 0.3),
+    inset -2px -2px 5px rgba(30, 25, 15, 0.1);
 }
 
 
@@ -396,13 +396,13 @@ html[data-theme="dark"] .skeuo-outline:active {
 .landing-gold {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(145deg, #faf7f0, #f2ece0);
+  background: linear-gradient(145deg, #f7f0dc, #ede3c4);
   border: 1.5px solid var(--accent);
   color: var(--icon-color);
   box-shadow:
-    0 0 0 0.5px rgba(220, 192, 95, 0.45),
-    0 0 14px rgba(220, 192, 95, 0.18),
-    3px 3px 10px rgba(180, 165, 140, 0.28),
+    0 0 0 0.5px rgba(185, 146, 14, 0.50),
+    0 0 14px rgba(185, 146, 14, 0.20),
+    3px 3px 10px rgba(160, 140, 110, 0.30),
     -3px -3px 10px rgba(255, 255, 255, 0.55),
     inset 0 1px 0 rgba(255, 255, 255, 0.75);
   transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
@@ -424,9 +424,9 @@ html[data-theme="dark"] .skeuo-outline:active {
   filter: brightness(1.06);
   transform: translateY(-2px);
   box-shadow:
-    0 0 0 0.5px rgba(220, 192, 95, 0.6),
-    0 0 22px rgba(220, 192, 95, 0.28),
-    4px 4px 14px rgba(180, 165, 140, 0.3),
+    0 0 0 0.5px rgba(185, 146, 14, 0.65),
+    0 0 22px rgba(185, 146, 14, 0.30),
+    4px 4px 14px rgba(160, 140, 110, 0.32),
     -4px -4px 14px rgba(255, 255, 255, 0.65),
     inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }

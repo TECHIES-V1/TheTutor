@@ -10,6 +10,7 @@
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^4.0.63",
     "@ai-sdk/mcp": "^1.0.21",
+    "@aws-sdk/client-polly": "^3.1004.0",
     "ai": "^6.0.98",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
