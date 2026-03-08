@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useRef, useEffect, KeyboardEvent } from "react";
-import { Sparkles, X, ArrowUp } from "lucide-react";
-import { api } from "@/lib/api";
+import { useState, useRef, useEffect, useCallback, KeyboardEvent } from "react";
+import { Sparkles, X, ArrowUp, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 import { BACKEND_URL } from "@/lib/backendUrl";
 import { MarkdownContent } from "@/components/ui/markdown-content";
+import { useVoiceInput } from "@/hooks/useVoiceInput";
+import { useAssistantTTS } from "@/hooks/useAssistantTTS";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -26,6 +27,11 @@ export function AiAssistantButton({ courseId, lessonId, lessonTitle, lessonConte
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const prevStreamingRef = useRef(false);
+
+  // Voice hooks
+  const { isListening, transcript, isSupported: micSupported, startListening, stopListening } = useVoiceInput();
+  const { isSpeaking, autoSpeak, toggleAutoSpeak, speakResponse, stopSpeaking } = useAssistantTTS();
 
   useEffect(() => {
     if (open && inputRef.current) inputRef.current.focus();
@@ -35,13 +41,41 @@ export function AiAssistantButton({ courseId, lessonId, lessonTitle, lessonConte
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Abort stream on panel close
+  // Abort stream on unmount
   useEffect(() => {
     return () => { abortRef.current?.abort(); };
   }, []);
 
-  const sendMessage = async (text: string) => {
+  // Append voice transcript to input when recognition ends
+  useEffect(() => {
+    if (!isListening && transcript) {
+      setInput(prev => (prev ? prev + " " + transcript : transcript));
+    }
+  }, [isListening, transcript]);
+
+  // Auto-speak when streaming finishes
+  useEffect(() => {
+    if (prevStreamingRef.current && !streaming && autoSpeak) {
+      const lastMsg = messages[messages.length - 1];
+      if (lastMsg?.role === "assistant" && lastMsg.content) {
+        speakResponse(lastMsg.content);
+      }
+    }
+    prevStreamingRef.current = streaming;
+  }, [streaming, autoSpeak, messages, speakResponse]);
+
+  // Stop TTS when panel closes
+  useEffect(() => {
+    if (!open) {
+      stopSpeaking();
+    }
+  }, [open, stopSpeaking]);
+
+  const sendMessage = useCallback(async (text: string) => {
     if (!text.trim() || streaming) return;
+
+    // Stop any ongoing TTS
+    stopSpeaking();
 
     // Abort any in-flight stream
     abortRef.current?.abort();
@@ -112,7 +146,7 @@ export function AiAssistantButton({ courseId, lessonId, lessonTitle, lessonConte
     } finally {
       setStreaming(false);
     }
-  };
+  }, [streaming, messages, stopSpeaking, lessonTitle, lessonContent, courseId, lessonId]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -137,12 +171,23 @@ export function AiAssistantButton({ courseId, lessonId, lessonTitle, lessonConte
                 <span className="truncate text-xs text-muted-foreground">— {lessonTitle}</span>
               )}
             </div>
-            <button
-              onClick={() => setOpen(false)}
-              className="ml-2 flex-shrink-0 rounded-lg p-1 transition-colors hover:bg-muted"
-            >
-              <X className="h-4 w-4 text-muted-foreground" />
-            </button>
+            <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+              <button
+                onClick={toggleAutoSpeak}
+                className="rounded-lg p-1 transition-colors hover:bg-muted"
+                title={autoSpeak ? "Disable auto-speak" : "Enable auto-speak"}
+              >
+                {autoSpeak
+                  ? <Volume2 className="h-3.5 w-3.5 text-primary" />
+                  : <VolumeX className="h-3.5 w-3.5 text-muted-foreground" />}
+              </button>
+              <button
+                onClick={() => setOpen(false)}
+                className="rounded-lg p-1 transition-colors hover:bg-muted"
+              >
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </div>
           </div>
 
           {/* Messages */}
@@ -182,7 +227,19 @@ export function AiAssistantButton({ courseId, lessonId, lessonTitle, lessonConte
 
           {/* Input */}
           <div className="flex-shrink-0 border-t border-[var(--glass-border)] p-3">
-            <div className="flex items-end gap-2 rounded-xl border border-[var(--glass-border)] bg-transparent px-3 py-2 transition-colors focus-within:border-primary/40">
+            {/* Speaking indicator */}
+            {isSpeaking && (
+              <div className="mb-2 flex items-center gap-2 text-xs text-primary">
+                <Volume2 className="h-3 w-3 animate-pulse" />
+                <span>Speaking...</span>
+                <button onClick={stopSpeaking} className="ml-auto text-muted-foreground hover:text-foreground">
+                  Stop
+                </button>
+              </div>
+            )}
+            <div className={`flex items-end gap-2 rounded-xl border bg-transparent px-3 py-2 transition-colors focus-within:border-primary/40 ${
+              isListening ? "border-primary/60 shadow-[0_0_8px_rgba(212,175,55,0.3)]" : "border-[var(--glass-border)]"
+            }`}>
               <textarea
                 ref={inputRef}
                 value={input}
@@ -192,12 +249,28 @@ export function AiAssistantButton({ courseId, lessonId, lessonTitle, lessonConte
                   e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`;
                 }}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask about this lesson..."
+                placeholder={isListening ? "Listening..." : "Ask about this lesson..."}
                 disabled={streaming}
                 rows={1}
                 className="flex-1 resize-none bg-transparent text-sm leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none"
                 style={{ maxHeight: "96px", minHeight: "24px" }}
               />
+              {micSupported && (
+                <button
+                  onClick={isListening ? stopListening : startListening}
+                  disabled={streaming}
+                  className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                    isListening
+                      ? "bg-primary/15 text-primary"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                  title={isListening ? "Stop listening" : "Voice input"}
+                >
+                  {isListening
+                    ? <MicOff className="h-3.5 w-3.5" />
+                    : <Mic className="h-3.5 w-3.5" />}
+                </button>
+              )}
               <button
                 onClick={() => sendMessage(input)}
                 disabled={!input.trim() || streaming}

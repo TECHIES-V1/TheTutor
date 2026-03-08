@@ -53,16 +53,20 @@ interface KeywordSearchParams {
 
 interface RawSearchResult {
   id: string | number;
+  source_id?: string | number;
   title: string;
   authors?: Array<string | { name: string }>;
   source: string;
   downloadUrl?: string;
   download_url?: string;
+  download_links?: Array<{ format: string; url: string; label?: string }>;
   format?: string;
   description?: string;
   subjects?: string[];
+  extra?: { subjects?: string[]; publishers?: string[] };
   publishYear?: number;
   publish_year?: number;
+  year?: number;
 }
 
 /**
@@ -109,7 +113,7 @@ export async function keywordSearch(
       title: book.title || "",
       authors: normalizeAuthors(book.authors),
       source: (book.source || "openlibrary") as BookSource,
-      downloadUrl: book.downloadUrl || book.download_url,
+      downloadUrl: book.downloadUrl || book.download_url || extractDownloadUrl(book.download_links),
       format: book.format,
       description: book.description,
       subjects: book.subjects,
@@ -161,27 +165,34 @@ export async function discoverySearch(
   }
 
   const data = await response.json() as Record<string, unknown>;
-  logger.info({ query, responseKeys: Object.keys(data), totalFound: data.totalFound ?? data.total ?? data.numFound }, "[discoverySearch] Raw response shape");
+  logger.info({ query, responseKeys: Object.keys(data) }, "[discoverySearch] Raw response shape");
 
-  const rawBooks = (data.books || data.results || data.responses || []) as RawSearchResult[];
+  // Response is { responses: [{ source, books: [...] }, ...] } — flatten all books
+  let rawBooks: RawSearchResult[];
+  if (Array.isArray(data.responses)) {
+    rawBooks = (data.responses as Array<{ books?: RawSearchResult[] }>)
+      .flatMap((r) => r.books || []);
+  } else {
+    rawBooks = (data.books || data.results || []) as RawSearchResult[];
+  }
 
   const books: DiscoveredBook[] = rawBooks.map(
     (book: RawSearchResult) => ({
-      id: String(book.id),
+      id: String(book.source_id || book.id || ""),
       title: book.title,
       authors: normalizeAuthors(book.authors),
-      source: book.source as BookSource,
-      downloadUrl: book.downloadUrl || book.download_url,
+      source: (book.source || "openlibrary") as BookSource,
+      downloadUrl: book.downloadUrl || book.download_url || extractDownloadUrl(book.download_links),
       format: book.format,
       description: book.description,
-      subjects: book.subjects,
-      publishYear: book.publishYear || book.publish_year,
+      subjects: book.subjects || book.extra?.subjects,
+      publishYear: book.publishYear || book.publish_year || book.year,
     })
   ).filter((b) => b.title);
 
   return {
     books,
-    totalFound: (data.totalFound || data.total || books.length) as number,
+    totalFound: books.length,
     query,
   };
 }
@@ -226,7 +237,7 @@ export async function pipelineTopic(
       title: book.title,
       authors: normalizeAuthors(book.authors),
       source: book.source as BookSource,
-      downloadUrl: book.downloadUrl || book.download_url,
+      downloadUrl: book.downloadUrl || book.download_url || extractDownloadUrl(book.download_links),
       format: book.format,
       description: book.description,
       subjects: book.subjects,
@@ -301,6 +312,17 @@ export async function fetchAndParse(
 }
 
 // ── Helper Functions ──────────────────────────────────────────────────────
+
+function extractDownloadUrl(
+  links?: Array<{ format: string; url: string }>
+): string | undefined {
+  if (!links?.length) return undefined;
+  const pdf = links.find((l) => l.format?.toLowerCase().includes("pdf"));
+  if (pdf) return pdf.url;
+  const epub = links.find((l) => l.format?.toLowerCase().includes("epub"));
+  if (epub) return epub.url;
+  return links[0].url;
+}
 
 function normalizeAuthors(
   authors: Array<string | { name: string }> | undefined

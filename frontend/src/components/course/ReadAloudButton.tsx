@@ -62,12 +62,12 @@ export function ReadAloudButton({ contentMarkdown, contentContainerRef }: ReadAl
         active={status === "playing"}
       />
 
-      <div className="fixed bottom-6 left-6 z-[60]">
+      <div className="fixed bottom-[5.5rem] right-6 z-[60]">
         {/* Control panel — shows when active */}
         {isActive && (
           <div
             ref={panelRef}
-            className="absolute bottom-16 left-0 overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-xl shadow-2xl"
+            className="absolute bottom-16 right-0 overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-xl shadow-2xl"
             style={{ width: 260 }}
           >
             {/* Section announcement */}

@@ -14,6 +14,7 @@ import chatRoutes from "./routes/chat";
 import courseRoutes from "./routes/course";
 import coursesRoutes from "./routes/courses";
 import dashboardRoutes from "./routes/dashboard";
+import ttsRoutes from "./routes/tts";
 import { getFrontendBaseUrl } from "./config/publicUrls";
 import { requestLogger } from "./middleware/requestLogger";
 import { logger } from "./config/logger";
@@ -53,6 +54,7 @@ app.use("/chat", chatRoutes);
 app.use("/course", courseRoutes);
 app.use("/courses", coursesRoutes);
 app.use("/dashboard", dashboardRoutes);
+app.use("/tts", ttsRoutes);
 
 app.get("/health", (_req, res) => {
   const dbState = mongoose.connection.readyState; // 1 = connected

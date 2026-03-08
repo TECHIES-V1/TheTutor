@@ -690,7 +690,9 @@ router.post("/:courseId/lessons/:lessonId/assistant", requireAuth, aiLimiter, as
       moduleName,
     });
 
-    const aiMessages: ModelMessage[] = rawMessages.map((m: { role: string; content: string }) => ({
+    // Limit conversation history to last 16 messages to keep context focused
+    const recentMessages = rawMessages.slice(-16);
+    const aiMessages: ModelMessage[] = recentMessages.map((m: { role: string; content: string }) => ({
       role: (m.role === "user" ? "user" : "assistant") as "user" | "assistant",
       content: String(m.content ?? ""),
     }));
@@ -704,8 +706,8 @@ router.post("/:courseId/lessons/:lessonId/assistant", requireAuth, aiLimiter, as
         model: getModel(),
         system: systemPrompt,
         messages: aiMessages,
-        maxOutputTokens: 1024,
-        temperature: 0.5,
+        maxOutputTokens: 2048,
+        temperature: 0.7,
       });
 
       for await (const chunk of result.textStream) {

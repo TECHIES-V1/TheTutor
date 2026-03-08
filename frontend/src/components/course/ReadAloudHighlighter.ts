@@ -14,10 +14,16 @@ interface ReadAloudHighlighterProps {
   active: boolean;
 }
 
+const supportsCustomHighlight =
+  typeof CSS !== "undefined" && "highlights" in CSS;
+
 /**
- * DOM-based word highlighter for read-aloud.
- * Walks text nodes in the content container, maps global word indices to DOM positions,
- * and highlights the current word using a temporary <mark> wrapper.
+ * Word highlighter for read-aloud.
+ *
+ * Primary path: CSS Custom Highlight API — creates Range objects without
+ * touching the DOM, so no MutationObserver feedback loops or normalize() calls.
+ *
+ * Fallback path: <mark> element wrapping with a mutation guard for older browsers.
  */
 export function ReadAloudHighlighter({
   containerRef,
@@ -25,10 +31,13 @@ export function ReadAloudHighlighter({
   active,
 }: ReadAloudHighlighterProps) {
   const wordMapRef = useRef<WordLocation[]>([]);
-  const activeMarkRef = useRef<HTMLElement | null>(null);
   const builtForRef = useRef<HTMLElement | null>(null);
 
-  // Build word map from DOM text nodes
+  // Fallback refs (only used when Custom Highlight API is unavailable)
+  const activeMarkRef = useRef<HTMLElement | null>(null);
+  const isMutatingRef = useRef(false);
+
+  // Build word map from DOM text nodes (one-time per activation)
   const buildWordMap = useCallback(() => {
     const container = containerRef.current;
     if (!container || builtForRef.current === container) return;
@@ -39,7 +48,6 @@ export function ReadAloudHighlighter({
     let textNode: Text | null;
     while ((textNode = walker.nextNode() as Text | null)) {
       const text = textNode.textContent ?? "";
-      // Match word boundaries
       const regex = /\S+/g;
       let match: RegExpExecArray | null;
       while ((match = regex.exec(text)) !== null) {
@@ -55,40 +63,78 @@ export function ReadAloudHighlighter({
     builtForRef.current = container;
   }, [containerRef]);
 
-  // Rebuild word map when container content changes
+  // Build word map once when activated
   useEffect(() => {
     if (!active) return;
-
     buildWordMap();
 
-    // Observe mutations to rebuild if content changes
-    const container = containerRef.current;
-    if (!container) return;
+    // Only observe for external content changes (not needed for Custom Highlight
+    // path, but useful if content is lazy-loaded). Guard against self-mutations.
+    if (!supportsCustomHighlight) {
+      const container = containerRef.current;
+      if (!container) return;
 
-    const observer = new MutationObserver(() => {
-      builtForRef.current = null;
-      buildWordMap();
-    });
-
-    observer.observe(container, { childList: true, subtree: true, characterData: true });
-    return () => observer.disconnect();
+      const observer = new MutationObserver(() => {
+        if (isMutatingRef.current) return;
+        builtForRef.current = null;
+        buildWordMap();
+      });
+      observer.observe(container, { childList: true, subtree: true, characterData: true });
+      return () => observer.disconnect();
+    }
   }, [active, buildWordMap, containerRef]);
 
-  // Apply/remove highlight
+  // Apply highlight using CSS Custom Highlight API (primary path)
   useEffect(() => {
-    // Remove previous highlight
+    if (!supportsCustomHighlight) return;
+
+    if (highlightWordIndex === null || !active) {
+      CSS.highlights.delete("read-aloud");
+      return;
+    }
+
+    const words = wordMapRef.current;
+    if (highlightWordIndex >= words.length) return;
+
+    const { node, start, end } = words[highlightWordIndex];
+    if (!node.parentNode || !document.contains(node)) return;
+
+    try {
+      const range = document.createRange();
+      range.setStart(node, start);
+      range.setEnd(node, end);
+
+      const highlight = new Highlight(range);
+      CSS.highlights.set("read-aloud", highlight);
+
+      // Scroll the word into view
+      const rect = range.getBoundingClientRect();
+      const viewportH = window.innerHeight;
+      if (rect.top < 80 || rect.bottom > viewportH - 80) {
+        const el = node.parentElement;
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    } catch {
+      // Range can fail if DOM changed underneath
+    }
+  }, [highlightWordIndex, active]);
+
+  // Fallback: <mark> wrapping (only for browsers without Custom Highlight API)
+  useEffect(() => {
+    if (supportsCustomHighlight) return;
+
+    // Remove previous mark
     if (activeMarkRef.current) {
       const mark = activeMarkRef.current;
       const parent = mark.parentNode;
       if (parent) {
-        // Replace <mark> with its text content
+        isMutatingRef.current = true;
         const textNode = document.createTextNode(mark.textContent ?? "");
         parent.replaceChild(textNode, mark);
-        // Normalize to merge adjacent text nodes
         parent.normalize();
-        // Rebuild word map since DOM changed
         builtForRef.current = null;
         buildWordMap();
+        isMutatingRef.current = false;
       }
       activeMarkRef.current = null;
     }
@@ -99,11 +145,10 @@ export function ReadAloudHighlighter({
     if (highlightWordIndex >= words.length) return;
 
     const { node, start, end } = words[highlightWordIndex];
-
-    // Verify node is still in document
     if (!node.parentNode || !document.contains(node)) return;
 
     try {
+      isMutatingRef.current = true;
       const range = document.createRange();
       range.setStart(node, start);
       range.setEnd(node, end);
@@ -111,34 +156,41 @@ export function ReadAloudHighlighter({
       const mark = document.createElement("mark");
       mark.className = "read-aloud-active";
       range.surroundContents(mark);
-
       activeMarkRef.current = mark;
+      isMutatingRef.current = false;
 
-      // Scroll into view smoothly
       mark.scrollIntoView({ behavior: "smooth", block: "center" });
     } catch {
-      // Range operations can fail if DOM structure changed
+      isMutatingRef.current = false;
     }
   }, [highlightWordIndex, active, buildWordMap]);
 
-  // Cleanup on unmount or deactivation
+  // Cleanup on deactivation or unmount
   useEffect(() => {
     if (active) return;
 
+    // Clean up Custom Highlight API
+    if (supportsCustomHighlight) {
+      CSS.highlights.delete("read-aloud");
+    }
+
+    // Clean up fallback <mark>
     if (activeMarkRef.current) {
       const mark = activeMarkRef.current;
       const parent = mark.parentNode;
       if (parent) {
+        isMutatingRef.current = true;
         const textNode = document.createTextNode(mark.textContent ?? "");
         parent.replaceChild(textNode, mark);
         parent.normalize();
+        isMutatingRef.current = false;
       }
       activeMarkRef.current = null;
     }
+
     wordMapRef.current = [];
     builtForRef.current = null;
   }, [active]);
 
-  // This is a logic-only component, no UI
   return null;
 }

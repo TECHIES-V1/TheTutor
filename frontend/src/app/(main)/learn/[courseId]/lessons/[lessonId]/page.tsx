@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
@@ -13,6 +13,7 @@ import { useCoursePanelState } from "@/hooks/useCoursePanelState";
 import { AiAssistantButton } from "@/components/course/AiAssistantButton";
 import { MarkdownContent } from "@/components/ui/markdown-content";
 import { PageLoader } from "@/components/ui/PageLoader";
+import { ReadAloudButton } from "@/components/course/ReadAloudButton";
 
 function toEmbedUrl(url: string) {
   try {
@@ -41,6 +42,7 @@ export default function LessonPage() {
   const { data: preview } = useCoursePreview(courseId);
   const { isOpen: isCoursePanelOpen, toggle: toggleCoursePanel } = useCoursePanelState();
 
+  const contentRef = useRef<HTMLDivElement>(null);
   const [data, setData] = useState<LessonDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -133,7 +135,7 @@ export default function LessonPage() {
               )}
 
               {/* Content */}
-              <div className="mt-6 text-sm leading-relaxed text-muted-foreground">
+              <div ref={contentRef} className="mt-6 text-sm leading-relaxed text-muted-foreground">
                 <MarkdownContent>{data.lesson.contentMarkdown}</MarkdownContent>
               </div>
 
@@ -252,6 +254,11 @@ export default function LessonPage() {
           )}
         </div>
       </div>
+
+      <ReadAloudButton
+        contentMarkdown={data.lesson.contentMarkdown}
+        contentContainerRef={contentRef}
+      />
 
       <AiAssistantButton
         courseId={courseId}

@@ -85,7 +85,7 @@ export async function* discoverAndParseBooks(
     throw new Error("MCP service unavailable");
   }
 
-  // Primary: smart keyword search (/search) — all keywords at once
+  // Primary: aggregated discovery search (returns download_links)
   let searchResult = { books: [] as DiscoveredBook[] };
 
   yield {
@@ -97,34 +97,35 @@ export async function* discoverAndParseBooks(
     },
   };
 
-  try {
-    searchResult = await keywordSearch({ keywords, limit: 18 });
-    logger.info({ keywords, bookCount: searchResult.books.length }, "[discovery] Keyword search results");
-  } catch (err) {
-    logger.warn({ keywords, err }, "[discovery] Keyword search failed, falling back to discovery search");
+  // Try first 2 keywords via /discovery/search (aggregates Gutendex + OpenLibrary + Standard Ebooks)
+  const primaryKeywords = keywords.slice(0, 2);
+  for (const keyword of primaryKeywords) {
+    try {
+      searchResult = await discoverySearch({ query: keyword, limit: 18 });
+      logger.info({ query: keyword, bookCount: searchResult.books.length }, "[discovery] Discovery search results");
+      if (searchResult.books.length > 0) break;
+    } catch (err) {
+      logger.warn({ query: keyword, err }, "[discovery] Discovery search failed, trying next keyword");
+      continue;
+    }
   }
 
-  // Fallback: try first 2 keywords via /discovery/search (keep it fast)
+  // Fallback: keyword search via /search (wider OpenLibrary, may lack download URLs)
   if (searchResult.books.length === 0) {
-    const fallbackKeywords = keywords.slice(0, 2);
-    for (const keyword of fallbackKeywords) {
-      yield {
-        type: "status",
-        data: {
-          phase: "resource_retrieval",
-          message: `Searching for textbooks about "${keyword}"...`,
-          progress: 10,
-        },
-      };
+    yield {
+      type: "status",
+      data: {
+        phase: "resource_retrieval",
+        message: `Broadening search...`,
+        progress: 10,
+      },
+    };
 
-      try {
-        searchResult = await discoverySearch({ query: keyword, limit: 18 });
-        if (searchResult.books.length > 0) break;
-        logger.info({ query: keyword }, "[discovery] No results, trying next keyword");
-      } catch (err) {
-        logger.warn({ query: keyword, err }, "[discovery] Search attempt failed, trying next keyword");
-        continue;
-      }
+    try {
+      searchResult = await keywordSearch({ keywords, limit: 18 });
+      logger.info({ keywords, bookCount: searchResult.books.length }, "[discovery] Keyword search fallback results");
+    } catch (err) {
+      logger.warn({ keywords, err }, "[discovery] Keyword search fallback failed");
     }
   }
 
@@ -249,6 +250,10 @@ export async function* discoverAndParseBooks(
 
     // Need to parse this book
     if (!book.downloadUrl) {
+      logger.warn(
+        { bookTitle: book.title, bookId: book.id, source: book.source },
+        "[discovery] Book has no downloadUrl, skipping parse"
+      );
       yield {
         type: "parsing_progress",
         data: {
@@ -320,6 +325,10 @@ export async function* discoverAndParseBooks(
           },
         };
       } else {
+        logger.warn(
+          { bookTitle: book.title, downloadUrl: book.downloadUrl, error: parseResult.error },
+          "[discovery] fetchAndParse returned success=false"
+        );
         yield {
           type: "parsing_progress",
           data: {
@@ -331,7 +340,7 @@ export async function* discoverAndParseBooks(
         };
       }
     } catch (error) {
-      logger.error({ err: error, bookTitle: book.title }, "Failed to parse book");
+      logger.error({ err: error, bookTitle: book.title, downloadUrl: book.downloadUrl }, "[discovery] fetchAndParse threw an exception");
       yield {
         type: "parsing_progress",
         data: {
@@ -356,16 +365,18 @@ export async function* discoverAndParseBooks(
   }
 
   if (bookContexts.length === 0) {
+    logger.warn(
+      { selectedCount: selectedBooks.length },
+      "[discovery] No books could be parsed, continuing without book sources"
+    );
     yield {
-      type: "error",
+      type: "status",
       data: {
-        code: "PARSING_FAILED",
-        message: "Failed to parse any textbooks. Please try again.",
-        retryable: true,
         phase: "parsing",
+        message: "Could not parse textbooks — course will use AI knowledge only.",
+        progress: 70,
       },
     };
-    throw new Error("No books could be parsed");
   }
 
   return {

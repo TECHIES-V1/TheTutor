@@ -56,6 +56,7 @@ export function useReadAloud(contentMarkdown: string): UseReadAloudReturn {
   const rafRef = useRef<number>(0);
   const prefetchedRef = useRef<Map<number, ChunkAudio>>(new Map());
   const abortRef = useRef<AbortController | null>(null);
+  const lastWordIdxRef = useRef<number | null>(null);
 
   // Keep refs in sync
   useEffect(() => {
@@ -119,7 +120,10 @@ export function useReadAloud(contentMarkdown: string): UseReadAloudReturn {
         }
       }
 
-      setHighlightWordIndex(activeWordIdx);
+      if (activeWordIdx !== lastWordIdxRef.current) {
+        lastWordIdxRef.current = activeWordIdx;
+        setHighlightWordIndex(activeWordIdx);
+      }
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
@@ -168,8 +172,14 @@ export function useReadAloud(contentMarkdown: string): UseReadAloudReturn {
     }
 
     return new Promise<void>((resolve, reject) => {
-      audio.onended = () => resolve();
-      audio.onerror = () => reject(new Error("Audio playback error"));
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        resolve();
+      };
+      audio.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("Audio playback error"));
+      };
       audio.play().catch(reject);
     });
   }, [playbackRate, fetchChunkAudio]);
@@ -191,10 +201,12 @@ export function useReadAloud(contentMarkdown: string): UseReadAloudReturn {
       }
 
       await playChunkAudio(chunkAudio, chunkList[i]);
+      prefetchedRef.current.delete(i);
     }
 
     // Done playing all chunks
     cancelAnimationFrame(rafRef.current);
+    lastWordIdxRef.current = null;
     setHighlightWordIndex(null);
     setSectionAnnouncement(null);
     setStatus("idle");
@@ -247,6 +259,7 @@ export function useReadAloud(contentMarkdown: string): UseReadAloudReturn {
     abortRef.current?.abort();
     audioRef.current?.pause();
     cancelAnimationFrame(rafRef.current);
+    lastWordIdxRef.current = null;
     setHighlightWordIndex(null);
     setSectionAnnouncement(null);
     setCurrentChunkIndex(0);
