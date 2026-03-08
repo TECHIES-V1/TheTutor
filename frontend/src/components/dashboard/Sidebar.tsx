@@ -139,7 +139,7 @@ export function Sidebar({
             type="button"
             onClick={handleLogoClick}
             className={cx(
-              "flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-primary/15 bg-primary/5 shadow-neo-card transition-all duration-300",
+              "flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--glass-border)] bg-primary/5 shadow-neo-card transition-all duration-300",
               isCollapsed
                 ? "h-9 w-9 cursor-pointer"
                 : "h-9 w-9 cursor-default"
@@ -225,7 +225,7 @@ export function Sidebar({
           {isCourseWorkspace && (
             <div
               className={cx(
-                "mt-3 space-y-0.5 rounded-xl border border-primary/20 bg-primary/8 p-2 shadow-neo-inset",
+                "mt-3 space-y-0.5 rounded-xl border border-[var(--glass-border)] bg-primary/8 p-2 shadow-neo-inset",
                 isCollapsed ? "lg:hidden" : ""
               )}
             >
@@ -305,7 +305,7 @@ export function Sidebar({
             {profileOpen && (
               <div
                 className={cx(
-                  "absolute rounded-xl border border-primary/15 bg-card p-1 shadow-neo-raised",
+                  "absolute rounded-xl border border-[var(--glass-border)] bg-card p-1 shadow-neo-raised",
                   isCollapsed
                     ? "lg:bottom-0 lg:left-full lg:mb-0 lg:ml-2 lg:w-48 bottom-full left-2 right-2 mb-2"
                     : "bottom-full left-2 right-2 mb-2"

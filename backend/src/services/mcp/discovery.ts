@@ -85,7 +85,7 @@ export async function* discoverAndParseBooks(
     throw new Error("MCP service unavailable");
   }
 
-  // Primary: smart keyword search (/search) — sends all keywords at once
+  // Primary: smart keyword search (/search) — all keywords at once
   let searchResult = { books: [] as DiscoveredBook[] };
 
   yield {
@@ -104,9 +104,10 @@ export async function* discoverAndParseBooks(
     logger.warn({ keywords, err }, "[discovery] Keyword search failed, falling back to discovery search");
   }
 
-  // Fallback: try individual keywords via /discovery/search if keyword search returned nothing
+  // Fallback: try first 2 keywords via /discovery/search (keep it fast)
   if (searchResult.books.length === 0) {
-    for (const keyword of keywords) {
+    const fallbackKeywords = keywords.slice(0, 2);
+    for (const keyword of fallbackKeywords) {
       yield {
         type: "status",
         data: {

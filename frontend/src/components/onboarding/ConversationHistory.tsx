@@ -227,7 +227,7 @@ function ConversationList({
           <SkeletonList />
         ) : conversations.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-4 py-16 px-6 text-center">
-            <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/15 bg-primary/8">
+            <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--glass-border)] bg-primary/8">
               <Sparkles className="h-6 w-6 text-primary/60" />
             </div>
             <div className="space-y-1">

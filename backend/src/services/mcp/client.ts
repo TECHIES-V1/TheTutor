@@ -1,4 +1,5 @@
 import type { DiscoveredBook, MCPSearchResult, MCPFetchParseResult, BookSource } from "../../types";
+import { logger } from "../../config/logger";
 
 const MCP_BASE_URL = process.env.MCP_BASE_URL ?? "https://futher-mcp-production.up.railway.app";
 
@@ -83,24 +84,26 @@ export async function keywordSearch(
     {
       method: "GET",
       headers: { "Content-Type": "application/json" },
-      signal: AbortSignal.timeout(30000),
+      signal: AbortSignal.timeout(10000),
     }
   );
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({
-      error: "Unknown MCP error",
-      code: "UNKNOWN",
-    })) as MCPError;
-    throw new Error(`MCP keyword search failed: ${error.error}`);
+    const body = await response.text().catch(() => "");
+    throw new Error(`MCP keyword search failed (${response.status}): ${body.slice(0, 200)}`);
   }
 
-  const data = await response.json() as MCPSearchResponse;
+  const data = await response.json() as Record<string, unknown>;
 
-  const books: DiscoveredBook[] = (data.books || data.results || []).map(
+  // Handle multiple response shapes: { books: [...] }, { results: [...] }, { docs: [...] }, or top-level array
+  const rawBooks: RawSearchResult[] = (
+    (data.books || data.results || data.docs || (Array.isArray(data) ? data : [])) as RawSearchResult[]
+  );
+
+  const books: DiscoveredBook[] = rawBooks.map(
     (book: RawSearchResult) => ({
-      id: String(book.id),
-      title: book.title,
+      id: String(book.id || ""),
+      title: book.title || "",
       authors: normalizeAuthors(book.authors),
       source: (book.source || "openlibrary") as BookSource,
       downloadUrl: book.downloadUrl || book.download_url,
@@ -109,11 +112,11 @@ export async function keywordSearch(
       subjects: book.subjects,
       publishYear: book.publishYear || book.publish_year,
     })
-  );
+  ).filter((b) => b.title);
 
   return {
     books,
-    totalFound: data.totalFound || data.total || books.length,
+    totalFound: (data.totalFound || data.total || data.numFound || books.length) as number,
     query: keywords.join(", "),
   };
 }
@@ -145,21 +148,21 @@ export async function discoverySearch(
     {
       method: "GET",
       headers: { "Content-Type": "application/json" },
-      signal: AbortSignal.timeout(45000),
+      signal: AbortSignal.timeout(15000),
     }
   );
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({
-      error: "Unknown MCP error",
-      code: "UNKNOWN",
-    })) as MCPError;
-    throw new Error(`MCP search failed: ${error.error}`);
+    const body = await response.text().catch(() => "");
+    throw new Error(`MCP discovery search failed (${response.status}): ${body.slice(0, 200)}`);
   }
 
-  const data = await response.json() as MCPSearchResponse;
+  const data = await response.json() as Record<string, unknown>;
+  logger.info({ query, responseKeys: Object.keys(data), totalFound: data.totalFound ?? data.total ?? data.numFound }, "[discoverySearch] Raw response shape");
 
-  const books: DiscoveredBook[] = (data.books || data.results || []).map(
+  const rawBooks = (data.books || data.results || []) as RawSearchResult[];
+
+  const books: DiscoveredBook[] = rawBooks.map(
     (book: RawSearchResult) => ({
       id: String(book.id),
       title: book.title,
@@ -171,11 +174,11 @@ export async function discoverySearch(
       subjects: book.subjects,
       publishYear: book.publishYear || book.publish_year,
     })
-  );
+  ).filter((b) => b.title);
 
   return {
     books,
-    totalFound: data.totalFound || data.total || books.length,
+    totalFound: (data.totalFound || data.total || books.length) as number,
     query,
   };
 }

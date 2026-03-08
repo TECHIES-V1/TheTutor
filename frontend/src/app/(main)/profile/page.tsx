@@ -99,7 +99,7 @@ export default function ProfilePage() {
               <img
                 src={profile.image}
                 alt={profile?.name || "Profile"}
-                className="h-16 w-16 rounded-full border border-primary/30 object-cover flex-shrink-0"
+                className="h-16 w-16 rounded-full border border-[var(--glass-border)] object-cover flex-shrink-0"
               />
             ) : (
               <div className="skeuo-gold flex h-16 w-16 items-center justify-center rounded-full text-xl font-bold flex-shrink-0">
@@ -135,7 +135,7 @@ export default function ProfilePage() {
             <Button
               type="button"
               onClick={handleThemeToggle}
-              className="flex items-center gap-2 skeuo-outline rounded-full border border-border/70 text-foreground hover:border-primary/40"
+              className="flex items-center gap-2 skeuo-outline rounded-full border border-[var(--glass-border)] text-foreground hover:border-primary/40"
               size="sm"
             >
               {theme === "light" ? <MoonStar className="h-4 w-4" /> : <Sun className="h-4 w-4" />}

@@ -61,7 +61,7 @@ export default function SignInPage() {
           <div className="flex flex-col gap-6">
             {features.map(({ icon: Icon, title, description }) => (
               <div key={title} className="flex items-start gap-4">
-                <div className="neo-inset mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-primary/20">
+                <div className="neo-inset mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--glass-border)]">
                   <Icon className="h-5 w-5 text-primary" />
                 </div>
                 <div>
@@ -102,7 +102,7 @@ export default function SignInPage() {
             </p>
             <div className="grid grid-cols-2 gap-2">
               {features.map(({ icon: Icon, title }) => (
-                <div key={title} className="neo-inset flex items-center gap-2 rounded-xl border border-primary/15 px-3 py-2.5">
+                <div key={title} className="neo-inset flex items-center gap-2 rounded-xl border border-[var(--glass-border)] px-3 py-2.5">
                   <Icon className="h-3.5 w-3.5 shrink-0 text-primary" />
                   <span className="text-xs font-medium text-foreground">{title}</span>
                 </div>
@@ -120,7 +120,7 @@ export default function SignInPage() {
             </p>
           </div>
 
-          <div className="neo-inset mb-6 flex items-start gap-2.5 rounded-lg border border-primary/25 p-3">
+          <div className="neo-inset mb-6 flex items-start gap-2.5 rounded-lg border border-[var(--glass-border)] p-3">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
             <p className="text-xs leading-relaxed text-muted-foreground">
               <span className="font-medium text-foreground">New here?</span>{" "}

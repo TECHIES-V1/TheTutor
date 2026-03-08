@@ -140,7 +140,7 @@ export function GenerationNotifier() {
   if (!notice) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-[80] w-[min(92vw,24rem)] rounded-2xl border border-primary/35 bg-background/95 p-4 shadow-xl backdrop-blur-sm">
+    <div className="fixed bottom-4 right-4 z-[80] w-[min(92vw,24rem)] rounded-2xl border border-[var(--glass-border)] bg-background/95 p-4 shadow-xl backdrop-blur-sm">
       <div className="flex items-start gap-3">
         <span className="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-primary">
           <Bell className="h-4 w-4" />
@@ -155,7 +155,7 @@ export function GenerationNotifier() {
           <Link
             href={`/explore/${notice.courseId}`}
             onClick={dismiss}
-            className="mt-3 inline-flex rounded-full border border-primary/30 bg-primary/15 px-3 py-1.5 text-xs font-medium text-primary transition hover:bg-primary/20"
+            className="mt-3 inline-flex rounded-full border border-[var(--glass-border)] bg-primary/15 px-3 py-1.5 text-xs font-medium text-primary transition hover:bg-primary/20"
           >
             Open Course
           </Link>

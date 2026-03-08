@@ -92,7 +92,7 @@ export function DashboardCourseCard({
             variant="ghost"
             size="sm"
             onClick={() => onTogglePublish(course)}
-            className="w-full rounded-full border border-primary/30 whitespace-normal text-primary hover:bg-primary/10 sm:w-auto sm:whitespace-nowrap"
+            className="w-full rounded-full border border-[var(--glass-border)] whitespace-normal text-primary hover:bg-primary/10 sm:w-auto sm:whitespace-nowrap"
           >
             {course.visibility === "published" ? "Unpublish" : "Publish"}
           </Button>

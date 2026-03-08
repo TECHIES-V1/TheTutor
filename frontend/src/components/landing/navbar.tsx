@@ -39,8 +39,8 @@ export function NavBar() {
               ? "rgba(232, 224, 212, 0.92)"
               : "rgba(232, 224, 212, 0.6)",
             boxShadow: isScrolled
-              ? "4px 4px 14px rgba(180, 165, 140, 0.3), -4px -4px 14px rgba(255, 255, 255, 0.55), 0 0 0 1.5px rgba(201, 168, 76, 0.5)"
-              : "2px 2px 8px rgba(180, 165, 140, 0.15), -2px -2px 8px rgba(255, 255, 255, 0.35), 0 0 0 1px rgba(201, 168, 76, 0.25)",
+              ? "4px 4px 14px rgba(180, 165, 140, 0.3), -4px -4px 14px rgba(255, 255, 255, 0.55), 0 0 0 1.5px rgba(220, 192, 95, 0.55)"
+              : "2px 2px 8px rgba(180, 165, 140, 0.15), -2px -2px 8px rgba(255, 255, 255, 0.35), 0 0 0 1px rgba(220, 192, 95, 0.28)",
           }}
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
           className="relative flex w-full max-w-3xl items-center justify-between rounded-full px-3 py-2 backdrop-blur-lg sm:px-5"

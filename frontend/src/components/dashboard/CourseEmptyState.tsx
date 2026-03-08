@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 export function CourseEmptyState() {
   return (
-    <div className="neo-surface flex flex-col items-center justify-center rounded-3xl border border-dashed border-primary/20 px-8 py-16 text-center">
+    <div className="neo-surface flex flex-col items-center justify-center rounded-3xl border border-dashed border-[var(--glass-border)] px-8 py-16 text-center">
       {/* Icon */}
       <div className="neo-inset mb-6 flex h-16 w-16 items-center justify-center rounded-2xl">
         <BookOpen className="h-8 w-8 text-primary/60" />

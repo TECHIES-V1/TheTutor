@@ -30,8 +30,8 @@ export function Hero() {
           speed={0.5}
           squareSize={64}
           direction="down"
-          borderColor="rgba(201, 168, 76, 0.18)"
-          hoverFillColor="rgba(201, 168, 76, 0.1)"
+          borderColor="rgba(220, 192, 95, 0.2)"
+          hoverFillColor="rgba(220, 192, 95, 0.12)"
         />
       </div>
 
