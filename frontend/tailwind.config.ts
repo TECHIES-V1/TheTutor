@@ -24,26 +24,31 @@ const config: Config = {
         border: "var(--border)",
         input: "var(--input)",
         ring: "var(--ring)",
-        // Leather surface scale (static values for direct Tailwind usage)
+        // Leather surface scale (warm browns)
         leather: {
-          900: "#0D1A2E",
-          800: "#1B2D4F",
-          700: "#243550",
-          600: "#2E4068",
-          500: "#3B5080",
+          900: "#1a1611",
+          800: "#2a2318",
+          700: "#3d3428",
+          600: "#5a4d3a",
+          500: "#6b5b3e",
         },
         // Gold scale
         gold: {
-          300: "#F5D060",
+          300: "#F5D868",
+          400: "#d4b85c",
           500: "#D4AF37",
           600: "#C9A227",
           700: "#A67C00",
         },
         // Cream text scale
         cream: {
+          100: "#f5f0e8",
           200: "#F6F1DF",
+          300: "#f2ece0",
           400: "#D6C49A",
         },
+        // Icon/warm brown
+        icon: "var(--icon-color)",
       },
       borderRadius: {
         lg: "var(--radius)",

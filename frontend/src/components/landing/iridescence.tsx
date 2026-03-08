@@ -67,22 +67,22 @@ void main() {
 }
 `;
 
-// Light mode: warm beige base with gold iridescence
+// Light mode: warm cream/brown base with rich gold iridescence
 const LIGHT_PALETTE = {
-  clearColor: [0.97, 0.96, 0.94] as [number, number, number],    // #f8f5f0
-  baseLow: [0.96, 0.95, 0.93],                                     // off-white
-  baseHigh: [0.99, 0.98, 0.96],                                    // near-white
-  gold: [0.83, 0.69, 0.23],                                        // #D4AF37
-  goldStrength: 0.55,
+  clearColor: [0.91, 0.88, 0.83] as [number, number, number],    // #e8e0d4 (warm cream bg)
+  baseLow: [0.78, 0.72, 0.58],                                     // brighter warm brown
+  baseHigh: [0.94, 0.91, 0.84],                                    // brighter warm cream
+  gold: [0.90, 0.78, 0.32],                                        // brighter, lighter gold
+  goldStrength: 0.72,
 };
 
-// Dark mode: deep black base with gold glow (#0a0a0a theme)
+// Dark mode: deep warm brown base with gold glow
 const DARK_PALETTE = {
-  clearColor: [0.027, 0.025, 0.020] as [number, number, number],  // #070605
-  baseLow: [0.022, 0.020, 0.016],                                  // deep black
-  baseHigh: [0.055, 0.048, 0.035],                                 // very dark brown
-  gold: [0.83, 0.69, 0.23],                                        // #D4AF37
-  goldStrength: 0.45,
+  clearColor: [0.10, 0.086, 0.067] as [number, number, number],  // #1a1611 (warm dark)
+  baseLow: [0.08, 0.067, 0.047],                                   // deep warm brown
+  baseHigh: [0.18, 0.15, 0.10],                                    // dark brown
+  gold: [0.90, 0.78, 0.32],                                        // brighter gold
+  goldStrength: 0.6,
 };
 
 function getTheme(): "light" | "dark" {

@@ -122,7 +122,7 @@ export default function ExplorePage() {
               return (
                 <article key={course.id} className="neo-surface flex flex-col rounded-2xl border-0 p-5 sm:border">
                   <div className="mb-3 flex items-center justify-between gap-2">
-                    <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-xs text-primary capitalize">
+                    <span className="rounded-full border border-[var(--glass-border)] bg-primary/10 px-2 py-0.5 text-xs text-primary capitalize">
                       {course.level}
                     </span>
                     <span className="text-xs text-muted-foreground">

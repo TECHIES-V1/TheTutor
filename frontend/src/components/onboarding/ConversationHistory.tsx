@@ -140,7 +140,7 @@ function ConversationList({
       className={
         isMobile
           ? "flex flex-col h-full"
-          : "neo-surface flex flex-col w-72 flex-shrink-0 border-l border-primary/10"
+          : "neo-surface flex flex-col w-72 flex-shrink-0 border-l border-[var(--glass-border)]"
       }
     >
       {/* Header */}
@@ -376,7 +376,7 @@ export function ConversationHistory({
     return (
       <div className="lg:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm">
         <div
-          className="absolute inset-y-0 left-0 flex flex-col overflow-hidden border-r border-primary/10 bg-background animate-in slide-in-from-left duration-300"
+          className="absolute inset-y-0 left-0 flex flex-col overflow-hidden border-r border-[var(--glass-border)] bg-background animate-in slide-in-from-left duration-300"
           style={{ width: "min(18rem, 85vw)" }}
         >
           <ConversationList

@@ -125,14 +125,14 @@ export function Sidebar({
 
       <aside
         className={cx(
-          "group/sidebar neo-surface fixed bottom-0 left-0 top-0 z-50 flex flex-col border-r border-primary/10 transition-[transform,width] duration-300 ease-in-out lg:translate-x-0",
+          "group/sidebar neo-surface fixed bottom-0 left-0 top-0 z-50 flex flex-col border-r border-[var(--glass-border)] transition-[transform,width] duration-300 ease-in-out lg:translate-x-0",
           isCollapsed ? "w-72 lg:w-[4.5rem]" : "w-72",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* ── Header ── */}
         <div className={cx(
-          "flex items-center border-b border-primary/10 pb-4 pt-5 transition-all duration-300",
+          "flex items-center border-b border-[var(--glass-border)] pb-4 pt-5 transition-all duration-300",
           isCollapsed ? "lg:justify-center lg:px-0 lg:gap-0 gap-3 px-3" : "gap-3 px-3"
         )}>
           <button
@@ -185,8 +185,8 @@ export function Sidebar({
                 className={cx(
                   linkBase,
                   active
-                    ? "bg-primary/10 text-primary border-[rgba(212,175,55,0.22)] shadow-neo-inset"
-                    : "text-muted-foreground border-transparent hover:bg-primary/5 hover:text-foreground hover:border-[rgba(212,175,55,0.12)]"
+                    ? "bg-primary/10 text-primary border-[var(--glass-border)] shadow-neo-inset"
+                    : "text-muted-foreground border-transparent hover:bg-primary/5 hover:text-foreground hover:border-[var(--glass-border)]"
                 )}
               >
                 {active && (
@@ -210,8 +210,8 @@ export function Sidebar({
               linkBase,
               "font-medium",
               pathname.startsWith("/create-course")
-                ? "bg-primary/15 text-primary border-[rgba(212,175,55,0.22)] shadow-neo-inset"
-                : "text-primary/70 border-transparent hover:bg-primary/8 hover:text-primary hover:border-[rgba(212,175,55,0.12)]"
+                ? "bg-primary/15 text-primary border-[var(--glass-border)] shadow-neo-inset"
+                : "text-primary/70 border-transparent hover:bg-primary/8 hover:text-primary hover:border-[var(--glass-border)]"
             )}
           >
             {pathname.startsWith("/create-course") && (
@@ -262,13 +262,13 @@ export function Sidebar({
 
         {/* ── Footer ── */}
         {user && (
-          <div ref={profileRef} className="relative border-t border-primary/10 px-2 pb-3 pt-2">
+          <div ref={profileRef} className="relative border-t border-[var(--glass-border)] px-2 pb-3 pt-2">
             <button
               onClick={() => setProfileOpen((p) => !p)}
               className={cx(
                 "flex w-full items-center rounded-xl px-2.5 py-2 border border-transparent transition-all duration-200",
-                "hover:bg-primary/5 hover:border-[rgba(212,175,55,0.12)]",
-                profileOpen && "bg-primary/5 border-[rgba(212,175,55,0.12)]",
+                "hover:bg-primary/5 hover:border-[var(--glass-border)]",
+                profileOpen && "bg-primary/5 border-[var(--glass-border)]",
                 isCollapsed ? "lg:justify-center lg:px-0 lg:gap-0 gap-2.5" : "gap-2.5"
               )}
             >

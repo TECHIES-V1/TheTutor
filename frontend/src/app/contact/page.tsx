@@ -12,50 +12,50 @@ export const metadata: Metadata = generateMetadata({
 
 export default function ContactPage() {
   return (
-    <div className="min-h-screen bg-white text-[#101010]">
+    <div className="min-h-screen bg-[var(--landing-bg)] text-[var(--landing-body)]">
       <NavBar />
       <main className="container pt-36 pb-20">
         <section className="landing-surface max-w-4xl rounded-3xl p-6 sm:p-8 md:p-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#b48b1d]">Contact</p>
-          <h1 className="mt-3 font-playfair text-4xl font-bold text-[#1a1a1a] md:text-5xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Contact</p>
+          <h1 className="mt-3 font-playfair text-4xl font-bold text-[var(--landing-heading)] md:text-5xl">
             Get In Touch
           </h1>
-          <p className="mt-5 text-base leading-relaxed text-[#333333]">
+          <p className="mt-5 text-base leading-relaxed text-[var(--landing-body)]">
             We welcome questions, feedback, and partnership conversations. If you need help with your
             account, courses, or platform behavior, our team is available by email.
           </p>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            <div className="rounded-2xl border border-[#d4af37]/25 bg-[#fafaf8] p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8a6a09]">General Support</p>
+            <div className="landing-inset rounded-2xl p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">General Support</p>
               <a
                 href="mailto:support@thetutor.ai"
-                className="mt-2 inline-flex text-sm font-semibold text-[#8a6a09] underline-offset-4 hover:underline"
+                className="mt-2 inline-flex text-sm font-semibold text-primary underline-offset-4 hover:underline"
               >
                 support@thetutor.ai
               </a>
-              <p className="mt-2 text-xs text-[#444444]">Account, course, and product support.</p>
+              <p className="mt-2 text-xs text-[var(--landing-secondary)]">Account, course, and product support.</p>
             </div>
-            <div className="rounded-2xl border border-[#d4af37]/25 bg-[#fafaf8] p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8a6a09]">Partnerships</p>
+            <div className="landing-inset rounded-2xl p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Partnerships</p>
               <a
                 href="mailto:partnerships@thetutor.ai"
-                className="mt-2 inline-flex text-sm font-semibold text-[#8a6a09] underline-offset-4 hover:underline"
+                className="mt-2 inline-flex text-sm font-semibold text-primary underline-offset-4 hover:underline"
               >
                 partnerships@thetutor.ai
               </a>
-              <p className="mt-2 text-xs text-[#444444]">Collaboration, institutional, and strategic inquiries.</p>
+              <p className="mt-2 text-xs text-[var(--landing-secondary)]">Collaboration, institutional, and strategic inquiries.</p>
             </div>
           </div>
 
-          <div className="mt-6 space-y-3 text-sm leading-relaxed text-[#333333]">
+          <div className="mt-6 space-y-3 text-sm leading-relaxed text-[var(--landing-body)]">
             <p>
-              <span className="font-semibold text-[#1a1a1a]">Response Time:</span> We typically respond within
+              <span className="font-semibold text-[var(--landing-heading)]">Response Time:</span> We typically respond within
               1-2 business days.
             </p>
             <p>
-              <span className="font-semibold text-[#1a1a1a]">Security Reports:</span> If you discover a potential
-              security issue, please email <a href="mailto:security@thetutor.ai" className="text-[#8a6a09] underline-offset-4 hover:underline">security@thetutor.ai</a> with details.
+              <span className="font-semibold text-[var(--landing-heading)]">Security Reports:</span> If you discover a potential
+              security issue, please email <a href="mailto:security@thetutor.ai" className="text-primary underline-offset-4 hover:underline">security@thetutor.ai</a> with details.
             </p>
           </div>
         </section>

@@ -1,5 +1,6 @@
 import {
   checkHealth,
+  keywordSearch,
   discoverySearch,
   fetchAndParse,
 } from "./client";
@@ -45,14 +46,20 @@ export async function* discoverAndParseBooks(
     logger.warn({ err }, "[discovery] AI query generation failed, using raw topic");
   }
 
-  // Build search attempts: AI queries first, then raw topic as fallback
-  const uniqueAttempts: string[] = [];
+  // Deduplicate keywords
+  const keywords: string[] = [];
   const seen = new Set<string>();
-  for (const q of [rawQuery, ...aiQueries]) {
+  for (const q of aiQueries) {
     const lower = q.toLowerCase().trim();
     if (!lower || seen.has(lower)) continue;
     seen.add(lower);
-    uniqueAttempts.push(q.trim());
+    keywords.push(q.trim());
+  }
+  // Add raw topic as fallback only if it's short (1-2 words)
+  const rawWords = rawQuery.trim().split(/\s+/);
+  if (rawWords.length <= 2) {
+    const lower = rawQuery.toLowerCase().trim();
+    if (!seen.has(lower)) keywords.push(rawQuery.trim());
   }
 
   // Check MCP health first
@@ -78,25 +85,46 @@ export async function* discoverAndParseBooks(
     throw new Error("MCP service unavailable");
   }
 
-  // Search for books, retrying with broader keywords if no results
+  // Primary: smart keyword search (/search) — sends all keywords at once
   let searchResult = { books: [] as DiscoveredBook[] };
 
-  for (const attempt of uniqueAttempts) {
+  yield {
+    type: "status",
+    data: {
+      phase: "resource_retrieval",
+      message: `Searching for textbooks (${keywords.join(", ")})...`,
+      progress: 10,
+    },
+  };
 
-    yield {
-      type: "status",
-      data: {
-        phase: "resource_retrieval",
-        message: `Searching for textbooks about "${attempt}"...`,
-        progress: 10,
-      },
-    };
+  try {
+    searchResult = await keywordSearch({ keywords, limit: 18 });
+    logger.info({ keywords, bookCount: searchResult.books.length }, "[discovery] Keyword search results");
+  } catch (err) {
+    logger.warn({ keywords, err }, "[discovery] Keyword search failed, falling back to discovery search");
+  }
 
-    searchResult = await discoverySearch({ query: attempt, limit: 18 });
+  // Fallback: try individual keywords via /discovery/search if keyword search returned nothing
+  if (searchResult.books.length === 0) {
+    for (const keyword of keywords) {
+      yield {
+        type: "status",
+        data: {
+          phase: "resource_retrieval",
+          message: `Searching for textbooks about "${keyword}"...`,
+          progress: 10,
+        },
+      };
 
-    if (searchResult.books.length > 0) break;
-
-    logger.info({ query: attempt }, "[discovery] No results, retrying with broader keywords");
+      try {
+        searchResult = await discoverySearch({ query: keyword, limit: 18 });
+        if (searchResult.books.length > 0) break;
+        logger.info({ query: keyword }, "[discovery] No results, trying next keyword");
+      } catch (err) {
+        logger.warn({ query: keyword, err }, "[discovery] Search attempt failed, trying next keyword");
+        continue;
+      }
+    }
   }
 
   yield {

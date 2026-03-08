@@ -115,8 +115,8 @@ export function CourseWorkspaceSidebar({
       {/* Panel */}
       <aside
         className={`neo-surface overflow-y-auto
-          fixed inset-x-0 bottom-0 z-50 max-h-[82vh] rounded-t-3xl border-t border-primary/15 p-4 transition-transform duration-300
-          lg:static lg:max-h-[calc(100svh-7rem)] lg:w-full lg:max-w-none lg:self-start lg:rounded-2xl lg:border lg:border-primary/15 lg:translate-y-0 lg:transition-none
+          fixed inset-x-0 bottom-0 z-50 max-h-[82vh] rounded-t-3xl border-t border-[var(--glass-border)] p-4 transition-transform duration-300
+          lg:static lg:max-h-[calc(100svh-7rem)] lg:w-full lg:max-w-none lg:self-start lg:rounded-2xl lg:border lg:border-[var(--glass-border)] lg:translate-y-0 lg:transition-none
           ${isOpen ? "translate-y-0" : "translate-y-full"}`}
       >
         {/* Drag handle (mobile only) */}
@@ -161,7 +161,7 @@ export function CourseWorkspaceSidebar({
 
         {/* Current lesson context */}
         {currentModule && currentLesson && (
-          <div className="mb-3 rounded-xl border border-primary/20 bg-primary/8 px-3 py-2.5">
+          <div className="mb-3 rounded-xl border border-[var(--glass-border)] bg-primary/8 px-3 py-2.5">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-primary/60">Now</p>
             <p className="mt-0.5 text-xs font-medium text-primary line-clamp-1">{currentModule.title}</p>
             <p className="text-[11px] text-primary/70">
@@ -213,7 +213,7 @@ export function CourseWorkspaceSidebar({
               <div
                 key={module.moduleId}
                 className={`rounded-xl border transition-colors ${
-                  isCurrentMod ? "border-primary/25 bg-primary/5" : "border-border/50 bg-card/40"
+                  isCurrentMod ? "border-[var(--glass-border)] bg-primary/5" : "border-border/50 bg-card/40"
                 }`}
               >
                 <button

@@ -592,7 +592,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
           {/* SVG circular progress */}
           <div className="relative flex h-24 w-24 shrink-0 items-center justify-center animate-in fade-in duration-700 sm:h-28 sm:w-28">
             <svg viewBox="0 0 120 120" className="h-24 w-24 -rotate-90 sm:h-28 sm:w-28" aria-hidden="true">
-              <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(212,175,55,0.12)" strokeWidth="8" />
+              <circle cx="60" cy="60" r="52" fill="none" stroke="var(--glass-border)" strokeWidth="8" />
               <circle
                 cx="60" cy="60" r="52" fill="none"
                 stroke="url(#goldGrad)" strokeWidth="8" strokeLinecap="round"
@@ -602,8 +602,8 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
               />
               <defs>
                 <linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#d4af37" />
-                  <stop offset="100%" stopColor="#f5d060" />
+                  <stop offset="0%" stopColor="var(--accent)" />
+                  <stop offset="100%" stopColor="var(--accent-strong)" />
                 </linearGradient>
               </defs>
             </svg>
@@ -634,7 +634,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
                     i < activePhase
                       ? "bg-primary/15 text-primary border border-primary/25"
                       : i === activePhase
-                        ? "bg-primary/20 text-primary border border-primary/35 shadow-[0_0_8px_rgba(212,175,55,0.2)]"
+                        ? "bg-primary/20 text-primary border border-primary/35 shadow-[0_0_8px_var(--glass-border)]"
                         : "bg-muted/20 text-muted-foreground/40 border border-border/20"
                   }`}
                 >

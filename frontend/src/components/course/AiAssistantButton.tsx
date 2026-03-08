@@ -125,11 +125,11 @@ export function AiAssistantButton({ courseId, lessonId, lessonTitle, lessonConte
     <div className="fixed bottom-6 right-6 z-[60]">
       {open && (
         <div
-          className="absolute bottom-16 right-0 flex flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-2xl"
+          className="absolute bottom-16 right-0 flex flex-col overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] backdrop-blur-xl shadow-2xl"
           style={{ width: "min(380px, calc(100vw - 3rem))", maxHeight: "70vh" }}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-border px-4 py-3 flex-shrink-0">
+          <div className="flex items-center justify-between border-b border-[var(--glass-border)] px-4 py-3 flex-shrink-0">
             <div className="flex items-center gap-2 min-w-0">
               <Sparkles className="h-4 w-4 text-primary flex-shrink-0" />
               <span className="text-sm font-semibold text-foreground">AI Tutor</span>
@@ -158,7 +158,7 @@ export function AiAssistantButton({ courseId, lessonId, lessonTitle, lessonConte
                   className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${
                     msg.role === "user"
                       ? "skeuo-gold rounded-tr-sm"
-                      : "rounded-tl-sm border border-border/50 bg-card text-foreground"
+                      : "rounded-tl-sm border border-[var(--glass-border)] bg-card text-foreground"
                   }`}
                 >
                   {msg.content ? (
@@ -181,8 +181,8 @@ export function AiAssistantButton({ courseId, lessonId, lessonTitle, lessonConte
           </div>
 
           {/* Input */}
-          <div className="flex-shrink-0 border-t border-border p-3">
-            <div className="flex items-end gap-2 rounded-xl border border-border bg-background px-3 py-2 transition-colors focus-within:border-primary/40">
+          <div className="flex-shrink-0 border-t border-[var(--glass-border)] p-3">
+            <div className="flex items-end gap-2 rounded-xl border border-[var(--glass-border)] bg-transparent px-3 py-2 transition-colors focus-within:border-primary/40">
               <textarea
                 ref={inputRef}
                 value={input}

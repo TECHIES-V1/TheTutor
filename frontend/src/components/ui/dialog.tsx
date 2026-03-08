@@ -127,7 +127,7 @@ export function DialogContent({ children, className }: DialogContentProps) {
     >
       <div
         className={cn(
-          "relative w-full max-w-lg rounded-2xl border border-border bg-background p-5",
+          "relative w-full max-w-lg rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] p-5 backdrop-blur-xl",
           className,
         )}
         onClick={(event) => event.stopPropagation()}

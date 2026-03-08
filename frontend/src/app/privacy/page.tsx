@@ -12,21 +12,21 @@ export const metadata: Metadata = generateMetadata({
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-white text-[#101010]">
+    <div className="min-h-screen bg-[var(--landing-bg)] text-[var(--landing-body)]">
       <NavBar />
       <main className="container pt-36 pb-20">
         <section className="landing-surface max-w-5xl rounded-3xl p-6 sm:p-8 md:p-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#b48b1d]">Privacy</p>
-          <h1 className="mt-3 font-playfair text-4xl font-bold text-[#1a1a1a] md:text-5xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Privacy</p>
+          <h1 className="mt-3 font-playfair text-4xl font-bold text-[var(--landing-heading)] md:text-5xl">
             Privacy Notice
           </h1>
-          <p className="mt-4 text-xs uppercase tracking-[0.14em] text-[#555555]">
+          <p className="mt-4 text-xs uppercase tracking-[0.14em] text-[var(--landing-secondary)]">
             Last updated: March 4, 2026
           </p>
 
-          <div className="mt-6 space-y-6 text-sm leading-relaxed text-[#333333]">
+          <div className="mt-6 space-y-6 text-sm leading-relaxed text-[var(--landing-body)]">
             <section>
-              <h5 className="font-playfair text-2xl font-semibold text-[#1a1a1a]">Overview</h5>
+              <h5 className="font-playfair text-2xl font-semibold text-[var(--landing-heading)]">Overview</h5>
               <p className="mt-2">
                 This Privacy Notice explains what data TheTutor collects, how we use it, and the choices
                 you have regarding your information when using our website and services.
@@ -34,7 +34,7 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h5 className="font-playfair text-2xl font-semibold text-[#1a1a1a]">Information We Collect</h5>
+              <h5 className="font-playfair text-2xl font-semibold text-[var(--landing-heading)]">Information We Collect</h5>
               <ul className="mt-2 list-disc space-y-1 pl-5">
                 <li>Account data such as name, email address, and profile image</li>
                 <li>Learning activity including course interactions, progress, and quiz responses</li>
@@ -44,7 +44,7 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h5 className="font-playfair text-2xl font-semibold text-[#1a1a1a]">How We Use Information</h5>
+              <h5 className="font-playfair text-2xl font-semibold text-[var(--landing-heading)]">How We Use Information</h5>
               <ul className="mt-2 list-disc space-y-1 pl-5">
                 <li>Provide, maintain, and improve platform features</li>
                 <li>Generate personalized learning experiences and content</li>
@@ -55,7 +55,7 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h5 className="font-playfair text-2xl font-semibold text-[#1a1a1a]">Data Sharing</h5>
+              <h5 className="font-playfair text-2xl font-semibold text-[var(--landing-heading)]">Data Sharing</h5>
               <p className="mt-2">
                 We do not sell personal data. We may share limited data with trusted service providers
                 that support hosting, analytics, authentication, or operations, subject to confidentiality
@@ -64,7 +64,7 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h5 className="font-playfair text-2xl font-semibold text-[#1a1a1a]">Retention and Security</h5>
+              <h5 className="font-playfair text-2xl font-semibold text-[var(--landing-heading)]">Retention and Security</h5>
               <p className="mt-2">
                 We retain data for as long as necessary to provide services, meet legal obligations,
                 and resolve disputes. We apply reasonable administrative, technical, and organizational
@@ -73,10 +73,10 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h5 className="font-playfair text-2xl font-semibold text-[#1a1a1a]">Your Choices</h5>
+              <h5 className="font-playfair text-2xl font-semibold text-[var(--landing-heading)]">Your Choices</h5>
               <p className="mt-2">
                 You can request account support, data export, or deletion by contacting us at{" "}
-                <a href="mailto:support@thetutor.ai" className="text-[#8a6a09] underline-offset-4 hover:underline">
+                <a href="mailto:support@thetutor.ai" className="text-primary underline-offset-4 hover:underline">
                   support@thetutor.ai
                 </a>
                 .
@@ -84,7 +84,7 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h5 className="font-playfair text-2xl font-semibold text-[#1a1a1a]">Updates to This Notice</h5>
+              <h5 className="font-playfair text-2xl font-semibold text-[var(--landing-heading)]">Updates to This Notice</h5>
               <p className="mt-2">
                 We may update this notice periodically. If we make material changes, we will revise
                 the date above and post the updated policy on this page.

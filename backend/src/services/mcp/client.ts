@@ -43,11 +43,10 @@ export async function checkHealth(): Promise<boolean> {
   }
 }
 
-// ── Discovery Search ──────────────────────────────────────────────────────
+// ── Keyword Search (Smart OpenLibrary — /search) ─────────────────────────
 
-interface DiscoverySearchParams {
-  query: string;
-  sources?: BookSource[];
+interface KeywordSearchParams {
+  keywords: string[];
   limit?: number;
 }
 
@@ -63,6 +62,68 @@ interface RawSearchResult {
   subjects?: string[];
   publishYear?: number;
   publish_year?: number;
+}
+
+/**
+ * Smart OpenLibrary keyword search via /search endpoint.
+ * Sends all keywords at once as repeated `keywords=` params.
+ */
+export async function keywordSearch(
+  params: KeywordSearchParams
+): Promise<MCPSearchResult> {
+  const { keywords, limit = 18 } = params;
+
+  const searchParams = new URLSearchParams({ limit: String(limit) });
+  for (const kw of keywords) {
+    searchParams.append("keywords", kw);
+  }
+
+  const response = await fetch(
+    `${MCP_BASE_URL}/search?${searchParams.toString()}`,
+    {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(30000),
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({
+      error: "Unknown MCP error",
+      code: "UNKNOWN",
+    })) as MCPError;
+    throw new Error(`MCP keyword search failed: ${error.error}`);
+  }
+
+  const data = await response.json() as MCPSearchResponse;
+
+  const books: DiscoveredBook[] = (data.books || data.results || []).map(
+    (book: RawSearchResult) => ({
+      id: String(book.id),
+      title: book.title,
+      authors: normalizeAuthors(book.authors),
+      source: (book.source || "openlibrary") as BookSource,
+      downloadUrl: book.downloadUrl || book.download_url,
+      format: book.format,
+      description: book.description,
+      subjects: book.subjects,
+      publishYear: book.publishYear || book.publish_year,
+    })
+  );
+
+  return {
+    books,
+    totalFound: data.totalFound || data.total || books.length,
+    query: keywords.join(", "),
+  };
+}
+
+// ── Discovery Search (Aggregate — /discovery/search) ─────────────────────
+
+interface DiscoverySearchParams {
+  query: string;
+  sources?: BookSource[];
+  limit?: number;
 }
 
 export async function discoverySearch(
@@ -84,7 +145,7 @@ export async function discoverySearch(
     {
       method: "GET",
       headers: { "Content-Type": "application/json" },
-      signal: AbortSignal.timeout(30000),
+      signal: AbortSignal.timeout(45000),
     }
   );
 
@@ -98,7 +159,6 @@ export async function discoverySearch(
 
   const data = await response.json() as MCPSearchResponse;
 
-  // Normalize the response to our DiscoveredBook format
   const books: DiscoveredBook[] = (data.books || data.results || []).map(
     (book: RawSearchResult) => ({
       id: String(book.id),

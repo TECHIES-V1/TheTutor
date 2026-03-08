@@ -114,7 +114,7 @@ export default function ExploreCourseDetailPage() {
               </p>
 
               <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
-                <span className="rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-primary capitalize">
+                <span className="rounded-full border border-[var(--glass-border)] bg-primary/10 px-2 py-0.5 text-primary capitalize">
                   {data.course.level}
                 </span>
                 <span className="rounded-full border border-border px-2 py-0.5 text-muted-foreground">
@@ -158,7 +158,7 @@ export default function ExploreCourseDetailPage() {
                     {enrolling ? "Enrolling..." : isGenerating ? "Generating..." : "Enroll for Free"}
                   </Button>
                 ) : (
-                  <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-2 text-xs text-primary">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-primary/10 px-3 py-2 text-xs text-primary">
                     <CheckCircle2 className="h-4 w-4" />
                     Access already available
                   </div>
