@@ -487,18 +487,18 @@ CRITICAL RULES:
 - These are OLD-SCHOOL digital libraries — they have classic textbooks, not modern tutorials
 - ${hint}
 - ${levelHint}
-- Each query should be 1-3 words maximum — library search engines work best with short queries
+- Each query must be exactly ONE word — library search engines return the best results with a single broad keyword
 - Order from most specific to broadest (first query closest to topic, last query = parent discipline)
 - NEVER use branded names, framework versions, or marketing phrases
-- Think: "What would this topic be called in a university library catalog?"
+- Think: "What single word would a university librarian use to catalog this?"
 
 Examples:
-- Topic "neumorphism" → ["user interface design", "CSS design", "web design", "graphic design", "human computer interaction"]
-- Topic "React hooks" → ["JavaScript programming", "web development", "software engineering", "computer programming"]
-- Topic "machine learning" → ["machine learning", "artificial intelligence", "statistical learning", "pattern recognition", "data science", "probability statistics"]
-- Topic "anxiety management" → ["anxiety disorders", "cognitive therapy", "mental health", "psychology", "behavioural science"]
-- Topic "stock trading" → ["stock market", "investment", "financial analysis", "economics", "finance"]
-- Topic "guitar" → ["guitar instruction", "music theory", "musical instruments", "music education"]
+- Topic "neumorphism" → ["design", "CSS", "interface", "typography", "graphics"]
+- Topic "React hooks" → ["JavaScript", "programming", "engineering", "computing"]
+- Topic "machine learning" → ["intelligence", "learning", "statistics", "probability", "algorithms"]
+- Topic "anxiety management" → ["anxiety", "therapy", "psychology", "psychiatry", "neuroscience"]
+- Topic "stock trading" → ["investing", "finance", "economics", "markets", "trading"]
+- Topic "guitar" → ["guitar", "music", "instruments", "harmony", "theory"]
 
 Respond with ONLY a JSON array of search query strings. No explanation, no markdown.`;
 }
@@ -712,12 +712,12 @@ export function getToolAwareGenerationPrompt(data: OnboardingData): string {
   const subject = confirmedSubject || topic;
 
   const searchStrategies: Record<string, string[]> = {
-    "Programming & Software Development": [`"${topic}" programming textbook`, `${topic} algorithms implementation`, `software engineering ${topic}`],
-    "Medicine & Clinical Sciences": [`clinical ${topic} medicine`, `${topic} pathophysiology textbook`, `${topic} diagnosis treatment`],
-    "Engineering": [`${topic} engineering principles`, `${topic} worked examples textbook`, `engineering mechanics ${topic}`],
-    "Mathematics": [`${topic} mathematics proof`, `${topic} applied mathematics`, `${topic} textbook exercises`],
-    "Finance & Investment": [`${topic} finance quantitative`, `${topic} investment analysis`, `financial ${topic} textbook`],
-    "default": [`${topic} textbook`, `${topic} ${level} course material`, `${subject} fundamentals`],
+    "Programming & Software Development": ["programming", "algorithms", "engineering"],
+    "Medicine & Clinical Sciences": ["medicine", "pathology", "anatomy"],
+    "Engineering": ["engineering", "mechanics", "thermodynamics"],
+    "Mathematics": ["mathematics", "calculus", "algebra"],
+    "Finance & Investment": ["finance", "economics", "investing"],
+    "default": [`${topic}`.split(/\s+/)[0].toLowerCase(), `${subject}`.split(/\s+/)[0].toLowerCase(), profile.domain.split(/\s+/)[0].toLowerCase()],
   };
 
   const strategies = searchStrategies[profile.domain] || searchStrategies["default"];
@@ -746,7 +746,7 @@ export function getToolAwareGenerationPrompt(data: OnboardingData): string {
 
 ## MCP-First Research Protocol
 This is the first and only research phase before any course speculation. Do not plan modules or lessons until you have completed the steps below.
-1. Run at least 3 discover_books queries (use the strategy list below plus any domain synonyms you need) and collect all promising titles.
+1. Run at least 3 discover_books queries (use the strategy list below plus any domain synonyms you need) and collect all promising titles. IMPORTANT: Use a SINGLE keyword per query — these are old-school library catalogs (Gutenberg, OpenLibrary) that work best with one broad term. Never send multi-word phrases.
 2. For the top 4–5 discoveries, call fetch_and_parse_book to read the most relevant chapters (prioritise the first two content emphasis points) and capture the chapter titles or sections you will cite.
 3. Record the chapter-level takeaways; you will reference them when you generate lessons. Do not start writing until these books are parsed, summarised, and you can point to which book/chapter supports each claim.
 

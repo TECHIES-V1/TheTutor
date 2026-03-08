@@ -849,25 +849,6 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
             </div>
           )}
 
-          {conversationPhase === "resource_retrieval" &&
-            !awaitingCourseGenerationDecision &&
-            !requiresConfirmation &&
-            !isTyping &&
-            !isGenerating &&
-            !isReadOnly && (
-              <div className="mt-4 flex flex-col items-start gap-3">
-                <button
-                  onClick={handleCreateCourseAnyway}
-                  className="skeuo-gold rounded-xl px-5 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-90"
-                >
-                  Resume Course Creation
-                </button>
-                <p className="text-xs text-muted-foreground">
-                  Your course setup is ready. Continue generation from where you left it.
-                </p>
-              </div>
-            )}
-
           {submitError && (
             <div className="mt-4 space-y-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-4">
               <div className="flex items-center gap-2 text-destructive">
