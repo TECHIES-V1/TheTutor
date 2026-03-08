@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import Squares from "@/components/Squares";
+import { Iridescence } from "./iridescence";
 
 const heroImages = [
   {
