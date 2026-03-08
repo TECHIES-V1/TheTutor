@@ -10,17 +10,18 @@ import { Iridescence } from "@/components/landing/iridescence";
 import { Message, RelatedCoursePreview } from "@/types";
 import { api } from "@/lib/api";
 import { BACKEND_URL } from "@/lib/backendUrl";
+import { useAuth } from "@/components/providers/AuthProvider";
 
 interface ChatMessageProps {
   initialConversationId?: string | null;
   onScrollDirectionChange?: (visible: boolean) => void;
 }
 
-function getGreeting() {
+function getGreeting(name?: string) {
   const hour = new Date().getHours();
-  if (hour < 12) return "Good morning.";
-  if (hour < 18) return "Good afternoon.";
-  return "Good evening.";
+  const greeting =
+    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  return name ? `${greeting}, ${name.split(" ")[0]}.` : `${greeting}.`;
 }
 
 type LiveCurriculumModule = {
@@ -38,6 +39,7 @@ type ConversationPhase =
   | "completed";
 
 export function ChatMessage({ initialConversationId, onScrollDirectionChange }: ChatMessageProps) {
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -766,7 +768,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center pt-10 md:pt-20 animate-in fade-in slide-in-from-bottom-4 duration-1000">
               <h1 className="text-2xl md:text-4xl text-foreground font-medium mb-4 tracking-tight">
-                {getGreeting()}
+                {getGreeting(user?.name)}
               </h1>
               <p className="text-muted-foreground text-sm md:text-xl max-w-md">
                 Hi! I&apos;m your AI tutor. What would you like to learn today?

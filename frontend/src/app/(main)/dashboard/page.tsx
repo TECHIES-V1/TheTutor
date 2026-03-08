@@ -11,7 +11,7 @@ function getTimeGreeting(name?: string) {
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-  return name ? `${greeting}, ${name.split(" ")[0]}` : greeting;
+  return name ? `${greeting}, ${name.split(" ")[0]}.` : `${greeting}.`;
 }
 
 interface StatsCard {
