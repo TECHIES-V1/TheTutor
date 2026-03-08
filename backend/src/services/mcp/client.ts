@@ -222,11 +222,15 @@ export async function pipelineTopic(
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({
-      error: "Unknown MCP error",
-      code: "UNKNOWN",
-    })) as MCPError;
-    throw new Error(`MCP pipeline/topic failed: ${error.error}`);
+    const body = await response.text().catch(() => "");
+    let errorMessage = `MCP pipeline/topic failed (${response.status})`;
+    try {
+      const parsed = JSON.parse(body) as MCPError;
+      errorMessage = parsed.error || errorMessage;
+    } catch {
+      if (body) errorMessage += `: ${body.slice(0, 200)}`;
+    }
+    throw new Error(errorMessage);
   }
 
   const data = await response.json() as MCPSearchResponse;
@@ -277,16 +281,21 @@ export async function fetchAndParse(
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({
-      error: "Unknown MCP error",
-      code: "UNKNOWN",
-    })) as MCPError;
+    const status = response.status;
+    const body = await response.text().catch(() => "");
+    let errorMessage = `MCP fetch-parse failed (${status})`;
+    try {
+      const parsed = JSON.parse(body) as MCPError;
+      errorMessage = parsed.error || errorMessage;
+    } catch {
+      if (body) errorMessage += `: ${body.slice(0, 200)}`;
+    }
     return {
       success: false,
       title: "",
       authors: [],
       content: { summary: "", chapters: [] },
-      error: error.error,
+      error: errorMessage,
     };
   }
 

@@ -11,6 +11,11 @@ export interface YouTubeVideoReference {
     queryUsed: string;
 }
 
+// ── Quota short-circuit ─────────────────────────────────────────────────
+let quotaExhausted = false;
+let quotaExhaustedAt = 0;
+const QUOTA_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
+
 // ── Primary: YouTube Data API v3 (requires API key) ──────────────────────
 
 async function searchWithDataApi(query: string, apiKey: string): Promise<YouTubeVideoReference | null> {
@@ -27,7 +32,13 @@ async function searchWithDataApi(query: string, apiKey: string): Promise<YouTube
         });
 
         if (!response.ok) {
-            logger.error({ status: response.status, body: await response.text() }, "YouTube Data API error");
+            const body = await response.text();
+            logger.error({ status: response.status, body }, "YouTube Data API error");
+            if (response.status === 403 && body.includes("quotaExceeded")) {
+                quotaExhausted = true;
+                quotaExhaustedAt = Date.now();
+                logger.warn("YouTube API quota exhausted — skipping API calls until cooldown");
+            }
             return null;
         }
 
@@ -102,11 +113,16 @@ async function searchWithPiped(query: string): Promise<YouTubeVideoReference | n
 export async function searchYouTubeVideo(query: string): Promise<YouTubeVideoReference | null> {
     const apiKey = process.env.YOUTUBE_API_KEY;
 
-    // Try YouTube Data API first if key is available
+    // Try YouTube Data API first if key is available and quota not exhausted
     if (apiKey) {
-        const result = await searchWithDataApi(query, apiKey);
-        if (result) return result;
-        logger.warn({ query }, "YouTube Data API returned no results, trying Piped fallback");
+        if (quotaExhausted && Date.now() - quotaExhaustedAt > QUOTA_COOLDOWN_MS) {
+            quotaExhausted = false;
+        }
+        if (!quotaExhausted) {
+            const result = await searchWithDataApi(query, apiKey);
+            if (result) return result;
+            logger.warn({ query }, "YouTube Data API returned no results, trying Piped fallback");
+        }
     }
 
     // Fallback to Piped API (no key needed)

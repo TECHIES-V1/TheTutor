@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "dev": "NODE_OPTIONS=--max-old-space-size=4096 ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "node -e \"require('fs').rmSync('dist',{ recursive: true, force: true })\" && npx tsc -p tsconfig.build.json",
     "start": "npm run build && node dist/index.js"
   },

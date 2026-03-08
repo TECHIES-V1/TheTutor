@@ -17,6 +17,20 @@ interface ReadAloudHighlighterProps {
 const supportsCustomHighlight =
   typeof CSS !== "undefined" && "highlights" in CSS;
 
+// Inject ::highlight(read-aloud) CSS at runtime so it can't be stripped
+// by Tailwind v4 / Lightning CSS during build.
+const HIGHLIGHT_STYLE_ID = "read-aloud-highlight-style";
+function ensureHighlightCSS() {
+  if (document.getElementById(HIGHLIGHT_STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = HIGHLIGHT_STYLE_ID;
+  style.textContent = [
+    "::highlight(read-aloud) { background-color: rgba(212, 175, 55, 0.25); color: inherit; }",
+    ".read-aloud-active { background-color: rgba(212, 175, 55, 0.25); color: inherit; border-radius: 2px; padding: 0 1px; }",
+  ].join("\n");
+  document.head.appendChild(style);
+}
+
 /**
  * Word highlighter for read-aloud.
  *
@@ -37,13 +51,33 @@ export function ReadAloudHighlighter({
   const activeMarkRef = useRef<HTMLElement | null>(null);
   const isMutatingRef = useRef(false);
 
-  // Build word map from DOM text nodes (one-time per activation)
+  // Inject highlight CSS on mount (runtime, bypasses build-time CSS stripping)
+  useEffect(() => {
+    ensureHighlightCSS();
+  }, []);
+
+  // Build word map from DOM text nodes (one-time per activation).
+  // Skips <pre> blocks to match stripMarkdown() which removes code fences.
   const buildWordMap = useCallback(() => {
     const container = containerRef.current;
     if (!container || builtForRef.current === container) return;
 
     const words: WordLocation[] = [];
-    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+    const walker = document.createTreeWalker(
+      container,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node: Node) {
+          // Skip text inside <pre> (fenced code blocks are removed by stripMarkdown)
+          let el = node.parentElement;
+          while (el && el !== container) {
+            if (el.tagName === "PRE") return NodeFilter.FILTER_REJECT;
+            el = el.parentElement;
+          }
+          return NodeFilter.FILTER_ACCEPT;
+        },
+      }
+    );
 
     let textNode: Text | null;
     while ((textNode = walker.nextNode() as Text | null)) {

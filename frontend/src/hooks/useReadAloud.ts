@@ -1,29 +1,15 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { BACKEND_URL } from "@/lib/backendUrl";
+import { stripMarkdown } from "@/lib/stripMarkdown";
 
-interface TextChunk {
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+interface Section {
   index: number;
-  plainText: string;
-  startOffset: number;
-  endOffset: number;
-  sectionHeading: string | null;
+  text: string;
+  heading: string | null;
   wordOffset: number;
-}
-
-interface SpeechMark {
-  time: number;
-  type: "word" | "sentence";
-  start: number;
-  end: number;
-  value: string;
-}
-
-interface ChunkAudio {
-  audio: string; // base64
-  marks: SpeechMark[];
-  chunkIndex: number;
 }
 
 export type ReadAloudStatus = "idle" | "loading" | "playing" | "paused";
@@ -41,245 +27,305 @@ export interface UseReadAloudReturn {
   sectionAnnouncement: string | null;
 }
 
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+// Chrome kills utterances after ~15s. Keep sections short.
+const MAX_SECTION_LENGTH = 250;
+
+/**
+ * Build speakable sections from markdown.
+ * Extracts headings before stripping, splits text at paragraph/sentence boundaries.
+ */
+function buildSections(markdown: string): Section[] {
+  // Extract headings in order from original markdown
+  const headingTexts: string[] = [];
+  const headingRegex = /^#{1,6}\s+(.+)$/gm;
+  let m: RegExpExecArray | null;
+  while ((m = headingRegex.exec(markdown)) !== null) {
+    headingTexts.push(m[1].trim());
+  }
+
+  const plainText = stripMarkdown(markdown);
+  if (!plainText) return [];
+
+  const paragraphs = plainText.split(/\n\n+/);
+  const sections: Section[] = [];
+  let wordOffset = 0;
+  let nextHeadingIdx = 0;
+
+  for (const para of paragraphs) {
+    const trimmed = para.trim();
+    if (!trimmed) continue;
+
+    // Check if this paragraph starts with the next heading text
+    let heading: string | null = null;
+    if (nextHeadingIdx < headingTexts.length) {
+      const expected = headingTexts[nextHeadingIdx];
+      if (trimmed.toLowerCase().startsWith(expected.toLowerCase())) {
+        heading = expected;
+        nextHeadingIdx++;
+      }
+    }
+
+    if (trimmed.length <= MAX_SECTION_LENGTH) {
+      const wordCount = trimmed.split(/\s+/).filter(Boolean).length;
+      sections.push({
+        index: sections.length,
+        text: trimmed,
+        heading,
+        wordOffset,
+      });
+      wordOffset += wordCount;
+    } else {
+      // Split long paragraph by sentences
+      const sentences = trimmed.match(/[^.!?]+[.!?]+\s*/g) || [trimmed];
+      let buffer = "";
+      let isFirst = true;
+
+      for (const sent of sentences) {
+        if (buffer.length + sent.length <= MAX_SECTION_LENGTH) {
+          buffer += sent;
+        } else {
+          if (buffer.trim()) {
+            const wc = buffer.trim().split(/\s+/).filter(Boolean).length;
+            sections.push({
+              index: sections.length,
+              text: buffer.trim(),
+              heading: isFirst ? heading : null,
+              wordOffset,
+            });
+            wordOffset += wc;
+            isFirst = false;
+          }
+          buffer = sent;
+        }
+      }
+      if (buffer.trim()) {
+        const wc = buffer.trim().split(/\s+/).filter(Boolean).length;
+        sections.push({
+          index: sections.length,
+          text: buffer.trim(),
+          heading: isFirst ? heading : null,
+          wordOffset,
+        });
+        wordOffset += wc;
+      }
+    }
+  }
+
+  return sections;
+}
+
+/** Count words in text before a given character index. */
+function countWordsBeforeChar(text: string, charIndex: number): number {
+  const before = text.slice(0, charIndex);
+  return before.split(/\s+/).filter(Boolean).length;
+}
+
+// ─── Hook ───────────────────────────────────────────────────────────────────
+
 export function useReadAloud(contentMarkdown: string): UseReadAloudReturn {
   const [status, setStatus] = useState<ReadAloudStatus>("idle");
-  const [chunks, setChunks] = useState<TextChunk[]>([]);
-  const [currentChunkIndex, setCurrentChunkIndex] = useState(0);
+  const [sections, setSections] = useState<Section[]>([]);
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [highlightWordIndex, setHighlightWordIndex] = useState<number | null>(null);
   const [sectionAnnouncement, setSectionAnnouncement] = useState<string | null>(null);
-  const [playbackRate, setPlaybackRate] = useState(1);
+  const [playbackRate, setPlaybackRateState] = useState(1);
+  const [voicesReady, setVoicesReady] = useState(false);
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const marksRef = useRef<SpeechMark[]>([]);
-  const chunksRef = useRef<TextChunk[]>([]);
-  const currentChunkRef = useRef(0);
-  const rafRef = useRef<number>(0);
-  const prefetchedRef = useRef<Map<number, ChunkAudio>>(new Map());
-  const abortRef = useRef<AbortController | null>(null);
+  const sectionsRef = useRef<Section[]>([]);
+  const currentSectionRef = useRef(0);
   const lastWordIdxRef = useRef<number | null>(null);
+  const stoppedRef = useRef(false);
+  const playbackRateRef = useRef(1);
+  const pendingPlayRef = useRef(false);
 
   // Keep refs in sync
+  useEffect(() => { sectionsRef.current = sections; }, [sections]);
+  useEffect(() => { currentSectionRef.current = currentSectionIndex; }, [currentSectionIndex]);
+
+  // Wait for browser voices to load
   useEffect(() => {
-    chunksRef.current = chunks;
-  }, [chunks]);
-  useEffect(() => {
-    currentChunkRef.current = currentChunkIndex;
-  }, [currentChunkIndex]);
+    const synth = typeof window !== "undefined" ? window.speechSynthesis : null;
+    if (!synth) return;
+
+    if (synth.getVoices().length > 0) {
+      setVoicesReady(true);
+      return;
+    }
+
+    const onVoices = () => {
+      setVoicesReady(true);
+    };
+    synth.addEventListener("voiceschanged", onVoices);
+    return () => synth.removeEventListener("voiceschanged", onVoices);
+  }, []);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      cancelAnimationFrame(rafRef.current);
-      audioRef.current?.pause();
-      abortRef.current?.abort();
+      window.speechSynthesis?.cancel();
     };
   }, []);
 
-  const fetchChunks = useCallback(async (signal: AbortSignal): Promise<TextChunk[]> => {
-    const res = await fetch(`${BACKEND_URL}/tts/chunk`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ markdown: contentMarkdown }),
-      signal,
-    });
-    if (!res.ok) throw new Error("Failed to chunk markdown");
-    const data = await res.json();
-    return data.chunks;
-  }, [contentMarkdown]);
-
-  const fetchChunkAudio = useCallback(async (chunk: TextChunk, signal: AbortSignal): Promise<ChunkAudio> => {
-    const res = await fetch(`${BACKEND_URL}/tts/synthesize`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: chunk.plainText, chunkIndex: chunk.index }),
-      signal,
-    });
-    if (!res.ok) throw new Error("Failed to synthesize chunk");
-    return res.json();
+  const setPlaybackRate = useCallback((rate: number) => {
+    playbackRateRef.current = rate;
+    setPlaybackRateState(rate);
   }, []);
 
-  const startHighlightLoop = useCallback(() => {
-    const tick = () => {
-      const audio = audioRef.current;
-      const marks = marksRef.current;
-      if (!audio || marks.length === 0) {
-        rafRef.current = requestAnimationFrame(tick);
-        return;
-      }
-
-      const currentMs = audio.currentTime * 1000;
-      let activeWordIdx: number | null = null;
-      const chunk = chunksRef.current[currentChunkRef.current];
-
-      for (let i = marks.length - 1; i >= 0; i--) {
-        if (marks[i].type === "word" && currentMs >= marks[i].time) {
-          activeWordIdx = (chunk?.wordOffset ?? 0) + i;
-          break;
+  const speakSection = useCallback(
+    (section: Section): Promise<void> => {
+      return new Promise<void>((resolve) => {
+        if (stoppedRef.current) {
+          resolve();
+          return;
         }
+
+        const utterance = new SpeechSynthesisUtterance(section.text);
+        utterance.rate = playbackRateRef.current;
+        utterance.pitch = 1;
+        utterance.lang = "en-US";
+
+        // Safety timeout: ~15 chars/sec at 1x, plus 5s buffer.
+        // If onend never fires (Chrome bug), we auto-advance.
+        const estimatedMs = (section.text.length / 15) * 1000 / playbackRateRef.current;
+        const timeout = setTimeout(() => {
+          resolve();
+        }, estimatedMs + 5000);
+
+        // Word highlighting via boundary events
+        utterance.onboundary = (event) => {
+          if (event.name === "word") {
+            const localWordIdx = countWordsBeforeChar(section.text, event.charIndex);
+            const globalIdx = section.wordOffset + localWordIdx;
+            if (globalIdx !== lastWordIdxRef.current) {
+              lastWordIdxRef.current = globalIdx;
+              setHighlightWordIndex(globalIdx);
+            }
+          }
+        };
+
+        utterance.onend = () => {
+          clearTimeout(timeout);
+          resolve();
+        };
+
+        utterance.onerror = (event) => {
+          clearTimeout(timeout);
+          // "interrupted" and "canceled" are expected when stopping
+          resolve();
+        };
+
+        window.speechSynthesis.speak(utterance);
+      });
+    },
+    []
+  );
+
+  const playAllSections = useCallback(
+    async (startIndex: number, sectionList: Section[]) => {
+      for (let i = startIndex; i < sectionList.length; i++) {
+        if (stoppedRef.current) break;
+
+        setCurrentSectionIndex(i);
+        currentSectionRef.current = i;
+
+        const section = sectionList[i];
+
+        // Section announcement
+        if (section.heading) {
+          setSectionAnnouncement(section.heading);
+          setTimeout(() => setSectionAnnouncement(null), 3000);
+        }
+
+        await speakSection(section);
       }
 
-      if (activeWordIdx !== lastWordIdxRef.current) {
-        lastWordIdxRef.current = activeWordIdx;
-        setHighlightWordIndex(activeWordIdx);
-      }
-      rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
-  }, []);
-
-  const playChunkAudio = useCallback(async (chunkAudio: ChunkAudio, chunk: TextChunk) => {
-    // Announce section if new heading
-    if (chunk.sectionHeading) {
-      setSectionAnnouncement(chunk.sectionHeading);
-      // Use browser speech for announcement (free)
-      if (typeof window !== "undefined" && window.speechSynthesis) {
-        const utterance = new SpeechSynthesisUtterance(`Now reading: ${chunk.sectionHeading}`);
-        utterance.rate = 1.1;
-        await new Promise<void>((resolve) => {
-          utterance.onend = () => resolve();
-          utterance.onerror = () => resolve();
-          window.speechSynthesis.speak(utterance);
-        });
-      }
-      // Clear announcement after a delay
-      setTimeout(() => setSectionAnnouncement(null), 3000);
-    }
-
-    marksRef.current = chunkAudio.marks;
-
-    // Create audio from base64
-    const blob = base64ToBlob(chunkAudio.audio, "audio/mpeg");
-    const url = URL.createObjectURL(blob);
-
-    if (audioRef.current) {
-      audioRef.current.pause();
-      URL.revokeObjectURL(audioRef.current.src);
-    }
-
-    const audio = new Audio(url);
-    audio.playbackRate = playbackRate;
-    audioRef.current = audio;
-
-    // Prefetch next chunk
-    const nextIdx = chunk.index + 1;
-    if (nextIdx < chunksRef.current.length && !prefetchedRef.current.has(nextIdx)) {
-      const nextChunk = chunksRef.current[nextIdx];
-      fetchChunkAudio(nextChunk, abortRef.current?.signal ?? new AbortController().signal)
-        .then((data) => prefetchedRef.current.set(nextIdx, data))
-        .catch(() => {}); // non-critical
-    }
-
-    return new Promise<void>((resolve, reject) => {
-      audio.onended = () => {
-        URL.revokeObjectURL(url);
-        resolve();
-      };
-      audio.onerror = () => {
-        URL.revokeObjectURL(url);
-        reject(new Error("Audio playback error"));
-      };
-      audio.play().catch(reject);
-    });
-  }, [playbackRate, fetchChunkAudio]);
-
-  const playAllChunks = useCallback(async (startIndex: number, chunkList: TextChunk[]) => {
-    startHighlightLoop();
-
-    for (let i = startIndex; i < chunkList.length; i++) {
-      if (abortRef.current?.signal.aborted) break;
-
-      setCurrentChunkIndex(i);
-      currentChunkRef.current = i;
-
-      // Get audio (from prefetch cache or fetch)
-      let chunkAudio = prefetchedRef.current.get(i);
-      if (!chunkAudio) {
-        chunkAudio = await fetchChunkAudio(chunkList[i], abortRef.current!.signal);
-        prefetchedRef.current.set(i, chunkAudio);
-      }
-
-      await playChunkAudio(chunkAudio, chunkList[i]);
-      prefetchedRef.current.delete(i);
-    }
-
-    // Done playing all chunks
-    cancelAnimationFrame(rafRef.current);
-    lastWordIdxRef.current = null;
-    setHighlightWordIndex(null);
-    setSectionAnnouncement(null);
-    setStatus("idle");
-  }, [startHighlightLoop, fetchChunkAudio, playChunkAudio]);
-
-  const play = useCallback(async () => {
-    if (status === "playing") return;
-
-    setStatus("loading");
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-    prefetchedRef.current.clear();
-
-    try {
-      const fetchedChunks = await fetchChunks(controller.signal);
-      if (fetchedChunks.length === 0) {
+      // Done
+      if (!stoppedRef.current) {
+        lastWordIdxRef.current = null;
+        setHighlightWordIndex(null);
+        setSectionAnnouncement(null);
         setStatus("idle");
-        return;
       }
+    },
+    [speakSection]
+  );
 
-      setChunks(fetchedChunks);
-      chunksRef.current = fetchedChunks;
-      setCurrentChunkIndex(0);
-      setStatus("playing");
+  const startPlayback = useCallback((markdown: string) => {
+    window.speechSynthesis.cancel();
+    stoppedRef.current = false;
 
-      await playAllChunks(0, fetchedChunks);
-    } catch (err) {
-      if ((err as Error).name !== "AbortError") {
-        console.error("Read-aloud error:", err);
-      }
+    const built = buildSections(markdown);
+    if (built.length === 0) {
       setStatus("idle");
+      return;
     }
-  }, [status, fetchChunks, playAllChunks]);
+
+    setSections(built);
+    sectionsRef.current = built;
+    setCurrentSectionIndex(0);
+    setStatus("playing");
+
+    playAllSections(0, built).catch((err) => {
+      console.error("Read-aloud error:", err);
+      setStatus("idle");
+    });
+  }, [playAllSections]);
+
+  // Auto-start when voices become ready (if play was pressed while loading)
+  useEffect(() => {
+    if (voicesReady && pendingPlayRef.current) {
+      pendingPlayRef.current = false;
+      startPlayback(contentMarkdown);
+    }
+  }, [voicesReady, contentMarkdown, startPlayback]);
+
+  const play = useCallback(() => {
+    if (status === "playing") return;
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+
+    if (!voicesReady) {
+      // Voices still loading — defer
+      pendingPlayRef.current = true;
+      setStatus("loading");
+      return;
+    }
+
+    startPlayback(contentMarkdown);
+  }, [status, voicesReady, contentMarkdown, startPlayback]);
 
   const pause = useCallback(() => {
-    audioRef.current?.pause();
-    cancelAnimationFrame(rafRef.current);
+    window.speechSynthesis?.pause();
     setStatus("paused");
   }, []);
 
   const resume = useCallback(() => {
     if (status !== "paused") return;
-    audioRef.current?.play();
-    startHighlightLoop();
+    window.speechSynthesis?.resume();
     setStatus("playing");
-  }, [status, startHighlightLoop]);
+  }, [status]);
 
   const stop = useCallback(() => {
-    abortRef.current?.abort();
-    audioRef.current?.pause();
-    cancelAnimationFrame(rafRef.current);
+    stoppedRef.current = true;
+    pendingPlayRef.current = false;
+    window.speechSynthesis?.cancel();
     lastWordIdxRef.current = null;
     setHighlightWordIndex(null);
     setSectionAnnouncement(null);
-    setCurrentChunkIndex(0);
+    setCurrentSectionIndex(0);
     setStatus("idle");
-    prefetchedRef.current.clear();
-    window.speechSynthesis?.cancel();
   }, []);
 
-  // Update playback rate on existing audio
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.playbackRate = playbackRate;
-    }
+    playbackRateRef.current = playbackRate;
   }, [playbackRate]);
 
-  const total = chunks.length || 1;
+  const total = sections.length || 1;
   const progress = {
-    current: currentChunkIndex + 1,
-    total: chunks.length,
-    percent: chunks.length > 0 ? Math.round(((currentChunkIndex + 1) / total) * 100) : 0,
+    current: currentSectionIndex + 1,
+    total: sections.length,
+    percent: sections.length > 0 ? Math.round(((currentSectionIndex + 1) / total) * 100) : 0,
   };
 
   return {
@@ -294,13 +340,4 @@ export function useReadAloud(contentMarkdown: string): UseReadAloudReturn {
     highlightWordIndex,
     sectionAnnouncement,
   };
-}
-
-function base64ToBlob(base64: string, mime: string): Blob {
-  const bytes = atob(base64);
-  const buffer = new Uint8Array(bytes.length);
-  for (let i = 0; i < bytes.length; i++) {
-    buffer[i] = bytes.charCodeAt(i);
-  }
-  return new Blob([buffer], { type: mime });
 }

@@ -29,7 +29,7 @@ import { generateUniqueSlug } from "../services/slugUtils";
 /** Strip trailing Quiz / Exercises / Video Search Queries the AI sometimes bakes into contentMarkdown */
 function stripEmbeddedSections(md: string): string {
   return md
-    .replace(/\n+#{0,4}\s*(?:Quiz|Exercises|Video\s*Search\s*Queries)\s*\n\s*\[[\s\S]*$/i, "")
+    .replace(/\n+#{0,4}\s*(?:Citations|Quiz|Exercises|Video\s*Search\s*Queries)\s*\n\s*[\[{][\s\S]*$/i, "")
     .trimEnd();
 }
 

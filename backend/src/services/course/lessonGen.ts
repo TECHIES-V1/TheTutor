@@ -361,7 +361,7 @@ function stripEmbeddedSections(md: string): string {
   // Match headings or bare labels like "Quiz", "Exercises", "Video Search Queries"
   // followed by JSON arrays/objects, all the way to the end of the string.
   const pattern =
-    /\n+#{0,4}\s*(?:Quiz|Exercises|Video\s*Search\s*Queries)\s*\n\s*\[[\s\S]*$/i;
+    /\n+#{0,4}\s*(?:Citations|Quiz|Exercises|Video\s*Search\s*Queries)\s*\n\s*[\[{][\s\S]*$/i;
   return md.replace(pattern, "").trimEnd();
 }
 
