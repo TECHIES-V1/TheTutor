@@ -416,6 +416,8 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
     setRequiresConfirmation(false);
     setAwaitingCourseGenerationDecision(false);
     setConversationPhase("resource_retrieval");
+    setIsTyping(true);
+    appendTutorMessage("Looking for recommended courses on this topic...");
 
     try {
       const res = await api.post("/chat/confirm-subject", { conversationId, confirmed: true });
@@ -430,13 +432,14 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
         relatedCourses?: RelatedCoursePreview[];
         hasRelatedCourses?: boolean;
       };
+      setIsTyping(false);
       const relatedCourses = Array.isArray(data.relatedCourses) ? data.relatedCourses : [];
-      appendTutorMessage(
-        data.message ?? "I checked for similar public courses first.",
-        relatedCourses
-      );
 
       if ((data.hasRelatedCourses ?? relatedCourses.length > 0) && relatedCourses.length > 0) {
+        appendTutorMessage(
+          data.message ?? "I found some similar courses you might like.",
+          relatedCourses
+        );
         setAwaitingCourseGenerationDecision(true);
         return;
       }
@@ -448,6 +451,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
       setIsGenerating(true);
       await startGeneration(conversationId);
     } catch {
+      setIsTyping(false);
       setSubmitError("Something went wrong while confirming. Please try again.");
     }
   };
@@ -801,39 +805,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
             </div>
           )}
 
-          {requiresConfirmation && !isTyping && (
-            isFinalConfirmation ? (
-              <div className="flex flex-col items-start gap-3 mt-4">
-                <button
-                  onClick={handleConfirm}
-                  className="skeuo-gold px-6 py-3 rounded-xl text-sm font-medium text-background hover:opacity-90 transition-opacity"
-                >
-                  Go — Create my course
-                </button>
-                <button
-                  onClick={handleRestart}
-                  className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors"
-                >
-                  Start a new chat instead
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-3 mt-4">
-                <button
-                  onClick={handleConfirm}
-                  className="skeuo-gold px-5 py-2.5 rounded-xl text-sm font-medium text-background hover:opacity-90 transition-opacity"
-                >
-                  Yes, that&apos;s it!
-                </button>
-                <button
-                  onClick={handleReject}
-                  className="px-5 py-2.5 rounded-xl text-sm font-medium border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
-                >
-                  No, let me clarify
-                </button>
-              </div>
-            )
-          )}
+          {/* Confirmation buttons now rendered inline in ChatInput */}
 
           {awaitingCourseGenerationDecision && !isTyping && !requiresConfirmation && (
             <div className="mt-4 flex flex-col items-start gap-3">
@@ -895,6 +867,16 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
             awaitingCourseGenerationDecision ||
             isGenerating ||
             conversationPhase !== "onboarding"
+          }
+          confirmation={
+            requiresConfirmation && !isTyping
+              ? {
+                  type: isFinalConfirmation ? "final" : "subject",
+                  onConfirm: handleConfirm,
+                  onReject: handleReject,
+                  onRestart: handleRestart,
+                }
+              : null
           }
         />
       )}

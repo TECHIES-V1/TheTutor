@@ -49,4 +49,10 @@ export interface MessageProps {
 export interface ChatInputProps {
     onSend: (message: string) => void;
     disabled?: boolean;
+    confirmation?: {
+      type: "subject" | "final";
+      onConfirm: () => void;
+      onReject: () => void;
+      onRestart?: () => void;
+    } | null;
 }
