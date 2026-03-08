@@ -807,19 +807,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
 
           {/* Confirmation buttons now rendered inline in ChatInput */}
 
-          {awaitingCourseGenerationDecision && !isTyping && !requiresConfirmation && (
-            <div className="mt-4 flex flex-col items-start gap-3">
-              <button
-                onClick={handleCreateCourseAnyway}
-                className="skeuo-gold rounded-xl px-5 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-90"
-              >
-                Create a New Course Anyway
-              </button>
-              <p className="text-xs text-muted-foreground">
-                You can open any similar public course listed above, or create yours now.
-              </p>
-            </div>
-          )}
+          {/* "Create a New Course Anyway" now rendered inline in ChatInput */}
 
           {submitError && (
             <div className="mt-4 space-y-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-4">
@@ -876,7 +864,12 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
                   onReject: handleReject,
                   onRestart: handleRestart,
                 }
-              : null
+              : awaitingCourseGenerationDecision && !isTyping
+                ? {
+                    type: "create_anyway" as const,
+                    onConfirm: handleCreateCourseAnyway,
+                  }
+                : null
           }
         />
       )}

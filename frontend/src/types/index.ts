@@ -50,9 +50,9 @@ export interface ChatInputProps {
     onSend: (message: string) => void;
     disabled?: boolean;
     confirmation?: {
-      type: "subject" | "final";
+      type: "subject" | "final" | "create_anyway";
       onConfirm: () => void;
-      onReject: () => void;
+      onReject?: () => void;
       onRestart?: () => void;
     } | null;
 }

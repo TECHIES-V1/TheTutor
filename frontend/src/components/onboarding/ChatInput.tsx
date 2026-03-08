@@ -9,8 +9,18 @@ import { ChatInputProps } from "@/types";
 export function ChatInput({ onSend, disabled, confirmation }: ChatInputProps) {
     const [input, setInput] = useState("");
     const [attachMenuOpen, setAttachMenuOpen] = useState(false);
+    const [busy, setBusy] = useState(false);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const attachMenuRef = useRef<HTMLDivElement>(null);
+
+    // Reset busy when confirmation changes (action completed or cancelled)
+    useEffect(() => { setBusy(false); }, [confirmation?.type]);
+
+    const guard = (fn?: () => void) => () => {
+        if (busy || !fn) return;
+        setBusy(true);
+        fn();
+    };
 
     useEffect(() => {
         if (!disabled && inputRef.current) {
@@ -61,29 +71,41 @@ export function ChatInput({ onSend, disabled, confirmation }: ChatInputProps) {
                     {confirmation.type === "final" ? (
                         <>
                             <button
-                                onClick={confirmation.onConfirm}
-                                className="skeuo-gold flex-1 rounded-xl px-4 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-90"
+                                onClick={guard(confirmation.onConfirm)}
+                                disabled={busy}
+                                className="skeuo-gold flex-1 rounded-xl px-4 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-60"
                             >
-                                Go — Create my course
+                                {busy ? "Creating..." : "Go — Create my course"}
                             </button>
                             <button
-                                onClick={confirmation.onRestart}
-                                className="flex-1 rounded-xl px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                                onClick={guard(confirmation.onRestart)}
+                                disabled={busy}
+                                className="flex-1 rounded-xl px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
                             >
                                 Start a new chat
                             </button>
                         </>
+                    ) : confirmation.type === "create_anyway" ? (
+                        <button
+                            onClick={guard(confirmation.onConfirm)}
+                            disabled={busy}
+                            className="skeuo-gold w-full rounded-xl px-4 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-60"
+                        >
+                            {busy ? "Creating..." : "Create a New Course Anyway"}
+                        </button>
                     ) : (
                         <>
                             <button
-                                onClick={confirmation.onConfirm}
-                                className="skeuo-gold flex-1 rounded-xl px-4 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-90"
+                                onClick={guard(confirmation.onConfirm)}
+                                disabled={busy}
+                                className="skeuo-gold flex-1 rounded-xl px-4 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-60"
                             >
-                                Yes, that&apos;s it!
+                                {busy ? "Confirming..." : "Yes, that\u2019s it!"}
                             </button>
                             <button
-                                onClick={confirmation.onReject}
-                                className="flex-1 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+                                onClick={guard(confirmation.onReject)}
+                                disabled={busy}
+                                className="flex-1 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground disabled:opacity-40"
                             >
                                 No, let me clarify
                             </button>
