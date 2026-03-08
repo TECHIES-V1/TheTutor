@@ -313,7 +313,7 @@ export async function generateLessonContent(
     }
   }
 
-  const contentMarkdown = String(parsed.contentMarkdown || "").trim();
+  const contentMarkdown = stripEmbeddedSections(String(parsed.contentMarkdown || "").trim());
   if (contentMarkdown.length < 500) {
     throw new Error(`lesson_parse_failed: Content too short for "${lesson.title}" (${contentMarkdown.length} chars)`);
   }
@@ -351,6 +351,18 @@ export async function generateLessonContent(
       .filter(Boolean),
     estimatedMinutes: Number(parsed.estimatedMinutes) || lesson.estimatedMinutes,
   };
+}
+
+/**
+ * Strip trailing Quiz / Exercises / Video Search Queries sections that the AI
+ * sometimes injects into contentMarkdown (they belong in the separate JSON fields).
+ */
+function stripEmbeddedSections(md: string): string {
+  // Match headings or bare labels like "Quiz", "Exercises", "Video Search Queries"
+  // followed by JSON arrays/objects, all the way to the end of the string.
+  const pattern =
+    /\n+#{0,4}\s*(?:Quiz|Exercises|Video\s*Search\s*Queries)\s*\n\s*\[[\s\S]*$/i;
+  return md.replace(pattern, "").trimEnd();
 }
 
 function normalizeExpectedConcepts(raw: unknown): string[][] {

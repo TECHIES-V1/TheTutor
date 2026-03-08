@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle2, BookCopy, PanelRightClose, PanelRightOpen, Clock, AlertTriangle } from "lucide-react";
+import { ArrowRight, CheckCircle2, BookCopy, PanelRightClose, PanelRightOpen, Clock, AlertTriangle, Eye, Users } from "lucide-react";
 import { useCoursePreview } from "@/hooks/useCoursePreview";
 import { CourseWorkspaceSidebar } from "@/components/course/CourseWorkspaceSidebar";
 import { useCoursePanelState } from "@/hooks/useCoursePanelState";
@@ -37,7 +37,7 @@ export default function ExploreCourseDetailPage() {
 
       router.push(`/learn/${courseId}/lessons/${payload.enrollment.currentLessonId}`);
     } catch {
-      setEnrollError("Enrollment failed. Please try again.");
+      setEnrollError("Couldn't enroll you in this course. Please try again.");
     } finally {
       setEnrolling(false);
     }
@@ -86,9 +86,9 @@ export default function ExploreCourseDetailPage() {
         )}
 
         {isFailed && (
-          <div className="flex items-center gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            <AlertTriangle className="h-4 w-4 shrink-0" />
-            Course generation failed. The creator may retry generating this course.
+          <div className="neo-surface flex items-center gap-3 rounded-2xl border border-[var(--glass-border)] px-5 py-4 text-sm text-muted-foreground">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-primary" />
+            This course couldn&apos;t be generated. The creator may retry generating it.
           </div>
         )}
 
@@ -126,11 +126,18 @@ export default function ExploreCourseDetailPage() {
                 <span className="rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-green-700">
                   Free (Hackathon)
                 </span>
+                <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-muted-foreground">
+                  <Eye className="h-3 w-3" />{data.course.viewCount ?? 0} views
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-muted-foreground">
+                  <Users className="h-3 w-3" />{data.course.enrollmentCount ?? 0} learners
+                </span>
               </div>
 
               {(error || enrollError) && (
-                <div className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                  {error ?? enrollError}
+                <div className="neo-surface mt-4 rounded-2xl border border-[var(--glass-border)] px-5 py-4 text-center">
+                  <p className="text-sm font-medium text-foreground">Something went wrong</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{error ?? enrollError}</p>
                 </div>
               )}
 

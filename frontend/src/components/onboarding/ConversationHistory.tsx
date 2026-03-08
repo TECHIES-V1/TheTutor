@@ -368,7 +368,7 @@ export function ConversationHistory({
       .then((data) => {
         if (data) setConversations(data.conversations);
       })
-      .catch(() => {})
+      .catch((err) => console.error("[TheTutor] Failed to delete conversation:", err))
       .finally(() => setLoading(false));
   }, []);
 

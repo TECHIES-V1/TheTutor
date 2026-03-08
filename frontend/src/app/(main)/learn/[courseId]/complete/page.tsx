@@ -62,7 +62,7 @@ export default function CourseCompletePage() {
       const response = await api.post(`/courses/${courseId}/complete`, {});
       if (!response.ok) {
         const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(payload?.error ?? "finish failed");
+        throw new Error(payload?.error ?? "Couldn't finish the course. Please try again.");
       }
 
       const payload = (await response.json()) as CompletionResponse;
@@ -101,8 +101,9 @@ export default function CourseCompletePage() {
             </p>
 
             {error && (
-              <div className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                {error}
+              <div className="neo-surface mt-4 rounded-2xl border border-[var(--glass-border)] px-5 py-4 text-center">
+                <p className="text-sm font-medium text-foreground">Something went wrong</p>
+                <p className="mt-1 text-xs text-muted-foreground">{error}</p>
               </div>
             )}
 

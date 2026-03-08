@@ -126,6 +126,8 @@ export interface ICourse extends Document {
     percentComplete: number;
     lastAccessedAt?: Date;
   };
+  viewCount: number;
+  enrollmentCount: number;
   generatedAt: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -345,6 +347,8 @@ const CourseSchema = new Schema<ICourse>(
       percentComplete: { type: Number, default: 0 },
       lastAccessedAt: Date,
     },
+    viewCount: { type: Number, default: 0 },
+    enrollmentCount: { type: Number, default: 0 },
     generatedAt: { type: Date, default: Date.now },
   },
   { timestamps: true }

@@ -1,5 +1,5 @@
 import "dotenv/config";
-import express from "express";
+import express, { type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import passport from "passport";
@@ -61,6 +61,24 @@ app.get("/health", (_req, res) => {
     db: dbState === 1 ? "connected" : "disconnected",
     uptime: process.uptime(),
   });
+});
+
+// Global error handler — catches unhandled errors from route handlers
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  logger.error({ err }, "[global] Unhandled error");
+  if (!res.headersSent) {
+    res.status(500).json({ error: "Something went wrong. Please try again." });
+  }
+});
+
+// ── Process-level error handlers ────────────────────────────────────────────
+process.on("unhandledRejection", (reason) => {
+  logger.error({ reason }, "[process] Unhandled promise rejection");
+});
+
+process.on("uncaughtException", (err) => {
+  logger.error({ err }, "[process] Uncaught exception");
+  process.exit(1);
 });
 
 // ── Start ───────────────────────────────────────────────────────────────────

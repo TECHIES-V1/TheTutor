@@ -148,8 +148,8 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
                 router.push(`/explore/${statusData.courseId}`);
               }
             }
-          } catch {
-            // Keep showing generation state, user can restart if needed
+          } catch (err) {
+            console.error("[TheTutor] Failed to reconnect to generation:", err);
           }
         }
 
@@ -158,8 +158,8 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
           setIsReadOnly(true);
           if (conv.courseId) setCreatedCourseId(conv.courseId);
         }
-      } catch {
-        // Silently fail — treat as fresh start
+      } catch (err) {
+        console.error("[TheTutor] Failed to load conversation:", err);
       }
     }
 
@@ -234,7 +234,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
             });
           });
         }
-      } catch { /* ignore parse errors */ }
+      } catch (err) { console.error("[TheTutor] SSE parse error:", err); }
     });
 
     es.addEventListener("outline_done", (e: MessageEvent) => {
@@ -256,7 +256,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
             }))
           );
         }
-      } catch { /* ignore */ }
+      } catch (err) { console.error("[TheTutor] SSE parse error:", err); }
     });
 
     es.addEventListener("lesson_started", (e: MessageEvent) => {
@@ -270,7 +270,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
               : mod
           )
         );
-      } catch { /* ignore */ }
+      } catch (err) { console.error("[TheTutor] SSE parse error:", err); }
     });
 
     es.addEventListener("lesson_done", (e: MessageEvent) => {
@@ -298,7 +298,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
             })
           );
         }
-      } catch { /* ignore */ }
+      } catch (err) { console.error("[TheTutor] SSE parse error:", err); }
     });
 
     es.addEventListener("enrichment_done", () => {
@@ -317,7 +317,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
         setGenerationProgress(100);
         setConversationPhase("completed");
         router.push(`/explore/${data.courseId}`);
-      } catch { /* ignore */ }
+      } catch (err) { console.error("[TheTutor] SSE parse error:", err); }
     });
 
     // Server-sent error events (distinct from connection errors)
@@ -328,7 +328,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
         try {
           const data = JSON.parse(me.data) as { courseId?: string };
           if (data.courseId) setCreatedCourseId(data.courseId);
-        } catch { /* ignore */ }
+        } catch (err) { console.error("[TheTutor] SSE parse error:", err); }
         es.close();
         jobStreamRef.current = null;
         setIsGenerating(false);
@@ -650,11 +650,12 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
 
           {/* Error state */}
           {submitError && (
-            <div className="w-full max-w-sm space-y-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-center">
-              <div className="flex items-center justify-center gap-2 text-destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <p className="text-sm font-medium">{submitError}</p>
+            <div className="neo-surface w-full max-w-sm space-y-3 rounded-2xl border border-[var(--glass-border)] p-4 text-center">
+              <div className="flex items-center justify-center gap-2 text-foreground">
+                <AlertTriangle className="h-4 w-4 text-primary" />
+                <p className="text-sm font-medium">Something went wrong</p>
               </div>
+              <p className="text-xs text-muted-foreground">{submitError}</p>
               <div className="flex items-center justify-center gap-2">
                 {createdCourseId && (
                   <Link
@@ -810,11 +811,12 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
           {/* "Create a New Course Anyway" now rendered inline in ChatInput */}
 
           {submitError && (
-            <div className="mt-4 space-y-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-4">
-              <div className="flex items-center gap-2 text-destructive">
-                <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-                <p className="text-sm font-medium">{submitError}</p>
+            <div className="neo-surface mt-4 space-y-3 rounded-2xl border border-[var(--glass-border)] p-4">
+              <div className="flex items-center gap-2 text-foreground">
+                <AlertTriangle className="h-4 w-4 flex-shrink-0 text-primary" />
+                <p className="text-sm font-medium">Something went wrong</p>
               </div>
+              <p className="text-xs text-muted-foreground">{submitError}</p>
               {createdCourseId && (
                 <Link
                   href={`/explore/${createdCourseId}`}

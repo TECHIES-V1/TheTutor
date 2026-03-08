@@ -77,7 +77,7 @@ export default function ModuleQuizPage() {
       const payload = (await response.json()) as ModuleQuizAttemptResult;
       setResult(payload);
     } catch {
-      setSubmitError("Quiz submission failed. Please try again.");
+      setSubmitError("We couldn't save your answer. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -161,8 +161,9 @@ export default function ModuleQuizPage() {
               </div>
 
               {submitError && (
-                <div className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                  {submitError}
+                <div className="neo-surface mt-4 rounded-2xl border border-[var(--glass-border)] px-5 py-4 text-center">
+                  <p className="text-sm font-medium text-foreground">Something went wrong</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{submitError}</p>
                 </div>
               )}
 

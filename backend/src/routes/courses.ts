@@ -23,6 +23,14 @@ import { COOKIE_OPTIONS, signTokenForUser } from "../utils/auth";
 import { CourseLevel, OnboardingPayload } from "../types/courseContract";
 import { aiLimiter } from "../middleware/rateLimiter";
 import { logger } from "../config/logger";
+import { getAssistantSystemPrompt } from "../services/ai/prompts";
+
+/** Strip trailing Quiz / Exercises / Video Search Queries the AI sometimes bakes into contentMarkdown */
+function stripEmbeddedSections(md: string): string {
+  return md
+    .replace(/\n+#{0,4}\s*(?:Quiz|Exercises|Video\s*Search\s*Queries)\s*\n\s*\[[\s\S]*$/i, "")
+    .trimEnd();
+}
 
 const router = Router();
 
@@ -226,7 +234,7 @@ async function ensureEnrollment(userId: string, course: ICourse): Promise<IEnrol
     return existing;
   }
 
-  return Enrollment.create({
+  const newEnrollment = await Enrollment.create({
     userId,
     courseId: course._id,
     status: "active",
@@ -234,6 +242,11 @@ async function ensureEnrollment(userId: string, course: ICourse): Promise<IEnrol
     currentLessonId: firstLesson,
     completedLessonIds: [],
   });
+
+  // Increment denormalized enrollment count (fire-and-forget)
+  Course.updateOne({ _id: course._id }, { $inc: { enrollmentCount: 1 } }).catch(() => {});
+
+  return newEnrollment;
 }
 
 async function getAccessState(userId: string, course: ICourse): Promise<{ isOwner: boolean; enrollment: IEnrollment | null }> {
@@ -284,6 +297,8 @@ function buildCourseSummary(
     moduleCount: outline.length,
     lessonCount: totalLessons,
     sourceAttribution,
+    viewCount: (course as any).viewCount ?? 0,
+    enrollmentCount: (course as any).enrollmentCount ?? 0,
     enrollment: enrollment
       ? {
           status: enrollment.status,
@@ -478,6 +493,9 @@ router.get("/:courseId/preview", optionalAuth, async (req: Request, res: Respons
         requiresAuthToEnroll: !userId,
       },
     });
+
+    // Fire-and-forget view count increment
+    Course.updateOne({ _id: courseId }, { $inc: { viewCount: 1 } }).catch(() => {});
   } catch (err) {
     logger.error({ err }, "Failed to get course preview");
     res.status(500).json({ error: "Internal server error" });
@@ -600,7 +618,7 @@ router.get("/:courseId/lessons/:lessonId", requireAuth, async (req: Request, res
         summary: lessonRecord.lesson.summary,
         videoUrl: lessonRecord.lesson.videoUrl,
         videoReferences: lessonRecord.lesson.videoReferences ?? [],
-        contentMarkdown: lessonRecord.lesson.contentMarkdown,
+        contentMarkdown: stripEmbeddedSections(lessonRecord.lesson.contentMarkdown),
         citations: lessonRecord.lesson.citations ?? [],
         quiz: lessonRecord.lesson.quiz.map((question) => ({
           questionId: question.questionId,
@@ -678,12 +696,15 @@ router.post("/:courseId/lessons/:lessonId/assistant", requireAuth, aiLimiter, as
     }
 
     const lesson = lessonRecord.lesson;
-    const systemPrompt = `You are TheTutor AI — an encouraging, expert tutor helping a student understand a specific lesson.
-
-Current lesson: "${lesson.title}"
-${lessonContext || lesson.summary || ""}
-
-Be concise, focused on this specific lesson content, and encourage the student. Answer follow-up questions naturally.`;
+    const moduleName = lessonRecord.moduleTitle;
+    const systemPrompt = getAssistantSystemPrompt({
+      lessonTitle: lesson.title,
+      lessonContent: lessonContext || lesson.contentMarkdown || lesson.content || lesson.summary || "",
+      courseTitle: course.title,
+      courseSubject: course.subject || course.topic || course.title,
+      courseLevel: course.level || "beginner",
+      moduleName,
+    });
 
     const aiMessages: ModelMessage[] = rawMessages.map((m: { role: string; content: string }) => ({
       role: (m.role === "user" ? "user" : "assistant") as "user" | "assistant",
@@ -699,15 +720,16 @@ Be concise, focused on this specific lesson content, and encourage the student. 
         model: getModel(),
         system: systemPrompt,
         messages: aiMessages,
-        maxOutputTokens: 512,
-        temperature: 0.7,
+        maxOutputTokens: 1024,
+        temperature: 0.5,
       });
 
       for await (const chunk of result.textStream) {
         res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
       }
       res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-    } catch {
+    } catch (streamErr) {
+      logger.error({ err: streamErr }, "[courses] Streaming assistant error");
       res.write(`data: ${JSON.stringify({ error: "Assistant unavailable" })}\n\n`);
     } finally {
       res.end();

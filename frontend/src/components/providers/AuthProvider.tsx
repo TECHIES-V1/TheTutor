@@ -45,7 +45,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!cancelled && (savedTheme === "light" || savedTheme === "dark")) {
           setTheme(savedTheme);
         }
-      } catch {
+      } catch (err) {
+        console.error("[TheTutor] Auth check failed:", err);
         if (!cancelled) setUser(null);
       } finally {
         if (!cancelled) setIsLoading(false);

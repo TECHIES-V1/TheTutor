@@ -5,7 +5,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { CourseSummary } from "@/types/course";
 import { Button } from "@/components/ui/button";
-import { Search, ArrowRight } from "lucide-react";
+import { Search, ArrowRight, Eye, Users } from "lucide-react";
 import { PageLoader } from "@/components/ui/PageLoader";
 
 export default function ExplorePage() {
@@ -98,8 +98,9 @@ export default function ExplorePage() {
         </form>
 
         {error && (
-          <div className="mb-4 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
+          <div className="neo-surface mb-4 rounded-2xl border border-[var(--glass-border)] px-5 py-4 text-center">
+            <p className="text-sm font-medium text-foreground">Something went wrong</p>
+            <p className="mt-1 text-xs text-muted-foreground">{error}</p>
           </div>
         )}
 
@@ -131,9 +132,12 @@ export default function ExplorePage() {
                   </div>
                   <h4 className="font-playfair text-base font-bold text-foreground">{course.title}</h4>
                   <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{course.description}</p>
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    {course.moduleCount} modules • {course.lessonCount} lessons • Free
-                  </p>
+                  <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    <span>{course.moduleCount} modules</span>
+                    <span>{course.lessonCount} lessons</span>
+                    <span className="inline-flex items-center gap-1"><Eye className="h-3 w-3" />{course.viewCount ?? 0}</span>
+                    <span className="inline-flex items-center gap-1"><Users className="h-3 w-3" />{course.enrollmentCount ?? 0} learners</span>
+                  </div>
 
                   <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                     <Button asChild size="sm" variant="ghost" className="w-full rounded-full border border-border sm:w-auto">

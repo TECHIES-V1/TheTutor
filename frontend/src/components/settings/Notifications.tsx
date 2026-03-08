@@ -51,7 +51,6 @@ export function Notifications() {
         e.preventDefault()
         setIsLoading(true)
         try {
-            console.log("Updating notification preferences:", preferences)
             // Backend integration coming later
             await new Promise(resolve => setTimeout(resolve, 500))
         } finally {

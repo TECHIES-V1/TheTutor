@@ -113,6 +113,8 @@ function mapDashboardCourse(
     currentLessonTitle,
     status: enrollment?.status ?? "active",
     completed: enrollment?.status === "completed" || enrollment?.progressPercent === 100,
+    viewCount: (course as any).viewCount ?? 0,
+    enrollmentCount: (course as any).enrollmentCount ?? 0,
     certificateAvailable: hasCertificate,
     updatedAt: enrollment?.updatedAt ?? course.updatedAt,
   };
@@ -133,7 +135,7 @@ router.get("/overview", requireAuth, async (req: Request, res: Response) => {
       ownerMatchFilters.push({ ownerId: userObjectId }, { userId: userObjectId });
     }
 
-    const courseProjection = "title description topic subject level goal ownerId ownerName userId visibility generationStatus accessModel sourceReferences curriculum updatedAt";
+    const courseProjection = "title description topic subject level goal ownerId ownerName userId visibility generationStatus accessModel sourceReferences curriculum viewCount enrollmentCount updatedAt";
 
     const ownedCourses = await Course.find({
       $or: ownerMatchFilters,

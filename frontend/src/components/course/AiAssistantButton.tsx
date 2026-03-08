@@ -98,7 +98,7 @@ export function AiAssistantButton({ courseId, lessonId, lessonTitle, lessonConte
                 return prev;
               });
             }
-          } catch { /* skip malformed */ }
+          } catch (err) { console.error("[TheTutor] Assistant SSE parse error:", err); }
         }
       }
     } catch {

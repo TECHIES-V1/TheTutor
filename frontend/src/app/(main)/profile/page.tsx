@@ -39,6 +39,8 @@ export default function ProfilePage() {
             setTheme(savedTheme);
           }
         }
+      } catch (err) {
+        console.error("[TheTutor] Failed to load profile:", err);
       } finally {
         if (!cancelled) setLoading(false);
       }

@@ -61,8 +61,9 @@ export default function DashboardCoursesPage() {
         </section>
 
         {error && (
-          <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 sm:px-4 py-3 text-sm text-destructive">
-            {error}
+          <div className="neo-surface rounded-2xl border border-[var(--glass-border)] px-5 py-4 text-center">
+            <p className="text-sm font-medium text-foreground">Something went wrong</p>
+            <p className="mt-1 text-xs text-muted-foreground">{error}</p>
           </div>
         )}
 

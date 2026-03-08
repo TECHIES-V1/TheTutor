@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BookOpenCheck, Globe, LockKeyhole } from "lucide-react";
+import { ArrowRight, BookOpenCheck, Globe, LockKeyhole, Eye, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DashboardCourseCard as DashboardCourseCardData } from "@/types/course";
 import { BACKEND_URL } from "@/lib/backendUrl";
@@ -39,6 +39,16 @@ export function DashboardCourseCard({
             <span className="rounded-full border border-border px-2 py-0.5 text-muted-foreground">
               {Math.round(course.progressPercent)}% complete
             </span>
+            {course.role === "owner" && (
+              <>
+                <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-muted-foreground">
+                  <Eye className="h-3 w-3" />{course.viewCount ?? 0}
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-muted-foreground">
+                  <Users className="h-3 w-3" />{course.enrollmentCount ?? 0}
+                </span>
+              </>
+            )}
             {course.visibility === "published" ? (
               <span className="rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-green-700">
                 Published

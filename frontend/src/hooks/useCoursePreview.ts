@@ -35,7 +35,7 @@ export function useCoursePreview(courseId: string): UseCoursePreviewResult {
           | null;
         const message =
           errorPayload?.error ??
-          `Could not load course preview (HTTP ${response.status}).`;
+          "Couldn't load the course preview. Please try again.";
         throw new Error(message);
       }
       const payload = (await response.json()) as CoursePreviewResponse;

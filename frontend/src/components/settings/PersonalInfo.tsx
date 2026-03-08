@@ -35,7 +35,6 @@ export function PersonalInfo() {
         e.preventDefault()
         setIsLoading(true)
         try {
-            console.log("Updating personal info:", formData)
             // Backend integration coming later
             await new Promise(resolve => setTimeout(resolve, 500))
         } finally {
@@ -44,7 +43,6 @@ export function PersonalInfo() {
     }
 
     const handleProfilePictureEdit = async () => {
-        console.log("Edit profile picture")
         // Backend integration coming later
     }
 

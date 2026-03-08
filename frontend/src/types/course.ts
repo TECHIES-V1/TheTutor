@@ -23,6 +23,8 @@ export interface CourseSummary {
   accessModel: "free_hackathon";
   moduleCount: number;
   lessonCount: number;
+  viewCount: number;
+  enrollmentCount: number;
   enrollment: {
     status: EnrollmentStatus;
     progressPercent: number;
@@ -83,6 +85,8 @@ export interface DashboardCourseCard {
   currentLessonTitle: string | null;
   status: EnrollmentStatus;
   completed: boolean;
+  viewCount: number;
+  enrollmentCount: number;
   certificateAvailable: boolean;
   updatedAt: string;
 }

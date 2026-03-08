@@ -257,7 +257,7 @@ export default function LessonPage() {
         courseId={courseId}
         lessonId={lessonId}
         lessonTitle={data.lesson.title}
-        lessonContent={data.lesson.summary ?? String(data.lesson.contentMarkdown ?? "").slice(0, 2000)}
+        lessonContent={String(data.lesson.contentMarkdown ?? data.lesson.summary ?? "")}
       />
     </div>
   );

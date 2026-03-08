@@ -43,10 +43,6 @@ export function Security() {
 
         setIsLoading(true)
         try {
-            console.log("Updating password:", {
-                currentPassword: formData.currentPassword,
-                newPassword: formData.newPassword,
-            })
             // Backend integration coming later
             await new Promise(resolve => setTimeout(resolve, 500))
 
@@ -116,8 +112,9 @@ export function Security() {
                     </div>
 
                     {error && (
-                        <div className="text-sm text-destructive bg-destructive/10 border border-destructive/30 p-3 rounded-md">
-                            {error}
+                        <div className="neo-surface rounded-2xl border border-[var(--glass-border)] px-5 py-4 text-center">
+                            <p className="text-sm font-medium text-foreground">Something went wrong</p>
+                            <p className="mt-1 text-xs text-muted-foreground">{error}</p>
                         </div>
                     )}
 

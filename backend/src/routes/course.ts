@@ -38,9 +38,17 @@ router.post(
       res.json({ jobId });
     } catch (error) {
       logger.error({ err: error }, "[course/generate] Error");
-      const message = error instanceof Error ? error.message : "Failed to start generation";
-      const status = message.includes("not found") ? 404 : message.includes("phase") ? 400 : 500;
-      res.status(status).json({ error: message, code: "AI_ERROR" });
+      const internal = error instanceof Error ? error.message : "";
+      let status = 500;
+      let userMessage = "Something went wrong. Please try again.";
+      if (internal.toLowerCase().includes("not found")) {
+        status = 404;
+        userMessage = "We couldn't find what you're looking for.";
+      } else if (internal.toLowerCase().includes("phase")) {
+        status = 400;
+        userMessage = "Please complete the previous step first.";
+      }
+      res.status(status).json({ error: userMessage, code: "AI_ERROR" });
     }
   }
 );
