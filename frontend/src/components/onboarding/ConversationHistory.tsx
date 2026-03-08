@@ -1,8 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
-import { Plus, X, PanelRightClose } from "lucide-react";
+import {
+  BookOpen,
+  MessageSquare,
+  PanelRightClose,
+  Plus,
+  Search,
+  Sparkles,
+  X,
+} from "lucide-react";
 
 interface ConvSummary {
   id: string;
@@ -340,7 +348,6 @@ export function ConversationHistory({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
     api
       .get("/chat/conversations")
       .then((r) => (r.ok ? r.json() : null))
