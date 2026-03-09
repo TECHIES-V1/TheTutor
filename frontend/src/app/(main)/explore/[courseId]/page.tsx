@@ -124,7 +124,7 @@ export default function ExploreCourseDetailPage() {
                   {data.course.lessonCount} lessons
                 </span>
                 <span className="rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-green-700">
-                  Free (Hackathon)
+                  Free
                 </span>
                 <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-muted-foreground">
                   <Eye className="h-3 w-3" />{data.course.viewCount ?? 0} views

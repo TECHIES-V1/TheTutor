@@ -51,16 +51,16 @@ export default function MainLayout({
     return (
         <div className="flex min-h-screen bg-background">
             {/* Mobile Header */}
-            <header className={`fixed top-0 left-0 right-0 z-30 h-16 items-center border-b border-[var(--glass-border)] bg-[var(--glass-bg)] px-4 backdrop-blur-md transition-transform duration-300 lg:hidden ${showSidebar ? "flex" : "hidden"} ${headerVisible ? "translate-y-0" : "-translate-y-full"}`}>
+            <header className={`fixed top-0 left-0 right-0 z-30 h-16 items-center justify-between border-b border-[var(--glass-border)] bg-[var(--glass-bg)] px-4 backdrop-blur-md transition-transform duration-300 lg:hidden ${showSidebar ? "flex" : "hidden"} ${headerVisible ? "translate-y-0" : "-translate-y-full"}`}>
                 <button
                     type="button"
                     onClick={() => setIsMobileSidebarOpen(true)}
-                    className=" text-muted-foreground hover:text-primary transition-colors"
+                    className="text-muted-foreground hover:text-primary transition-colors"
                     aria-label="Open sidebar"
                 >
                     <Menu className="h-6 w-6" />
                 </button>
-                <div className="flex items-center gap-2 ml-2">
+                <div className="flex items-center gap-2">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src="/logo.png" alt="TheTutor" className="h-8 w-8 shrink-0 rounded-lg object-contain" />
                     <span className="font-playfair font-bold text-primary">TheTutor</span>
