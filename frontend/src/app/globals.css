@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @config "../../tailwind.config.ts";
 
+/* Override Tailwind v4 dark mode: use data-theme attribute, not prefers-color-scheme */
+@variant dark (&:is([data-theme="dark"] *));
+
 :root {
   --primary: #b8920e;
   --primary-foreground: #fff8e6;
