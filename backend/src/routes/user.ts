@@ -68,15 +68,10 @@ router.get("/profile", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router.patch("/preferences", requireAuth, async (req: Request, res: Response) => {
+router.patch("/preferences", requireAuth, validateBody(userPreferencesSchema), async (req: Request, res: Response) => {
   try {
     const { userId } = req.jwtUser as JwtPayload;
-    const themeRaw = String(req.body?.theme ?? "").toLowerCase();
-
-    if (themeRaw !== "light" && themeRaw !== "dark") {
-      res.status(400).json({ error: "Invalid theme value" });
-      return;
-    }
+    const themeRaw = req.body.theme as "light" | "dark";
 
     const user = await User.findById(userId);
     if (!user) {

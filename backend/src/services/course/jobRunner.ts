@@ -1,3 +1,20 @@
+/**
+ * Course Generation Pipeline (Job Runner)
+ *
+ * Orchestrates the 4-phase generation pipeline:
+ *   1. MCP Discovery  — Finds and parses textbook content via Further MCP
+ *   2. Outline         — AI generates structured course outline (retry up to 2×)
+ *   3. Lesson Gen      — Parallel lesson content generation (p-limit concurrency)
+ *                        with sequential fallback pass for failures
+ *   4. Video Enrichment — YouTube video references fetched in parallel
+ *
+ * Crash recovery: resumeOrphanedJobs() runs on startup and re-enters runJob()
+ * for any jobs left in "running" state after a server restart (60s stale threshold).
+ *
+ * All lesson writes are atomic ($set on specific array indices) so parallel
+ * workers never conflict. Job progress is tracked via GenerationJob.lessonSlots
+ * and broadcast to connected SSE clients in real-time.
+ */
 import { randomUUID } from "crypto";
 import { Types } from "mongoose";
 import { GenerationJob, type ILessonSlot } from "../../models/GenerationJob";

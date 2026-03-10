@@ -35,6 +35,8 @@ const FRONTEND_URL = getFrontendBaseUrl();
 const REQUEST_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS) || 120_000;
 
 // ── Middleware ──────────────────────────────────────────────────────────────
+// Order matters: CORS first (so preflight works), then body parsing,
+// then timeout guard, then request logging, then Passport init.
 app.use(
   cors({
     origin: (origin, callback) => {

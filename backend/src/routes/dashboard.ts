@@ -1,3 +1,12 @@
+/**
+ * Dashboard Overview Route
+ *
+ * Query strategy: fires 3 independent queries in parallel (owned courses,
+ * all enrollments, certificates), then splits enrollments client-side into
+ * "owned" vs "external" buckets. External courses are batch-fetched in a
+ * single follow-up query. This reduces the previous 5-query waterfall to
+ * 3 parallel + 1 sequential.
+ */
 import { Router, Request, Response } from "express";
 import { Types } from "mongoose";
 import { requireAuth, JwtPayload } from "../middleware/auth";

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { Types } from "mongoose";
 import { requireAuth, optionalAuth, JwtPayload } from "../middleware/auth";
+import { validateBody, assistantMessagesSchema, quizAnswersSchema } from "../middleware/validate";
 import { Course, ICourse } from "../models/Course";
 import { Enrollment, IEnrollment } from "../models/Enrollment";
 import { QuizAttempt } from "../models/QuizAttempt";
@@ -649,7 +650,7 @@ router.get("/:courseId/lessons/:lessonId", requireAuth, async (req: Request, res
   }
 });
 
-router.post("/:courseId/lessons/:lessonId/assistant", requireAuth, aiLimiter, async (req: Request, res: Response) => {
+router.post("/:courseId/lessons/:lessonId/assistant", requireAuth, aiLimiter, validateBody(assistantMessagesSchema), async (req: Request, res: Response) => {
   try {
     const { userId } = req.jwtUser as JwtPayload;
     const course = await resolveCourse(req.params.courseId);
@@ -730,7 +731,7 @@ router.post("/:courseId/lessons/:lessonId/assistant", requireAuth, aiLimiter, as
   }
 });
 
-router.post("/:courseId/lessons/:lessonId/quiz-attempts", requireAuth, aiLimiter, async (req: Request, res: Response) => {
+router.post("/:courseId/lessons/:lessonId/quiz-attempts", requireAuth, aiLimiter, validateBody(quizAnswersSchema), async (req: Request, res: Response) => {
   try {
     const { userId } = req.jwtUser as JwtPayload;
     const course = await resolveCourse(req.params.courseId);
@@ -1083,7 +1084,7 @@ router.get("/:courseId/modules/:moduleId/quiz", requireAuth, async (req: Request
 });
 
 // POST /courses/:courseId/modules/:moduleId/quiz-attempts
-router.post("/:courseId/modules/:moduleId/quiz-attempts", requireAuth, aiLimiter, async (req: Request, res: Response) => {
+router.post("/:courseId/modules/:moduleId/quiz-attempts", requireAuth, aiLimiter, validateBody(quizAnswersSchema), async (req: Request, res: Response) => {
   try {
     const { userId } = req.jwtUser as JwtPayload;
     const course = await resolveCourse(req.params.courseId);

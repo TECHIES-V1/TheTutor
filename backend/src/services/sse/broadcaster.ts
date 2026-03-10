@@ -1,3 +1,11 @@
+/**
+ * SSE Broadcaster — manages live Server-Sent Events connections per generation job.
+ *
+ * Lifecycle: registerClient() when a client connects to /course/jobs/:jobId/events,
+ * unregisterClient() on disconnect, unregisterJob() when the job finishes to free memory.
+ * getBroadcaster() returns a fire-and-forget interface used by jobRunner to push events
+ * to all connected clients for a given job.
+ */
 import type { Response } from "express";
 import { sendSSE } from "../../middleware/sse";
 

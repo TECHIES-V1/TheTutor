@@ -1,9 +1,9 @@
 <p align="center">
  <img src="media/vector/default-monochrome.svg" alt="TheTutor banner" width="900" />
 </p>
-  
+
   ---
- 
+
 # **TheTutor**
 
 <p align="center">
@@ -17,32 +17,36 @@
 - [Core Features](#core-features)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
-- [Nova + MCP Integration](#nova--mcp-integration-prime-focus)
-- [Further-MCP (The Future of Learning in an AI driven world)](#further-mcp)
+- [Course Generation Pipeline](#course-generation-pipeline)
+- [Further-MCP](#further-mcp)
 - [Project Structure](#project-structure)
 - [API Surface](#api-surface)
 - [Local Setup](#local-setup)
 - [Environment Variables](#environment-variables)
-- [Development Notes](#development-notes)
+- [Documentation](#documentation)
 - [Developers](#developers)
 - [License](#license)
-<!-- - [Contributors](#contributors) -->
+
 ## Overview
 
-TheTutor is an AI-powered learning platform where users sign in with Google, chat with an onboarding tutor, confirm a subject, and generate a structured course with modules, lessons, quizzes, exercises, and video resources.
+TheTutor is an AI-powered learning platform where users sign in with Google, chat with an onboarding tutor, confirm a subject, and generate a structured course with modules, lessons, quizzes, exercises, and video resources — all powered by Amazon Nova via AWS Bedrock and real textbook content from MCP-integrated book sources.
 
 Our Tagline: **Just Ask**.
 
 ## Core Features
 
-- Google OAuth login with JWT stored in secure `httpOnly` cookies.
-- Guided onboarding chat that collects topic, level, study time, and goal.
-- AI-generated subject suggestion and confirmation flow.
-- Real-time course generation streamed to the UI via SSE.
-- Tool-augmented generation using MCP tools (book discovery + parsing).
-- Persistent course, conversation, and progress storage in MongoDB.
-- YouTube video enrichment for lesson-level study resources.
-- Route protection and onboarding gatekeeping in `frontend/proxy.ts`.
+- Google OAuth login with JWT stored in secure `httpOnly` cookies
+- Guided onboarding chat that collects topic, level, study time, and goal
+- AI-generated subject suggestion and confirmation flow
+- Job-based course generation with real-time SSE progress updates
+- MCP-powered book discovery + parsing for grounded content
+- Two-pass parallel lesson generation with sequential fallback
+- YouTube video enrichment for lesson-level study resources
+- Open-ended quiz grading via AI evaluation
+- Course certificates on completion
+- Explore page for published courses with text search
+- Route-aware dark/light theme system
+- Route protection and onboarding gatekeeping via `proxy.ts`
 
 ## Tech Stack
 
@@ -52,80 +56,109 @@ Our Tagline: **Just Ask**.
 
 | Layer | Technologies |
 |---|---|
-| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4 |
-| Backend | Express, TypeScript, Node.js |
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4, Framer Motion |
+| Backend | Express, TypeScript, Node.js, Zod validation |
 | AI | Amazon Bedrock (`@ai-sdk/amazon-bedrock`) with Amazon Nova |
-| MCP Integration | `@ai-sdk/mcp` over SSE transport |
-| Data | MongoDB + Mongoose |
+| MCP Integration | Further-MCP (HTTP + FastMCP) for book discovery/parsing |
+| Data | MongoDB + Mongoose, Upstash Redis (caching) |
 | Auth | Google OAuth 2.0 (Passport.js) + JWT cookie auth |
-| Media Enrichment | YouTube Data API |
+| Media | YouTube Data API, AWS Polly (TTS) |
+| Logging | Pino structured logging |
 
 ## Architecture
 
 ```mermaid
 flowchart LR
     U[User] --> FE[Next.js Frontend]
-    FE --> PX[Next.js proxy.ts]
+    FE --> PX[proxy.ts Middleware]
     FE -->|REST + SSE| BE[Express Backend]
     BE --> DB[(MongoDB)]
+    BE --> REDIS[(Upstash Redis)]
     BE -->|AI SDK| NOVA[Amazon Bedrock: Nova]
-    BE -->|MCP over SSE| MCP[MCP Server]
+    BE -->|HTTP| MCP[Further-MCP Server]
     MCP --> SRC[OpenLibrary + Gutendex + Standard Ebooks]
     BE --> YT[YouTube Data API]
+    BE --> POLLY[AWS Polly TTS]
 ```
 
-## Nova + MCP Integration (PRIME FOCUS)
-
-This project connects Amazon Nova AI and MCP directly in the generation path:
-
-1. `POST /course/generate` starts an SSE stream from backend to frontend.
-2. Backend calls `streamCourseWithMCPTools(...)`.
-3. `getMCPTools()` creates an MCP client using `@ai-sdk/mcp` over SSE (`MCP_SSE_URL`).
-4. The same `streamText(...)` call sends model + tools in one loop.
-5. Model: Amazon Nova via Bedrock (`AI_MODEL`, default `us.amazon.nova-pro-v1:0`).
-6. Tools: MCP-discovered tools (`discover_books`, `fetch_and_parse_book`, `search_books`).
-7. Nova decides when to invoke MCP tools while generating the course.
-8. Tool calls and tool results are streamed back as SSE events to the frontend.
-9. Final generated markdown is parsed into modules/lessons and saved in MongoDB.
-
-### End-to-End Sequence
+### Auth Flow
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant FE as Frontend (Next.js)
-    participant API as Backend (Express)
-    participant Nova as Amazon Nova (Bedrock)
-    participant MCP as MCP Server
-    participant Sources as Book Sources
-    participant DB as MongoDB
+    participant FE as Frontend
+    participant BE as Backend
+    participant Google
 
-    User->>FE: Confirm subject and click Generate
-    FE->>API: POST /course/generate (SSE)
-    API->>Nova: streamText(prompt, tools=getMCPTools())
-    Nova->>MCP: discover_books(query)
-    MCP->>Sources: Search catalogs
-    Sources-->>MCP: Book candidates
-    MCP-->>Nova: Tool result
-    Nova->>MCP: fetch_and_parse_book(url)
-    MCP-->>Nova: Parsed chapters + summary
-    Nova-->>API: Course chunks + tool events
-    API-->>FE: SSE status/tool/chunk/complete
-    API->>DB: Save course + update conversation phase
-    FE-->>User: Live progress and generated course
+    User->>FE: Click "Continue with Google"
+    FE->>BE: GET /auth/google
+    BE->>Google: OAuth redirect
+    Google-->>BE: Callback with auth code
+    BE->>BE: Create/find user, sign JWT
+    BE->>FE: Redirect to /api/auth/callback?token=JWT
+    FE->>FE: Set frontend-domain cookie, redirect
+    FE->>FE: proxy.ts reads JWT for route protection
 ```
 
-### Source Pointers
+## Course Generation Pipeline
 
-- Nova model config: `backend/src/config/ai.ts`
-- Nova generation + tool streaming: `backend/src/services/ai/nova.ts`
-- MCP client + tool registration: `backend/src/services/mcp/mcpClient.ts`
-- HTTP MCP fallback client: `backend/src/services/mcp/client.ts`
-- Course generation orchestrator: `backend/src/services/course/generator.ts`
+The generation pipeline uses a job-based architecture with 4 phases:
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant FE as Frontend
+    participant API as Backend
+    participant MCP as Further-MCP
+    participant Nova as Amazon Nova
+    participant DB as MongoDB
+
+    User->>FE: Confirm subject → Click Generate
+    FE->>API: POST /course/generate
+    API-->>FE: { jobId }
+    FE->>API: GET /course/jobs/:jobId/events (SSE)
+
+    Note over API: Phase 1: MCP Discovery
+    API->>MCP: discover_books + fetch_and_parse
+    MCP-->>API: Book contexts + source refs
+
+    Note over API: Phase 2: Outline
+    API->>Nova: Generate structured outline (retry 2×)
+    Nova-->>API: CourseOutline JSON
+    API-->>FE: SSE: outline_done
+
+    Note over API: Phase 3: Parallel Lesson Gen
+    loop p-limit(4) parallel + sequential fallback
+        API->>Nova: Generate lesson content
+        Nova-->>API: Lesson markdown + quiz + citations
+        API->>DB: Atomic $set on curriculum[i].lessons[j]
+        API-->>FE: SSE: lesson_done
+    end
+
+    Note over API: Phase 4: Video Enrichment
+    loop p-limit(6) parallel
+        API->>API: YouTube search per lesson
+        API->>DB: Update videoReferences
+    end
+    API-->>FE: SSE: complete
+
+    API->>DB: Finalize course, create enrollment
+```
+
+### Key Files
+
+| File | Purpose |
+|---|---|
+| `backend/src/services/course/jobRunner.ts` | 4-phase pipeline orchestrator |
+| `backend/src/services/course/lessonGen.ts` | Single lesson content generation |
+| `backend/src/services/course/outline.ts` | Course outline generation |
+| `backend/src/services/mcp/discovery.ts` | MCP book discovery pipeline |
+| `backend/src/services/sse/broadcaster.ts` | SSE client management |
+| `backend/src/config/ai.ts` | Nova model config per phase |
 
 ## Further-MCP
 
-> Special context: TheTutor uses a **custom MCP** built specifically for this project so Amazon Nova can discover, fetch, and parse real books before generating course content.
+> TheTutor uses a **custom MCP** built specifically for this project so Amazon Nova can discover, fetch, and parse real books before generating course content.
 
 <p align="center">
   <a href="https://github.com/TECHIES-V1/futher-mcp"><img src="https://img.shields.io/badge/GitHub-futher--mcp-181717?style=for-the-badge&logo=github&logoColor=res" alt="Further-MCP GitHub" /></a>
@@ -133,92 +166,108 @@ sequenceDiagram
   <a href="https://futher-mcp-production.up.railway.app/health"><img src="https://img.shields.io/badge/Health-Endpoint-2EA44F?style=for-the-badge&logo=fastapi&logoColor=blue" alt="MCP Health Endpoint" /></a>
 </p>
 
-**Repository:** [https://github.com/TECHIES-V1/futher-mcp](https://github.com/TECHIES-V1/futher-mcp)  
-**Live on Railway:** [https://futher-mcp-production.up.railway.app](futher-mcp-production.up.railway.app)  
-**Health Check:** [https://futher-mcp-production.up.railway.app/health](https://futher-mcp-production.up.railway.app/sse)
+**Repository:** [https://github.com/TECHIES-V1/futher-mcp](https://github.com/TECHIES-V1/futher-mcp)
+**Live on Railway:** [https://futher-mcp-production.up.railway.app](https://futher-mcp-production.up.railway.app)
+**Health Check:** [https://futher-mcp-production.up.railway.app/health](https://futher-mcp-production.up.railway.app/health)
 
-Further-MCP combines OpenLibrary discovery with EPUB/PDF parsing and exposes both FastAPI routes and FastMCP tools. In TheTutor, this powers Nova tool calls such as `discover_books` and `fetch_and_parse_book` during course generation.
+Further-MCP combines OpenLibrary discovery with EPUB/PDF parsing and exposes both FastAPI routes and FastMCP tools. In TheTutor, this powers book discovery and content extraction during course generation.
 
-| Capability | What Further-MCP provides | How TheTutor uses it |
+| Capability | What Further-MCP Provides | How TheTutor Uses It |
 |---|---|---|
 | Discovery | OpenLibrary + Gutendex + Standard Ebooks aggregation | Finds high-signal books for a learner topic |
 | Parsing | EPUB/PDF metadata, TOC, chapter extraction | Feeds structured source context to Nova |
 | Interfaces | FastAPI + FastMCP pack | Works for HTTP pipelines and MCP tool mode |
 | Hosting | Railway deployment | Production-ready MCP endpoint for generation flow |
 
-### FastAPI Surface (Further-MCP)
-
-| Path | Method | Purpose |
-|---|---|---|
-| `/health` | `GET` | Service readiness check on Railway |
-| `/discovery/search` | `GET` | Aggregated discovery across Gutendex/OpenLibrary/Standard Ebooks |
-| `/discovery/gutendex` | `GET` | Project Gutenberg discovery source |
-| `/discovery/openlibrary` | `GET` | OpenLibrary discovery + Internet Archive links |
-| `/discovery/standard-ebooks` | `GET` | Standard Ebooks OPDS search |
-| `/pipeline/fetch-parse` | `POST` | Download and parse one book into AI-readable summary + chapters |
-| `/pipeline/topic` | `POST` | Topic pipeline: discover + download + parse batch |
-| `/pipeline/topic/sse` | `GET` | Streaming version for agent/event-driven flows |
-
-### FastMCP Tools Exposed
+### FastMCP Tools
 
 - `discover_books(query, sources?, limit?)`
 - `fetch_and_parse_book(url, limit_pages?, limit_chapters?)`
 - `search_books(query, keywords?, limit?)`
-- `search_author(query)` and `search_author_with_book_name(query)`
-- `list_ebooks()`, `get_epub_metadata(...)`, `get_pdf_metadata(...)`
-- `get_epub_toc(...)`, `get_pdf_toc(...)`
-- `get_epub_chapter_markdown(...)`, `get_pdf_chapter_text(...)`
-
-### Railway Deployment Notes
-
-- Runtime supports both FastAPI and FastMCP interfaces from the same project.
-- Environment-driven configuration keeps discovery endpoints and parser behavior consistent across local/dev/prod.
-- Suggested Railway start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`.
-
-```mermaid
-flowchart LR
-    TUTOR[TheTutor Backend] -->|MCP SSE tools| FMCP[Further-MCP on Railway]
-    FMCP -->|discover_books| SOURCES[OpenLibrary/Gutendex/Standard Ebooks]
-    FMCP -->|fetch_and_parse_book| PARSER[EPUB/PDF Parser]
-    PARSER -->|chapter summaries| NOVA[Amazon Nova Generation]
-```
 
 ## Project Structure
 
 ```text
 TheTutor/
-├── frontend/                     # Next.js app (UI + route protection)
-│   ├── src/app/                  # App Router pages
-│   ├── src/components/           # UI, onboarding, dashboard, settings
-│   ├── src/lib/api.ts            # Backend fetch helper
-│   └── proxy.ts                  # JWT-based route protection
-├── backend/                      # Express API
-│   ├── src/routes/               # auth, user, chat, course endpoints
-│   ├── src/services/ai/          # Amazon Nova prompts + generation
-│   ├── src/services/mcp/         # MCP connectivity and discovery adapters
-│   ├── src/services/course/      # course generation orchestrator
-│   ├── src/models/               # MongoDB models
-│   └── src/config/               # DB, auth, AI configs
-├── docs/
-│   └── The Tutor-logo/           # Branding assets
-├── mcp.md                        # External MCP service reference
+├── frontend/                         # Next.js 16 app
+│   ├── src/app/                      # App Router pages
+│   │   ├── (main)/                   # Authenticated app (dashboard, learn, explore, settings)
+│   │   ├── auth/                     # Sign-in page
+│   │   └── api/auth/                 # OAuth callback + logout handlers
+│   ├── src/components/
+│   │   ├── ui/                       # shadcn/ui components
+│   │   ├── landing/                  # Marketing page sections
+│   │   ├── dashboard/                # Sidebar, empty states
+│   │   ├── onboarding/              # Course creation chat UI
+│   │   ├── course/                   # Lesson viewer, AI assistant, quiz
+│   │   ├── explore/                  # Course discovery components
+│   │   └── providers/                # AuthProvider, ThemeProvider
+│   ├── src/lib/                      # api.ts, seo.ts, backendUrl.ts
+│   └── proxy.ts                      # JWT-based route protection middleware
+├── backend/                          # Express API
+│   ├── src/routes/                   # auth, user, chat, course, courses, dashboard, tts
+│   ├── src/services/
+│   │   ├── ai/                       # Nova prompts, generation, grading
+│   │   ├── mcp/                      # MCP client + discovery pipeline
+│   │   ├── course/                   # jobRunner, lessonGen, outline, contextBuilder
+│   │   ├── sse/                      # SSE broadcaster + client management
+│   │   ├── youtube/                  # YouTube video enrichment
+│   │   └── cache/                    # Upstash Redis chat caching
+│   ├── src/middleware/               # auth, sse, rateLimiter, validate, requestLogger
+│   ├── src/models/                   # Mongoose schemas (User, Course, Enrollment, etc.)
+│   ├── src/config/                   # database, passport, ai, logger, publicUrls
+│   └── src/utils/                    # errors, auth helpers
+├── docs/                             # Architecture, API reference, deployment guide
 └── README.md
 ```
 
 ## API Surface
 
-Key backend routes:
+### Authentication
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| GET | `/auth/google` | No | Start Google OAuth flow |
+| GET | `/auth/google/callback` | No | OAuth callback, issues JWT |
+| GET | `/auth/me` | Yes | Current user payload |
+| POST | `/auth/logout` | Yes | Clear auth cookie |
 
-- `GET /health` - backend health check.
-- `GET /auth/google` - start Google OAuth.
-- `GET /auth/google/callback` - OAuth callback and JWT cookie issue.
-- `GET /auth/me` - authenticated user payload.
-- `POST /chat/message` - onboarding conversation turn.
-- `POST /chat/confirm-subject` - confirm or revise suggested course subject.
-- `POST /course/generate` - SSE course generation stream.
-- `GET /course/generation-status/:conversationId` - generation status by conversation.
-- `GET /course` - list user courses.
-- `GET /course/:id` - get full course details.
+### Chat (Onboarding)
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | `/chat/message` | Yes | Send onboarding chat message |
+| POST | `/chat/confirm-subject` | Yes | Confirm/reject suggested subject |
+| GET | `/chat/conversations` | Yes | List user conversations |
+| GET | `/chat/conversation` | Yes | Get active conversation |
+| GET | `/chat/conversation/:id` | Yes | Get conversation by ID |
+| POST | `/chat/restart` | Yes | Restart onboarding |
+
+### Course Generation
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | `/course/generate` | Yes | Start job-based generation |
+| GET | `/course/jobs/:jobId` | Yes | Poll job status (JSON) |
+| GET | `/course/jobs/:jobId/events` | Yes | Real-time SSE stream |
+| GET | `/course/generation-status/:id` | Yes | Legacy generation status |
+
+### Courses
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| GET | `/courses/explore` | Optional | Browse published courses |
+| GET | `/courses/:id/preview` | Optional | Course preview with outline |
+| POST | `/courses/:id/enroll` | Yes | Enroll in a course |
+| GET | `/courses/:id/lessons/:lessonId` | Yes | Get lesson content |
+| POST | `/courses/:id/lessons/:lessonId/assistant` | Yes | AI lesson assistant (SSE) |
+| POST | `/courses/:id/lessons/:lessonId/quiz-attempts` | Yes | Submit lesson quiz |
+| POST | `/courses/:id/complete` | Yes | Complete course, get certificate |
+| PATCH | `/courses/:id/publish` | Yes | Toggle course visibility |
+
+### Dashboard & User
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| GET | `/dashboard/overview` | Yes | Dashboard stats + course cards |
+| GET | `/user/profile` | Yes | Full user profile |
+| PATCH | `/user/preferences` | Yes | Update theme preference |
+| POST | `/tts/synthesize` | Yes | Text-to-speech synthesis |
 
 ## Local Setup
 
@@ -233,103 +282,71 @@ Key backend routes:
 ### 1. Install dependencies
 
 ```bash
-cd backend
-npm install
-
-cd ../frontend
-npm install
+cd backend && npm install
+cd ../frontend && npm install
 ```
 
 ### 2. Configure environment variables
 
-Create:
+Create `backend/.env` and `frontend/.env.local` — see tables below.
 
-- `backend/.env`
-- `frontend/.env.local`
-
-Use the variable tables below.
-
-### 3. Run backend
+### 3. Run both servers
 
 ```bash
-cd backend
-npm run dev
+# Terminal 1
+cd backend && npm run dev     # http://localhost:5000
+
+# Terminal 2
+cd frontend && npm run dev    # http://localhost:3000
 ```
-
-Backend default: `http://localhost:5000`
-
-### 4. Run frontend
-
-```bash
-cd frontend
-npm run dev
-```
-
-Frontend default: `http://localhost:3000`
-
-### 5. (Optional) Run local MCP server
-
-If you are not using the hosted MCP endpoint, run your MCP service locally and set:
-
-- `MCP_SSE_URL=http://0.0.0.0:8002/mcp/sse`
-- `MCP_BASE_URL=http://localhost:8002`
 
 ## Environment Variables
 
 ### Backend (`backend/.env`)
 
-| Variable | Required | Example | Purpose |
-|---|---|---|---|
-| `PORT` | No | `5000` | Express server port |
-| `FRONTEND_URL` | Yes | `http://localhost:3000` | CORS + post-auth redirect target |
-| `MONGODB_URI` | Yes | `mongodb://127.0.0.1:27017/thetutor` | MongoDB connection string |
-| `GOOGLE_CLIENT_ID` | Yes | `xxx.apps.googleusercontent.com` | Google OAuth client ID |
-| `GOOGLE_CLIENT_SECRET` | Yes | `xxxx` | Google OAuth client secret |
-| `JWT_SECRET` | Yes | `super-long-random-secret` | JWT signing secret |
-| `AWS_REGION` | Yes | `us-east-1` | Bedrock region |
-| `AWS_ACCESS_KEY_ID` | Yes | `AKIA...` | AWS credential for Bedrock |
-| `AWS_SECRET_ACCESS_KEY` | Yes | `...` | AWS credential for Bedrock |
-| `AI_MODEL` | No | `us.amazon.nova-pro-v1:0` | Amazon Nova model ID |
-| `MCP_BASE_URL` | No | `https://futher-mcp-production.up.railway.app` | HTTP MCP endpoints |
-| `MCP_SSE_URL` | No | `http://0.0.0.0:8002/mcp/sse` | MCP SSE transport URL |
-| `YOUTUBE_API_KEY` | Optional | `AIza...` | YouTube lesson video lookup |
-| `SEED_DEMO_COURSES` | No | `true` | Enable or disable demo seeding |
-| `GENERATION_ADAPTER_MODE` | No | `stub` / `remote` | Alternate generation adapter mode |
-| `GENERATOR_ENDPOINT` | Optional | `https://...` | Remote generator endpoint |
+| Variable | Required | Purpose |
+|---|---|---|
+| `MONGODB_URI` | Yes | MongoDB connection string |
+| `JWT_SECRET` | Yes | JWT signing secret (must match frontend) |
+| `GOOGLE_CLIENT_ID` | Yes | Google OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | Yes | Google OAuth client secret |
+| `FRONTEND_URL` | Yes | CORS + post-auth redirect (e.g. `http://localhost:3000`) |
+| `AWS_ACCESS_KEY_ID` | Yes | AWS credential for Bedrock |
+| `AWS_SECRET_ACCESS_KEY` | Yes | AWS credential for Bedrock |
+| `AWS_REGION` | Yes | Bedrock region (e.g. `us-east-1`) |
+| `AI_MODEL` | No | Nova model ID (default: `amazon.nova-pro-v1:0`) |
+| `YT_API_KEY` | Optional | YouTube video enrichment |
+| `MCP_BASE_URL` | No | Further-MCP HTTP endpoint |
+| `PORT` | No | Express port (default: `5000`) |
+| `LESSON_CONCURRENCY` | No | Parallel lesson gen workers (default: `4`) |
+| `VIDEO_CONCURRENCY` | No | Parallel video fetch workers (default: `6`) |
 
 ### Frontend (`frontend/.env.local`)
 
-| Variable | Required | Example | Purpose |
-|---|---|---|---|
-| `NEXT_PUBLIC_BACKEND_URL` | Yes | `http://localhost:5000` | Browser-facing backend base URL |
-| `JWT_SECRET` | Yes | `super-long-random-secret` | JWT verification in `proxy.ts` |
+| Variable | Required | Purpose |
+|---|---|---|
+| `NEXT_PUBLIC_BACKEND_URL` | Yes | Browser-facing backend URL |
+| `JWT_SECRET` | Yes | JWT verification in `proxy.ts` (must match backend) |
 
-## Development Notes
+## Documentation
 
-- Frontend CI command: `npm ci && npm run lint && npm run build`
-- Backend CI command: `npm ci && npm run build`
+Detailed documentation is available in the [`docs/`](docs/) directory:
+
+- [Architecture](docs/architecture.md) — System design, auth flow, theme system
+- [Course Generation](docs/course-generation.md) — Pipeline phases, crash recovery
+- [API Reference](docs/api-reference.md) — Complete route documentation
+- [Deployment Guide](docs/deployment.md) — Environment setup, production checklist
 
 ## Developers
 
-| Name | Responsibility | GitHub |
-|---|---|---|
-| Tobiloba Sulaimon | FULL STACK AND CHIEF TECHNOLOGY OFFICER (CTO) | [tobilobacodes00](https://github.com/tobilobacodes00) |
-| Fadhan Daniel| BACKEND ENGINNER | [fadexadex](https://github.com/fadexadex) |
-| Robert Dominic | FRONTEND DEVELOPER| [Webnova](https://github.com/robert-dominic) |
-| Joanna Bassey | FRONTEND DEVELOPER | [DevBytes-J](https://github.com/DevBytes-J) |
-| Collins Joel | MCP ENGINEER | [Contractor-x](https://github.com/Contractor-x) |
-
-
-<!--- ## Contributors
-
-| Name | Role | GitHub |
-|---|---|---|
-| Contributor 1 | Contributor | [Profile]() |
-| Contributor 2 | Contributor | [Profile]() |
-| Contributor 3 | Contributor | [Profile]() |
--->
+| Name | Role | What They Built | GitHub |
+|---|---|---|---|
+| **Tobiloba Sulaimon** | Full-Stack Lead & CTO | Core architecture end-to-end: job-based generation pipeline (jobRunner, lessonGen, outline), AI streaming, MCP book discovery integration, voice/read-aloud highlighter, theme system (neumorphic + dark mode), Redis caching + rate limiting, MongoDB indexes, parallel lesson generation (p-limit), pino structured logging, dashboard, sidebar, authentication flow, all production bug fixes. 58+ commits. | [tobilobacodes00](https://github.com/tobilobacodes00) |
+| **Daniel Fadehan** | Backend Engineer | Initial AI + MCP scaffold: foundational backend services (nova.ts, prompts.ts, generator.ts, mcpClient.ts), Course model schema, chat routes, SSE middleware, YouTube video service, type definitions, test suites (vitest + course.test.ts + nova.e2e.test.ts). ~4600 lines added in initial integration. | [fadexadex](https://github.com/fadexadex) |
+| **Collins Joel** | MCP & Prompt Engineer | Subject taxonomy system (27 domain profiles with teaching styles, Bloom's levels), IBESTT teaching principles framework, MCP-first prompt flow, Upstash Redis caching layer (chatCache.ts + upstashRedis.ts), README documentation/branding. | [Contractor-x](https://github.com/Contractor-x) |
+| **Robert Dominic** | Frontend Developer | Explore Courses page (modular component architecture), full Settings module (3 tabs: PersonalInfo, Security, Notifications), shared sidebar layout refactor, responsive fixes, legal pages (privacy, terms, about, contact), Vercel deployment config, course creation sidebar animation. 27 commits, ~1200+ lines. | [robert-dominic](https://github.com/robert-dominic) |
+| **Joanna Bassey** | Frontend Developer & SEO | SEO implementation (metadata, sitemap.ts, robots.ts, OG image generation, structured data), sign-in page redesign, logout confirmation modal, footer/navbar polish, component cleanup. 8 commits, created 5+ new SEO files. | [DevBytes-J](https://github.com/DevBytes-J) |
 
 ## License
- - _This project is licensed under the MIT License. See [LICENSE](./LICENSE)._
----
 
+This project is licensed under the MIT License. See [LICENSE](./LICENSE).
