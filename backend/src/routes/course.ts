@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { Types } from "mongoose";
 import { requireAuth } from "../middleware/auth";
+import { validateBody, generateCourseSchema } from "../middleware/validate";
 import { sseHeaders, sendSSE, endSSE, startKeepAlive, stopKeepAlive } from "../middleware/sse";
 import { Conversation } from "../models/Conversation";
 import { Course } from "../models/Course";

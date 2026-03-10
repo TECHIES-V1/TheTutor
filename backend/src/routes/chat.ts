@@ -2,6 +2,7 @@ import { Router, type Request, type Response } from "express";
 import { Types } from "mongoose";
 import { randomUUID } from "crypto";
 import { requireAuth } from "../middleware/auth";
+import { validateBody, chatMessageSchema, confirmSubjectSchema } from "../middleware/validate";
 import { Conversation, type IMessage, type IConversation } from "../models/Conversation";
 import { Course } from "../models/Course";
 import {
@@ -167,7 +168,7 @@ function toConversationPayload(conversation: IConversation): ConversationPayload
 
 // ── POST /chat/message ────────────────────────────────────────────────────
 
-router.post("/message", requireAuth, aiLimiter, async (req: Request, res: Response) => {
+router.post("/message", requireAuth, aiLimiter, validateBody(chatMessageSchema), async (req: Request, res: Response) => {
   try {
     const { message, conversationId } = req.body as { message?: string; conversationId?: string };
     const userId = req.jwtUser!.userId;
@@ -429,7 +430,7 @@ router.get("/conversation/:id", requireAuth, async (req: Request, res: Response)
 
 // ── POST /chat/confirm-subject ────────────────────────────────────────────
 
-router.post("/confirm-subject", requireAuth, async (req: Request, res: Response) => {
+router.post("/confirm-subject", requireAuth, validateBody(confirmSubjectSchema), async (req: Request, res: Response) => {
   try {
     const { conversationId, confirmed } = req.body as { conversationId?: string; confirmed?: boolean };
     const userId = req.jwtUser!.userId;
