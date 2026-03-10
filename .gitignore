@@ -18,6 +18,9 @@ frontend/build/
 frontend/.env.local
 backend/.env
 
+# Claude
+CLAUDE.md
+
 # Misc
 .DS_Store
 *.pem
