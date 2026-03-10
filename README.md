@@ -1,20 +1,44 @@
 <p align="center">
- <img src="media/vector/default-monochrome.svg" alt="TheTutor banner" width="900" />
+  <img src="media/vector/default-monochrome.svg" alt="TheTutor" width="900" />
 </p>
-
-  ---
-
-# **TheTutor**
 
 <p align="center">
-  <a href="#"><img src="https://img.shields.io/badge/build-local%20check%20required-orange" alt="Build Status" /></a>
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License" /></a>
-  <a href="#tech-stack"><img src="https://img.shields.io/badge/stack-Next.js%20%7C%20Express%20%7C%20Amazon%20Nova%20%7C%20MongoDB-blue" alt="Tech Stack" /></a>
+  <strong>AI-powered course generation platform that turns any topic into a structured learning experience — powered by Amazon Nova, grounded in real textbooks via MCP.</strong>
 </p>
 
+<p align="center">
+  <a href="#"><img src="https://img.shields.io/badge/build-passing-brightgreen" alt="Build Status" /></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License" /></a>
+  <a href="#tech-stack"><img src="https://img.shields.io/badge/AI-Amazon%20Nova%20(Bedrock)-FF9900?logo=amazonaws" alt="Amazon Nova" /></a>
+  <a href="#tech-stack"><img src="https://img.shields.io/badge/frontend-Next.js%2016-black?logo=next.js" alt="Next.js" /></a>
+  <a href="#tech-stack"><img src="https://img.shields.io/badge/backend-Express%20%2B%20TypeScript-3178C6?logo=typescript" alt="Express" /></a>
+  <a href="#tech-stack"><img src="https://img.shields.io/badge/data-MongoDB-47A248?logo=mongodb&logoColor=white" alt="MongoDB" /></a>
+  <a href="#further-mcp"><img src="https://img.shields.io/badge/MCP-Further--MCP-8A2BE2" alt="MCP" /></a>
+</p>
 
-- [Overview](#overview)
-- [Core Features](#core-features)
+---
+
+## Overview
+
+Most AI learning tools generate shallow, generic content with no grounding in real material. **TheTutor** is different — it discovers real textbooks through a custom MCP pipeline, then uses Amazon Nova to synthesize structured courses grounded in actual published material. Every lesson includes quizzes, exercises, source citations, and curated video resources.
+
+Our tagline: **Just Ask.**
+
+### Highlights
+
+- **Full course from a single topic** — modules, lessons, quizzes, exercises, and video resources generated end-to-end
+- **Grounded in real textbooks** — a custom MCP server discovers and parses books from OpenLibrary, Gutendex, and Standard Ebooks so content is sourced, not hallucinated
+- **Real-time generation** — watch your course build live via Server-Sent Events with per-lesson progress updates
+- **Crash-resilient pipeline** — two-pass parallel lesson generation with automatic recovery from interrupted jobs
+- **Voice read-aloud** — synchronized text highlighting as lessons are narrated via AWS Polly
+- **AI lesson assistant** — ask follow-up questions in context while studying any lesson
+- **AI-graded quizzes** — open-ended answers evaluated by Nova, not just multiple choice
+- **Course certificates** — earn and download certificates on completion
+- **Community learning** — explore, enroll in, and learn from courses published by others
+
+---
+
+- [How It Works](#how-it-works)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
 - [Course Generation Pipeline](#course-generation-pipeline)
@@ -27,26 +51,18 @@
 - [Developers](#developers)
 - [License](#license)
 
-## Overview
+---
 
-TheTutor is an AI-powered learning platform where users sign in with Google, chat with an onboarding tutor, confirm a subject, and generate a structured course with modules, lessons, quizzes, exercises, and video resources — all powered by Amazon Nova via AWS Bedrock and real textbook content from MCP-integrated book sources.
+## How It Works
 
-Our Tagline: **Just Ask**.
+| Step | What Happens |
+|:---:|---|
+| **1. Sign In** | One-click Google OAuth. Secure JWT cookie auth, no passwords. |
+| **2. Chat** | Tell the AI tutor what you want to learn. It asks about your level, goals, and study preferences to tailor the course to you. |
+| **3. Generate** | TheTutor discovers real books via MCP, builds a structured outline, and generates every lesson — with quizzes, exercises, citations, and videos — all streamed to you in real time. |
+| **4. Learn** | Study at your own pace with voice narration, text highlighting, an AI assistant for questions, and earn a certificate when you finish. |
 
-## Core Features
-
-- Google OAuth login with JWT stored in secure `httpOnly` cookies
-- Guided onboarding chat that collects topic, level, study time, and goal
-- AI-generated subject suggestion and confirmation flow
-- Job-based course generation with real-time SSE progress updates
-- MCP-powered book discovery + parsing for grounded content
-- Two-pass parallel lesson generation with sequential fallback
-- YouTube video enrichment for lesson-level study resources
-- Open-ended quiz grading via AI evaluation
-- Course certificates on completion
-- Explore page for published courses with text search
-- Route-aware dark/light theme system
-- Route protection and onboarding gatekeeping via `proxy.ts`
+---
 
 ## Tech Stack
 
@@ -56,14 +72,13 @@ Our Tagline: **Just Ask**.
 
 | Layer | Technologies |
 |---|---|
-| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4, Framer Motion |
-| Backend | Express, TypeScript, Node.js, Zod validation |
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4, Framer Motion, shadcn/ui |
+| Backend | Express, TypeScript, Node.js, Zod validation, Pino structured logging |
 | AI | Amazon Bedrock (`@ai-sdk/amazon-bedrock`) with Amazon Nova |
-| MCP Integration | Further-MCP (HTTP + FastMCP) for book discovery/parsing |
-| Data | MongoDB + Mongoose, Upstash Redis (caching) |
-| Auth | Google OAuth 2.0 (Passport.js) + JWT cookie auth |
-| Media | YouTube Data API, AWS Polly (TTS) |
-| Logging | Pino structured logging |
+| MCP Integration | Further-MCP (HTTP + FastMCP) for real textbook discovery & parsing |
+| Data | MongoDB + Mongoose, Upstash Redis (caching + rate limiting) |
+| Auth | Google OAuth 2.0 (Passport.js) + JWT httpOnly cookie auth |
+| Media | YouTube Data API, AWS Polly (text-to-speech) |
 
 ## Architecture
 
@@ -102,7 +117,7 @@ sequenceDiagram
 
 ## Course Generation Pipeline
 
-The generation pipeline uses a job-based architecture with 4 phases:
+The generation pipeline uses a **job-based architecture** with 4 phases, crash recovery, and real-time SSE broadcasting:
 
 ```mermaid
 sequenceDiagram
@@ -145,20 +160,20 @@ sequenceDiagram
     API->>DB: Finalize course, create enrollment
 ```
 
-### Key Files
+### Key Pipeline Files
 
 | File | Purpose |
 |---|---|
-| `backend/src/services/course/jobRunner.ts` | 4-phase pipeline orchestrator |
-| `backend/src/services/course/lessonGen.ts` | Single lesson content generation |
-| `backend/src/services/course/outline.ts` | Course outline generation |
-| `backend/src/services/mcp/discovery.ts` | MCP book discovery pipeline |
-| `backend/src/services/sse/broadcaster.ts` | SSE client management |
-| `backend/src/config/ai.ts` | Nova model config per phase |
+| `backend/src/services/course/jobRunner.ts` | 4-phase pipeline orchestrator with crash recovery |
+| `backend/src/services/course/lessonGen.ts` | Single lesson content generation (markdown + quiz + exercises) |
+| `backend/src/services/course/outline.ts` | Structured course outline generation |
+| `backend/src/services/mcp/discovery.ts` | MCP book discovery + parsing pipeline |
+| `backend/src/services/sse/broadcaster.ts` | SSE client management + broadcasting |
+| `backend/src/config/ai.ts` | Nova model config per generation phase |
 
 ## Further-MCP
 
-> TheTutor uses a **custom MCP** built specifically for this project so Amazon Nova can discover, fetch, and parse real books before generating course content.
+> TheTutor uses a **custom MCP server** built specifically for this project so Amazon Nova can discover, fetch, and parse real books before generating course content — ensuring lessons are grounded in actual published material, not hallucinated.
 
 <p align="center">
   <a href="https://github.com/TECHIES-V1/futher-mcp"><img src="https://img.shields.io/badge/GitHub-futher--mcp-181717?style=for-the-badge&logo=github&logoColor=res" alt="Further-MCP GitHub" /></a>
@@ -174,10 +189,10 @@ Further-MCP combines OpenLibrary discovery with EPUB/PDF parsing and exposes bot
 
 | Capability | What Further-MCP Provides | How TheTutor Uses It |
 |---|---|---|
-| Discovery | OpenLibrary + Gutendex + Standard Ebooks aggregation | Finds high-signal books for a learner topic |
-| Parsing | EPUB/PDF metadata, TOC, chapter extraction | Feeds structured source context to Nova |
+| Discovery | OpenLibrary + Gutendex + Standard Ebooks aggregation | Finds high-signal books for a learner's topic |
+| Parsing | EPUB/PDF metadata, TOC, chapter extraction | Feeds structured source context to Nova for grounded content |
 | Interfaces | FastAPI + FastMCP pack | Works for HTTP pipelines and MCP tool mode |
-| Hosting | Railway deployment | Production-ready MCP endpoint for generation flow |
+| Hosting | Railway deployment | Production-ready MCP endpoint for the generation flow |
 
 ### FastMCP Tools
 
@@ -246,7 +261,7 @@ TheTutor/
 |---|---|---|---|
 | POST | `/course/generate` | Yes | Start job-based generation |
 | GET | `/course/jobs/:jobId` | Yes | Poll job status (JSON) |
-| GET | `/course/jobs/:jobId/events` | Yes | Real-time SSE stream |
+| GET | `/course/jobs/:jobId/events` | Yes | Real-time SSE progress stream |
 | GET | `/course/generation-status/:id` | Yes | Legacy generation status |
 
 ### Courses
@@ -256,9 +271,9 @@ TheTutor/
 | GET | `/courses/:id/preview` | Optional | Course preview with outline |
 | POST | `/courses/:id/enroll` | Yes | Enroll in a course |
 | GET | `/courses/:id/lessons/:lessonId` | Yes | Get lesson content |
-| POST | `/courses/:id/lessons/:lessonId/assistant` | Yes | AI lesson assistant (SSE) |
-| POST | `/courses/:id/lessons/:lessonId/quiz-attempts` | Yes | Submit lesson quiz |
-| POST | `/courses/:id/complete` | Yes | Complete course, get certificate |
+| POST | `/courses/:id/lessons/:lessonId/assistant` | Yes | AI lesson assistant (streaming) |
+| POST | `/courses/:id/lessons/:lessonId/quiz-attempts` | Yes | Submit + AI-grade quiz answers |
+| POST | `/courses/:id/complete` | Yes | Complete course, earn certificate |
 | PATCH | `/courses/:id/publish` | Yes | Toggle course visibility |
 
 ### Dashboard & User
@@ -267,7 +282,7 @@ TheTutor/
 | GET | `/dashboard/overview` | Yes | Dashboard stats + course cards |
 | GET | `/user/profile` | Yes | Full user profile |
 | PATCH | `/user/preferences` | Yes | Update theme preference |
-| POST | `/tts/synthesize` | Yes | Text-to-speech synthesis |
+| POST | `/tts/synthesize` | Yes | Text-to-speech via AWS Polly |
 
 ## Local Setup
 
@@ -288,7 +303,7 @@ cd ../frontend && npm install
 
 ### 2. Configure environment variables
 
-Create `backend/.env` and `frontend/.env.local` — see tables below.
+Create `backend/.env` and `frontend/.env.local` — see [Environment Variables](#environment-variables) below.
 
 ### 3. Run both servers
 
@@ -332,20 +347,20 @@ cd frontend && npm run dev    # http://localhost:3000
 
 Detailed documentation is available in the [`docs/`](docs/) directory:
 
-- [Architecture](docs/architecture.md) — System design, auth flow, theme system
-- [Course Generation](docs/course-generation.md) — Pipeline phases, crash recovery
-- [API Reference](docs/api-reference.md) — Complete route documentation
-- [Deployment Guide](docs/deployment.md) — Environment setup, production checklist
+- [Architecture](docs/architecture.md) — System design, auth flow, theme system, deployment topology
+- [Course Generation](docs/course-generation.md) — Pipeline phases, MCP integration, crash recovery
+- [API Reference](docs/api-reference.md) — Complete route documentation with request/response schemas
+- [Deployment Guide](docs/deployment.md) — Environment setup, Vercel/Railway config, production checklist
 
 ## Developers
 
-| Name | Role | What They Built | GitHub |
+| Name | Role | Contributions | GitHub |
 |---|---|---|---|
-| **Tobiloba Sulaimon** | Full-Stack Lead & CTO | Core architecture end-to-end: job-based generation pipeline (jobRunner, lessonGen, outline), AI streaming, MCP book discovery integration, voice/read-aloud highlighter, theme system (neumorphic + dark mode), Redis caching + rate limiting, MongoDB indexes, parallel lesson generation (p-limit), pino structured logging, dashboard, sidebar, authentication flow, all production bug fixes. 58+ commits. | [tobilobacodes00](https://github.com/tobilobacodes00) |
-| **Daniel Fadehan** | Backend Engineer | Initial AI + MCP scaffold: foundational backend services (nova.ts, prompts.ts, generator.ts, mcpClient.ts), Course model schema, chat routes, SSE middleware, YouTube video service, type definitions, test suites (vitest + course.test.ts + nova.e2e.test.ts). ~4600 lines added in initial integration. | [fadexadex](https://github.com/fadexadex) |
-| **Collins Joel** | MCP & Prompt Engineer | Subject taxonomy system (27 domain profiles with teaching styles, Bloom's levels), IBESTT teaching principles framework, MCP-first prompt flow, Upstash Redis caching layer (chatCache.ts + upstashRedis.ts), README documentation/branding. | [Contractor-x](https://github.com/Contractor-x) |
-| **Robert Dominic** | Frontend Developer | Explore Courses page (modular component architecture), full Settings module (3 tabs: PersonalInfo, Security, Notifications), shared sidebar layout refactor, responsive fixes, legal pages (privacy, terms, about, contact), Vercel deployment config, course creation sidebar animation. 27 commits, ~1200+ lines. | [robert-dominic](https://github.com/robert-dominic) |
-| **Joanna Bassey** | Frontend Developer & SEO | SEO implementation (metadata, sitemap.ts, robots.ts, OG image generation, structured data), sign-in page redesign, logout confirmation modal, footer/navbar polish, component cleanup. 8 commits, created 5+ new SEO files. | [DevBytes-J](https://github.com/DevBytes-J) |
+| **Tobiloba Sulaimon** | Full-Stack Lead & CTO | Sole architect and primary developer — designed and built the entire platform end-to-end across 83+ commits. **Backend**: Express server architecture, MongoDB schemas (Course, User, Enrollment, Certificate, Conversation, GenerationJob), connection pooling, graceful shutdown, env validation, request timeout guards. **Auth**: full Google OAuth flow with Passport.js, JWT httpOnly cookie issuance, cross-origin dual-cookie strategy, `proxy.ts` route protection middleware. **AI**: Amazon Bedrock/Nova integration via AI SDK, streaming text generation, prompt engineering, model configuration per generation phase, AI quiz grading, AI lesson assistant with AbortController. **Course Generation Pipeline**: complete 4-phase job runner (MCP discovery → outline → parallel lesson gen via p-limit → video enrichment), crash recovery with `resumeOrphanedJobs()`, atomic MongoDB writes, SSE broadcaster for real-time progress. **Frontend**: Next.js app architecture, onboarding chat interface with conversation history, dashboard with course cards, sidebar navigation, course viewer with markdown rendering, read-aloud voice narration with synchronized word-level text highlighting (AWS Polly + custom highlighter), explore page data layer, subject confirmation flow, generation notifier with SSE consumption. **Infrastructure**: pino structured logging across entire backend, request logger middleware, MongoDB text indexes, rate limiting on AI routes, pagination/projection on queries, idempotency guards on generation, CORS fixes for Safari/Brave, all production debugging and deployment fixes. **Design System**: complete neumorphic + dark mode theme (600+ line CSS overhaul), gold-accent design language, Tailwind config, landing page template and polish. | [tobilobacodes00](https://github.com/tobilobacodes00) |
+| **Collins Joel** | MCP & Prompt Engineer | Built the subject taxonomy and intelligent prompting layer that drives course quality. Created 27 domain-specific subject profiles (programming, medicine, engineering, AI/ML, finance, history, writing, and more) — each with its own teaching style, tone, lesson format, vocabulary standard, and attention anchor for Lesson 1 reinforcement. Designed and implemented the IBESTT teaching principles framework (6 attention/reinforcement principles) injected into every generation prompt. Built the MCP-first prompt flow ensuring Nova receives book context before generating. Implemented the Upstash Redis caching layer for chat conversations (`chatCache.ts` + `upstashRedis.ts` config). README documentation and project branding. | [Contractor-x](https://github.com/Contractor-x) |
+| **Robert Dominic** | Frontend Developer | Built core frontend pages and components across 27 commits. Created the Explore Courses page with modular component architecture (CourseCard, FilterPanel with shadcn/ui Select). Built the full Settings module (3 tabs: PersonalInfo, Security, Notifications) with OAuth-backed profile data. Implemented the shared sidebar layout refactor for all main routes with responsive mobile drawer. Built responsive fixes across learn, profile, and landing pages. Created all legal pages (privacy policy, terms of service, about, contact). Configured Vercel deployment for the monorepo. Added course creation sidebar open/close animation, chat input redesign with auto-resizing textarea, and dashboard spacing improvements. | [robert-dominic](https://github.com/robert-dominic) |
+| **Joanna Bassey** | Frontend Developer & SEO | Built comprehensive SEO infrastructure and UI polish. Implemented full metadata system (`generateMetadata`), dynamic `sitemap.ts`, `robots.ts`, Open Graph image generation route, and JSON-LD structured data (Organization, Website, EducationalOrganization). Created `.env.example` for frontend. Redesigned the sign-in page layout. Built the logout confirmation modal with centered auth pages. Added dynamic copyright year to footer, responsive navbar improvements, and applied component cleanup and formatting across the codebase. | [DevBytes-J](https://github.com/DevBytes-J) |
+| **Daniel Fadehan** | Backend Engineer | Initial backend services scaffold: early versions of `nova.ts`, `prompts.ts`, `mcpClient.ts`, chat routes, course routes, SSE middleware, YouTube video service, type definitions, and test setup with Vitest. | [fadexadex](https://github.com/fadexadex) |
 
 ## License
 
