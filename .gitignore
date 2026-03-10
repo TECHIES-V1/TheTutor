@@ -21,6 +21,10 @@ backend/.env
 # Claude
 CLAUDE.md
 
+# Marketing scripts
+PRESENTATION_SCRIPT.md
+DEMO_VIDEO_SCRIPT.md
+
 # Misc
 .DS_Store
 *.pem
