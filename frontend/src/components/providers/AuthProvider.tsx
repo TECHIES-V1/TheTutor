@@ -27,7 +27,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const bootstrapAuth = async () => {
       try {
-        const meResponse = await api.get("/auth/me");
+        // Fire both requests in parallel to save ~200ms
+        const [meResponse, profileResponse] = await Promise.all([
+          api.get("/auth/me"),
+          api.get("/user/profile"),
+        ]);
+
         if (!meResponse.ok) {
           if (!cancelled) setUser(null);
           return;
@@ -36,7 +41,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const mePayload = (await meResponse.json()) as User;
         if (!cancelled) setUser(mePayload);
 
-        const profileResponse = await api.get("/user/profile");
         if (!profileResponse.ok) return;
         const profile = (await profileResponse.json()) as {
           preferences?: { theme?: "light" | "dark" };

@@ -551,4 +551,8 @@ html[data-theme="dark"] .read-aloud-active {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+
+  .aurora-bg {
+    animation: none;
+  }
 }

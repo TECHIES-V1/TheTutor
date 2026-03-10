@@ -11,15 +11,16 @@ import { buildGenerationContext } from "./contextBuilder";
 import { discoverAndParseBooks } from "../mcp/discovery";
 import { fetchVideoReferencesForQueries } from "../youtube/youtube.service";
 import type { SSEBroadcaster } from "../sse/broadcaster";
-import { getBroadcaster, createNoOpBroadcaster } from "../sse/broadcaster";
+import { getBroadcaster, createNoOpBroadcaster, unregisterJob } from "../sse/broadcaster";
 import type { OnboardingData, BookContext } from "../../types/index";
 import { generateUniqueSlug } from "../slugUtils";
 import { logger } from "../../config/logger";
 import pLimit from "p-limit";
 
 const MAX_LESSON_ATTEMPTS = 2;
-const LESSON_CONCURRENCY = 4;
-const VIDEO_CONCURRENCY = 6;
+const LESSON_CONCURRENCY = Number(process.env.LESSON_CONCURRENCY) || 4;
+const VIDEO_CONCURRENCY = Number(process.env.VIDEO_CONCURRENCY) || 6;
+const LESSON_TIMEOUT_MS = 90_000; // 90s per lesson generation
 
 // ── Start a new generation job ────────────────────────────────────────────
 // Validates conversation, runs MCP discovery, creates outline skeleton,
@@ -360,15 +361,20 @@ export async function runJob(
           "[jobRunner] Generating lesson"
         );
 
-        const content = await generateLessonContent(
-          les,
-          mod,
-          outline,
-          onboardingData,
-          sourceReferences,
-          previousTitles,
-          preloadedBookContexts
-        );
+        const content = await Promise.race([
+          generateLessonContent(
+            les,
+            mod,
+            outline,
+            onboardingData,
+            sourceReferences,
+            previousTitles,
+            preloadedBookContexts
+          ),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Lesson generation timed out")), LESSON_TIMEOUT_MS)
+          ),
+        ]);
 
         // Save lesson content atomically
         const prefix = `curriculum.${slot.moduleIndex}.lessons.${slot.lessonIndex}`;
@@ -575,6 +581,7 @@ export async function runJob(
       retryable: true,
       courseId: course._id.toString(),
     });
+    unregisterJob(jobId);
     return;
   }
 
@@ -636,6 +643,9 @@ export async function runJob(
   logger.info({ completionData }, "[jobRunner] Completed");
 
   broadcast.send("complete", completionData, job.lastEventId);
+
+  // Clean up SSE client references to prevent memory leaks
+  unregisterJob(jobId);
 }
 
 // ── Resume orphaned jobs on server startup ────────────────────────────────

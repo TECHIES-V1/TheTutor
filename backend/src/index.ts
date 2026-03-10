@@ -4,8 +4,9 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import passport from "passport";
 import mongoose from "mongoose";
+import http from "http";
 
-import { connectDatabase } from "./config/database";
+import { connectDatabase, disconnectDatabase } from "./config/database";
 import { configurePassport } from "./config/passport";
 import { resumeOrphanedJobs } from "./services/course/jobRunner";
 import authRoutes from "./routes/auth";
@@ -19,9 +20,19 @@ import { getFrontendBaseUrl } from "./config/publicUrls";
 import { requestLogger } from "./middleware/requestLogger";
 import { logger } from "./config/logger";
 
+// ── Validate required environment variables on boot ─────────────────────────
+const REQUIRED_ENV = ["JWT_SECRET", "MONGODB_URI", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"] as const;
+for (const key of REQUIRED_ENV) {
+  if (!process.env[key]) {
+    logger.fatal(`Missing required env var: ${key}`);
+    process.exit(1);
+  }
+}
+
 const app = express();
 const PORT = process.env.PORT ?? 5000;
 const FRONTEND_URL = getFrontendBaseUrl();
+const REQUEST_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS) || 120_000;
 
 // ── Middleware ──────────────────────────────────────────────────────────────
 app.use(
@@ -44,6 +55,17 @@ app.use(
 );
 app.use(express.json({ limit: "50kb" }));
 app.use(cookieParser());
+
+// Request timeout — prevents hung connections from holding resources
+app.use((_req: Request, res: Response, next: NextFunction) => {
+  res.setTimeout(REQUEST_TIMEOUT_MS, () => {
+    if (!res.headersSent) {
+      res.status(408).json({ error: "Request timeout" });
+    }
+  });
+  next();
+});
+
 app.use(requestLogger);
 
 // ── Passport (no sessions — JWT only) ──────────────────────────────────────
@@ -87,9 +109,11 @@ process.on("uncaughtException", (err) => {
 });
 
 // ── Start ───────────────────────────────────────────────────────────────────
+let server: http.Server;
+
 connectDatabase()
   .then(async () => {
-    app.listen(PORT, () => {
+    server = app.listen(PORT, () => {
       logger.info(`Backend running on http://localhost:${PORT}`);
     });
     // Resume any generation jobs that were interrupted by a server restart
@@ -99,3 +123,20 @@ connectDatabase()
     logger.error({ err }, "MongoDB connection failed");
     process.exit(1);
   });
+
+// ── Graceful shutdown ────────────────────────────────────────────────────────
+async function shutdown(signal: string): Promise<void> {
+  logger.info(`${signal} received — shutting down gracefully`);
+  if (server) {
+    server.close(() => logger.info("HTTP server closed"));
+  }
+  try {
+    await disconnectDatabase();
+  } catch (err) {
+    logger.error({ err }, "Error during DB disconnect");
+  }
+  process.exit(0);
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));

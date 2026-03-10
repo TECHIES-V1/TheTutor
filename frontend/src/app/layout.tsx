@@ -8,7 +8,7 @@ import { generateMetadata as genMeta, jsonLd } from "@/lib/seo";
 const comfortaa = Comfortaa({
   subsets: ["latin"],
   variable: "--font-comfortaa",
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "600", "700"],
   display: "swap",
 });
 

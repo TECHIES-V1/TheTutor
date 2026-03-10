@@ -56,3 +56,11 @@ export function createNoOpBroadcaster(): SSEBroadcaster {
     },
   };
 }
+
+/**
+ * Remove all client references for a completed/failed job.
+ * Called at the end of runJob() to prevent memory leaks.
+ */
+export function unregisterJob(jobId: string): void {
+  jobClients.delete(jobId);
+}

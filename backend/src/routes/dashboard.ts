@@ -138,25 +138,30 @@ router.get("/overview", requireAuth, async (req: Request, res: Response) => {
 
     const courseProjection = "title slug description topic subject level goal ownerId ownerName userId visibility generationStatus accessModel sourceReferences curriculum viewCount enrollmentCount updatedAt";
 
-    const ownedCourses = await Course.find({
-      $or: ownerMatchFilters,
-    }).select(courseProjection).sort({ updatedAt: -1 });
-    const ownedCourseIds = ownedCourses.map((course) => course._id);
+    // Run independent queries in parallel to eliminate N+1 waterfall
+    const [ownedCourses, allEnrollments, certificates] = await Promise.all([
+      Course.find({ $or: ownerMatchFilters }).select(courseProjection).sort({ updatedAt: -1 }),
+      Enrollment.find({ userId }),
+      Certificate.find({ userId }).select("courseId"),
+    ]);
 
-    const ownedEnrollments = await Enrollment.find({
-      userId,
-      courseId: { $in: ownedCourseIds },
-    });
+    const ownedCourseIds = new Set(ownedCourses.map((c) => String(c._id)));
+    const certificateCourseIds = new Set<string>(certificates.map((item) => String(item.courseId)));
+
+    // Split enrollments into owned vs external client-side
     const ownedEnrollmentByCourseId = new Map<string, IEnrollment>();
-    for (const enrollment of ownedEnrollments) {
-      ownedEnrollmentByCourseId.set(String(enrollment.courseId), enrollment);
+    const externalEnrollments: IEnrollment[] = [];
+    for (const enrollment of allEnrollments) {
+      const courseIdStr = String(enrollment.courseId);
+      if (ownedCourseIds.has(courseIdStr)) {
+        ownedEnrollmentByCourseId.set(courseIdStr, enrollment);
+      } else {
+        externalEnrollments.push(enrollment);
+      }
     }
 
-    const externalEnrollments = await Enrollment.find({
-      userId,
-      courseId: { $nin: ownedCourseIds },
-    }).sort({ updatedAt: -1 });
-    const externalCourseIds = externalEnrollments.map((enrollment) => enrollment.courseId);
+    // Batch-fetch external courses in one query
+    const externalCourseIds = externalEnrollments.map((e) => e.courseId);
     const externalCourses = externalCourseIds.length
       ? await Course.find({ _id: { $in: externalCourseIds } }).select(courseProjection)
       : [];
@@ -166,9 +171,6 @@ router.get("/overview", requireAuth, async (req: Request, res: Response) => {
     }
 
     const ownerNameById = await buildOwnerNameMap([...ownedCourses, ...externalCourses]);
-
-    const certificates = await Certificate.find({ userId }).select("courseId");
-    const certificateCourseIds = new Set<string>(certificates.map((item) => String(item.courseId)));
 
     const ownedCards = ownedCourses.map((course) =>
       mapDashboardCourse(
@@ -194,7 +196,6 @@ router.get("/overview", requireAuth, async (req: Request, res: Response) => {
       })
       .filter((item): item is NonNullable<typeof item> => !!item);
 
-    const allEnrollments = [...ownedEnrollments, ...externalEnrollments];
     const completedCourses = allEnrollments.filter((enrollment) => enrollment.status === "completed").length;
 
     let completedLessons = 0;
