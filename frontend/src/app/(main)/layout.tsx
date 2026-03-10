@@ -51,20 +51,32 @@ export default function MainLayout({
     return (
         <div className="flex min-h-screen bg-background">
             {/* Mobile Header */}
-            <header className={`fixed top-0 left-0 right-0 z-30 h-16 items-center justify-between border-b border-[var(--glass-border)] bg-[var(--glass-bg)] px-4 backdrop-blur-md transition-transform duration-300 lg:hidden ${showSidebar ? "flex" : "hidden"} ${headerVisible ? "translate-y-0" : "-translate-y-full"}`}>
+            <header className={`fixed top-0 left-0 right-0 z-30 h-14 items-center gap-3 border-b border-[var(--glass-border)] bg-[var(--glass-bg)] px-4 backdrop-blur-xl transition-transform duration-300 lg:hidden ${showSidebar ? "flex" : "hidden"} ${headerVisible ? "translate-y-0" : "-translate-y-full"}`}>
                 <button
                     type="button"
                     onClick={() => setIsMobileSidebarOpen(true)}
-                    className="text-muted-foreground hover:text-primary transition-colors"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--glass-border)] bg-primary/5 text-muted-foreground transition-colors hover:text-primary"
                     aria-label="Open sidebar"
                 >
-                    <Menu className="h-6 w-6" />
+                    <Menu className="h-4 w-4" />
                 </button>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-1 items-center justify-center gap-2">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/logo.png" alt="TheTutor" className="h-8 w-8 shrink-0 rounded-lg object-contain" />
-                    <span className="font-playfair font-bold text-primary">TheTutor</span>
+                    <img src="/logo.png" alt="TheTutor" className="h-7 w-7 shrink-0 rounded-lg object-contain" />
+                    <span className="font-playfair text-sm font-bold text-primary tracking-wide">TheTutor</span>
                 </div>
+                {user?.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                        src={user.image}
+                        alt={user.name}
+                        className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-primary/20"
+                    />
+                ) : (
+                    <div className="h-8 w-8 shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-xs font-bold text-primary">{user?.name?.[0] ?? ""}</span>
+                    </div>
+                )}
             </header>
 
             {showSidebar && (
@@ -77,7 +89,7 @@ export default function MainLayout({
             )}
 
             {/* Main Content */}
-            <main className={`flex-1 min-w-0 transition-[margin,padding] duration-300 ${showSidebar ? "pt-16 lg:pt-0" : "pt-0"
+            <main className={`flex-1 min-w-0 transition-[margin,padding] duration-300 ${showSidebar ? "pt-14 lg:pt-0" : "pt-0"
                 } ${showSidebar ? (isSidebarCollapsed ? "lg:ml-[4.5rem]" : "lg:ml-72") : "lg:ml-0"
                 }`}>
                 {children}
