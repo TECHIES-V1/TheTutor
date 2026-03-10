@@ -10,7 +10,7 @@ export const metadata: Metadata = generateMetadata({
     "Learn about TheTutor - AI-powered learning platform helping adults learn with structured curricula, practical exercises, and progress tracking.",
   keywords: ["about thetutor", "AI education platform", "learning platform"],
 });
-
+   
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-[var(--landing-bg)] text-[var(--landing-body)]">
