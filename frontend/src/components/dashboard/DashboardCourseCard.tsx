@@ -4,7 +4,6 @@ import Link from "next/link";
 import { ArrowRight, BookOpenCheck, Globe, LockKeyhole, Eye, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DashboardCourseCard as DashboardCourseCardData } from "@/types/course";
-import { BACKEND_URL } from "@/lib/backendUrl";
 
 interface DashboardCourseCardProps {
   course: DashboardCourseCardData;
@@ -114,7 +113,7 @@ export function DashboardCourseCard({
             variant="ghost"
             size="sm"
             onClick={() => {
-              window.location.href = `${BACKEND_URL}/courses/${courseSlug}/certificate/download`;
+              window.location.href = `/api/proxy/courses/${courseSlug}/certificate/download`;
             }}
             className="w-full rounded-full border border-border whitespace-normal hover:bg-muted sm:w-auto sm:whitespace-nowrap"
           >

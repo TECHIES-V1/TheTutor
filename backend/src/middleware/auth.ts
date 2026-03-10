@@ -27,8 +27,16 @@ function decodeToken(token: string | undefined): JwtPayload | null {
   }
 }
 
+function extractToken(req: Request): string | undefined {
+  // Cookie first, then Authorization: Bearer <token>
+  return (
+    req.cookies?.token ||
+    req.headers.authorization?.replace(/^Bearer\s+/i, "")
+  );
+}
+
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
-  const payload = decodeToken(req.cookies?.token);
+  const payload = decodeToken(extractToken(req));
   if (!payload) {
     res.status(401).json({ error: "Unauthorized" });
     return;
@@ -39,7 +47,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
 }
 
 export function optionalAuth(req: Request, _res: Response, next: NextFunction): void {
-  const payload = decodeToken(req.cookies?.token);
+  const payload = decodeToken(extractToken(req));
   if (payload) {
     req.jwtUser = payload;
   }

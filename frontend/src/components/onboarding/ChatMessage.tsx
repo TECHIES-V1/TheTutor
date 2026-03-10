@@ -9,7 +9,6 @@ import { MessageField } from "./MessageField";
 import { Iridescence } from "@/components/landing/iridescence";
 import { Message, RelatedCoursePreview } from "@/types";
 import { api } from "@/lib/api";
-import { BACKEND_URL } from "@/lib/backendUrl";
 
 interface ChatMessageProps {
   initialConversationId?: string | null;
@@ -186,9 +185,7 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
       jobStreamRef.current = null;
     }
 
-    const es = new EventSource(`${BACKEND_URL}/course/jobs/${jId}/events`, {
-      withCredentials: true,
-    });
+    const es = new EventSource(`/api/proxy/course/jobs/${jId}/events`);
     jobStreamRef.current = es;
 
     es.addEventListener("job_state", (e: MessageEvent) => {
@@ -548,9 +545,8 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
       setGenerationStatus("Discovering learning resources...");
       setGenerationProgress(5);
 
-      const res = await fetch(`${BACKEND_URL}/course/generate`, {
+      const res = await fetch(`/api/proxy/course/generate`, {
         method: "POST",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ conversationId: convId }),
       });

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { BACKEND_URL } from "@/lib/backendUrl";
 
 export interface UseAssistantTTSReturn {
   isSpeaking: boolean;
@@ -63,9 +62,8 @@ export function useAssistantTTS(): UseAssistantTTSReturn {
     setIsSpeaking(true);
 
     try {
-      const res = await fetch(`${BACKEND_URL}/tts/assistant-speak`, {
+      const res = await fetch(`/api/proxy/tts/assistant-speak`, {
         method: "POST",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: truncated }),
         signal: controller.signal,

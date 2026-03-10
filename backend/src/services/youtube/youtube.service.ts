@@ -11,14 +11,64 @@ export interface YouTubeVideoReference {
     queryUsed: string;
 }
 
-// ── Quota short-circuit ─────────────────────────────────────────────────
-let quotaExhausted = false;
-let quotaExhaustedAt = 0;
+// ── Multi-key quota management ──────────────────────────────────────────────
+
+interface KeyState {
+    key: string;
+    exhausted: boolean;
+    exhaustedAt: number;
+}
+
 const QUOTA_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
+
+function parseApiKeys(): KeyState[] {
+    const multi = process.env.YOUTUBE_API_KEYS?.split(",").map(k => k.trim()).filter(Boolean);
+    const single = process.env.YOUTUBE_API_KEY?.trim();
+    const keys = multi?.length ? multi : single ? [single] : [];
+    return keys.map(key => ({ key, exhausted: false, exhaustedAt: 0 }));
+}
+
+const apiKeys: KeyState[] = parseApiKeys();
+let currentKeyIndex = 0;
+
+function getNextAvailableKey(): string | null {
+    if (apiKeys.length === 0) return null;
+
+    const now = Date.now();
+    for (const ks of apiKeys) {
+        if (ks.exhausted && now - ks.exhaustedAt > QUOTA_COOLDOWN_MS) {
+            ks.exhausted = false;
+        }
+    }
+
+    for (let i = 0; i < apiKeys.length; i++) {
+        const idx = (currentKeyIndex + i) % apiKeys.length;
+        if (!apiKeys[idx].exhausted) {
+            currentKeyIndex = idx;
+            return apiKeys[idx].key;
+        }
+    }
+
+    return null; // all exhausted
+}
+
+function markKeyExhausted(key: string): void {
+    const ks = apiKeys.find(k => k.key === key);
+    if (!ks) return;
+    ks.exhausted = true;
+    ks.exhaustedAt = Date.now();
+    const idx = apiKeys.indexOf(ks);
+    const available = apiKeys.filter(k => !k.exhausted).length;
+    logger.warn(
+        { keyIndex: idx, totalKeys: apiKeys.length, availableKeys: available },
+        "YouTube API key quota exhausted, rotating to next"
+    );
+    currentKeyIndex = (idx + 1) % apiKeys.length;
+}
 
 // ── Primary: YouTube Data API v3 (requires API key) ──────────────────────
 
-async function searchWithDataApi(query: string, apiKey: string): Promise<YouTubeVideoReference | null> {
+async function searchWithDataApi(query: string, apiKey: string): Promise<{ result: YouTubeVideoReference | null; quotaExceeded: boolean }> {
     try {
         const url = new URL("https://www.googleapis.com/youtube/v3/search");
         url.searchParams.append("part", "snippet");
@@ -35,11 +85,9 @@ async function searchWithDataApi(query: string, apiKey: string): Promise<YouTube
             const body = await response.text();
             logger.error({ status: response.status, body }, "YouTube Data API error");
             if (response.status === 403 && body.includes("quotaExceeded")) {
-                quotaExhausted = true;
-                quotaExhaustedAt = Date.now();
-                logger.warn("YouTube API quota exhausted — skipping API calls until cooldown");
+                return { result: null, quotaExceeded: true };
             }
-            return null;
+            return { result: null, quotaExceeded: false };
         }
 
         const data = (await response.json()) as any;
@@ -49,10 +97,13 @@ async function searchWithDataApi(query: string, apiKey: string): Promise<YouTube
             const videoId = item?.id?.videoId;
             if (videoId) {
                 return {
-                    url: `https://www.youtube.com/watch?v=${videoId}`,
-                    title: String(item?.snippet?.title ?? ""),
-                    channelName: String(item?.snippet?.channelTitle ?? ""),
-                    queryUsed: query,
+                    result: {
+                        url: `https://www.youtube.com/watch?v=${videoId}`,
+                        title: String(item?.snippet?.title ?? ""),
+                        channelName: String(item?.snippet?.channelTitle ?? ""),
+                        queryUsed: query,
+                    },
+                    quotaExceeded: false,
                 };
             }
         }
@@ -60,7 +111,7 @@ async function searchWithDataApi(query: string, apiKey: string): Promise<YouTube
         logger.error({ err: error }, "YouTube Data API fetch failed");
     }
 
-    return null;
+    return { result: null, quotaExceeded: false };
 }
 
 // ── Fallback: Piped API (no API key needed) ──────────────────────────────
@@ -111,18 +162,25 @@ async function searchWithPiped(query: string): Promise<YouTubeVideoReference | n
 // ── Public API ───────────────────────────────────────────────────────────
 
 export async function searchYouTubeVideo(query: string): Promise<YouTubeVideoReference | null> {
-    const apiKey = process.env.YOUTUBE_API_KEY;
+    // Try YouTube Data API with key rotation
+    let attempts = 0;
+    while (attempts < apiKeys.length) {
+        const key = getNextAvailableKey();
+        if (!key) break; // all keys exhausted
 
-    // Try YouTube Data API first if key is available and quota not exhausted
-    if (apiKey) {
-        if (quotaExhausted && Date.now() - quotaExhaustedAt > QUOTA_COOLDOWN_MS) {
-            quotaExhausted = false;
+        const { result, quotaExceeded } = await searchWithDataApi(query, key);
+
+        if (quotaExceeded) {
+            markKeyExhausted(key);
+            attempts++;
+            continue;
         }
-        if (!quotaExhausted) {
-            const result = await searchWithDataApi(query, apiKey);
-            if (result) return result;
-            logger.warn({ query }, "YouTube Data API returned no results, trying Piped fallback");
-        }
+
+        if (result) return result;
+
+        // API returned no results (not a quota issue) — don't retry with different key
+        logger.warn({ query }, "YouTube Data API returned no results, trying Piped fallback");
+        break;
     }
 
     // Fallback to Piped API (no key needed)

@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect, useCallback, KeyboardEvent } from "react";
 import { Sparkles, X, ArrowUp, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
-import { BACKEND_URL } from "@/lib/backendUrl";
 import { MarkdownContent } from "@/components/ui/markdown-content";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { useAssistantTTS } from "@/hooks/useAssistantTTS";
@@ -96,9 +95,8 @@ export function AiAssistantButton({ courseId, lessonId, lessonTitle, lessonConte
         lessonContent ? `Content: ${lessonContent}` : "",
       ].filter(Boolean).join("\n");
 
-      const response = await fetch(`${BACKEND_URL}/courses/${courseId}/lessons/${lessonId}/assistant`, {
+      const response = await fetch(`/api/proxy/courses/${courseId}/lessons/${lessonId}/assistant`, {
         method: "POST",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: nextMessages, lessonContext }),
         signal: abortRef.current.signal,
