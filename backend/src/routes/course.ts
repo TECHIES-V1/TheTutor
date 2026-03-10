@@ -23,6 +23,7 @@ router.post(
   "/generate",
   requireAuth,
   generateLimiter,
+  validateBody(generateCourseSchema),
   async (req: Request, res: Response) => {
     try {
       const { conversationId } = req.body as GenerateCourseRequest;

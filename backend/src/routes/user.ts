@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { User } from "../models/User";
 import { requireAuth, JwtPayload } from "../middleware/auth";
+import { validateBody, userPreferencesSchema } from "../middleware/validate";
 import { logger } from "../config/logger";
 
 const router = Router();
