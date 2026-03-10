@@ -11,6 +11,13 @@ interface ThemeContextValue {
 }
 
 const STORAGE_KEY = "thetutor-theme";
+const THEMED_PREFIXES = ["/dashboard", "/explore", "/learn", "/profile", "/settings", "/create-course"];
+
+function isThemedRoute(pathname: string) {
+  return THEMED_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`)
+  );
+}
 
 const ThemeContext = createContext<ThemeContextValue>({
   theme: "light",
@@ -25,13 +32,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   });
   const pathname = usePathname();
 
-  const isThemeEnabledRoute = useMemo(() => {
-    const current = pathname ?? "/";
-    const themedPrefixes = ["/dashboard", "/explore", "/learn", "/profile", "/settings", "/create-course"];
-    return themedPrefixes.some(
-      (prefix) => current === prefix || current.startsWith(`${prefix}/`)
-    );
-  }, [pathname]);
+  const isThemeEnabledRoute = useMemo(
+    () => isThemedRoute(pathname ?? "/"),
+    [pathname]
+  );
 
   useEffect(() => {
     document.documentElement.dataset.theme = isThemeEnabledRoute ? theme : "light";
@@ -41,9 +45,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setThemeState(nextTheme);
     if (typeof window !== "undefined") {
       window.localStorage.setItem(STORAGE_KEY, nextTheme);
+      const applied = isThemedRoute(window.location.pathname) ? nextTheme : "light";
       // Disable all transitions while swapping theme to prevent twitch/flash
       document.documentElement.classList.add("no-transitions");
-      document.documentElement.dataset.theme = nextTheme;
+      document.documentElement.dataset.theme = applied;
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           document.documentElement.classList.remove("no-transitions");
