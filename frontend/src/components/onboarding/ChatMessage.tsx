@@ -359,7 +359,8 @@ export function ChatMessage({ initialConversationId, onScrollDirectionChange }: 
       requiresConfirmation ||
       awaitingCourseGenerationDecision ||
       isGenerating ||
-      isReadOnly
+      isReadOnly ||
+      conversationPhase !== "onboarding"
     ) return;
 
     setSubmitError(null);

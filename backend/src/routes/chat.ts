@@ -142,10 +142,21 @@ async function findRelatedPublishedCourses(subject: string): Promise<RelatedCour
 }
 
 function toAIMessages(messages: IMessage[]): ModelMessage[] {
-  return messages.slice(-20).map((m) => ({
-    role: m.role,
-    content: m.content,
-  }));
+  // Filter out empty messages, then take the last 20
+  let recent = messages
+    .filter((m) => m.content?.trim())
+    .slice(-20)
+    .map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+
+  // Bedrock requires the conversation to start with a user message
+  const firstUserIdx = recent.findIndex((m) => m.role === "user");
+  if (firstUserIdx === -1) return [];
+  if (firstUserIdx > 0) recent = recent.slice(firstUserIdx);
+
+  return recent;
 }
 
 function toConversationPayload(conversation: IConversation): ConversationPayload {
@@ -269,7 +280,11 @@ router.post("/message", requireAuth, aiLimiter, validateBody(chatMessageSchema),
         `Is this what you want to learn?`;
       requiresConfirmation = true;
     } else {
-      aiResponse = await chat(toAIMessages(conversation.messages), Math.max(0, messagesLeft));
+      const aiMessages = toAIMessages(conversation.messages);
+      if (aiMessages.length === 0) {
+        aiMessages.push({ role: "user", content: message.trim() });
+      }
+      aiResponse = await chat(aiMessages, Math.max(0, messagesLeft));
     }
 
     const assistantMessage: IMessage = {

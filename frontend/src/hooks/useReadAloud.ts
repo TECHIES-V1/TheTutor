@@ -124,13 +124,22 @@ export function useReadAloud(contentMarkdown: string): UseReadAloudReturn {
     const synth = typeof window !== "undefined" ? window.speechSynthesis : null;
     if (!synth || voicesReady) return;
 
-    const onVoices = () => {
+    const handleReady = () => {
       setVoicesReady(true);
       if (pendingPlayRef.current) {
         pendingPlayRef.current = false;
         startPlaybackRef.current?.(contentRef.current);
       }
     };
+
+    // Voices may already be loaded (SSR hydration missed them) — check via microtask
+    // so setState isn't called synchronously in the effect body.
+    if (synth.getVoices().length > 0) {
+      queueMicrotask(handleReady);
+      return;
+    }
+
+    const onVoices = () => handleReady();
     synth.addEventListener("voiceschanged", onVoices);
     return () => synth.removeEventListener("voiceschanged", onVoices);
   }, [voicesReady]);
@@ -199,8 +208,10 @@ export function useReadAloud(contentMarkdown: string): UseReadAloudReturn {
     [speakSection]
   );
 
-  const startPlayback = useCallback((markdown: string) => {
+  const startPlayback = useCallback(async (markdown: string) => {
     window.speechSynthesis.cancel();
+    // Chrome needs a tick after cancel() before speak() will work
+    await new Promise((r) => setTimeout(r, 50));
     stoppedRef.current = false;
 
     const built = buildSections(markdown);
@@ -224,6 +235,14 @@ export function useReadAloud(contentMarkdown: string): UseReadAloudReturn {
     if (!voicesReady) {
       pendingPlayRef.current = true;
       setStatus("loading");
+      // Fallback: if voiceschanged never fires, try after 3s anyway
+      setTimeout(() => {
+        if (pendingPlayRef.current) {
+          pendingPlayRef.current = false;
+          setVoicesReady(true);
+          startPlaybackRef.current?.(contentRef.current);
+        }
+      }, 3000);
       return;
     }
 

@@ -692,11 +692,22 @@ router.post("/:courseId/lessons/:lessonId/assistant", requireAuth, aiLimiter, va
     });
 
     // Limit conversation history to last 16 messages to keep context focused
-    const recentMessages = rawMessages.slice(-16);
-    const aiMessages: ModelMessage[] = recentMessages.map((m: { role: string; content: string }) => ({
-      role: (m.role === "user" ? "user" : "assistant") as "user" | "assistant",
-      content: String(m.content ?? ""),
-    }));
+    // Filter out empty messages and ensure conversation starts with a user message (Bedrock requirement)
+    const aiMessages: ModelMessage[] = rawMessages
+      .filter((m: { role: string; content: string }) => m.content?.trim())
+      .slice(-16)
+      .map((m: { role: string; content: string }) => ({
+        role: (m.role === "user" ? "user" : "assistant") as "user" | "assistant",
+        content: String(m.content),
+      }));
+    const firstUserIdx = aiMessages.findIndex((m) => m.role === "user");
+    if (firstUserIdx === -1) {
+      res.setHeader("Content-Type", "text/event-stream");
+      res.write(`data: ${JSON.stringify({ error: "No messages to process" })}\n\n`);
+      res.end();
+      return;
+    }
+    if (firstUserIdx > 0) aiMessages.splice(0, firstUserIdx);
 
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
