@@ -355,6 +355,7 @@ Detailed documentation is available in the [`docs/`](docs/) directory:
 - [Course Generation](docs/course-generation.md) — Pipeline phases, MCP integration, crash recovery
 - [API Reference](docs/api-reference.md) — Complete route documentation with request/response schemas
 - [Deployment Guide](docs/deployment.md) — Environment setup, Vercel/Railway config, production checklist
+- [Wiki Pages](https://github.com/TECHIES-V1/TheTutor/wiki) — Official wiki link
 
 ## Developers
 
