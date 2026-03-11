@@ -25,7 +25,7 @@ export function validateBody<T extends z.ZodType>(schema: T) {
 
 export const chatMessageSchema = z.object({
   message: z.string().min(1, "Message is required").max(10_000, "Message too long"),
-  conversationId: z.string().optional(),
+  conversationId: z.string().nullish(),
 });
 
 export const confirmSubjectSchema = z.object({
