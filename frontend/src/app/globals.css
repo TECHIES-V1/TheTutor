@@ -45,7 +45,7 @@
 
   /* Landing neumorphic tokens */
   --landing-bg: #e8e0d4;
-  --landing-surface-bg: rgba(255, 255, 255, 0.55);
+  --landing-surface-bg: rgba(255, 255, 255, 0.85);
   --landing-inset-bg: #ddd5c8;
   --landing-heading: #3d3428;
   --landing-body: #5a4d3a;
@@ -382,8 +382,8 @@ html[data-theme="dark"] .skeuo-outline:active {
 
 .landing-surface {
   background: var(--landing-surface-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
   border: 1.5px solid var(--landing-border-gold);
   box-shadow: var(--landing-shadow-raised);
 }
@@ -399,9 +399,10 @@ html[data-theme="dark"] .skeuo-outline:active {
 .landing-gold {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(145deg, #f7f0dc, #ede3c4);
+  background: linear-gradient(145deg, #e8c84a, #d4af37);
   border: 1.5px solid var(--accent);
-  color: var(--icon-color);
+  color: #3d3428;
+  font-weight: 600;
   box-shadow:
     0 0 0 0.5px rgba(185, 146, 14, 0.50),
     0 0 14px rgba(185, 146, 14, 0.20),
@@ -496,26 +497,37 @@ html[data-theme="dark"] .skeuo-outline:active {
 }
 
 @keyframes aurora-shift {
-  0%   { background-position: 0%   50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0%   50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 @keyframes shimmer {
-  0%   { background-position: 200% center; }
-  100% { background-position: -200% center; }
+  0% {
+    background-position: 200% center;
+  }
+
+  100% {
+    background-position: -200% center;
+  }
 }
 
 .aurora-bg {
-  background: linear-gradient(
-    135deg,
-    rgba(212, 175, 55, 0.15),
-    rgba(150,  60, 220, 0.10),
-    rgba(  0, 160, 220, 0.08),
-    rgba(212, 175,  55, 0.12),
-    rgba(255, 120,  30, 0.07),
-    rgba( 80, 200, 160, 0.09)
-  );
+  background: linear-gradient(135deg,
+      rgba(212, 175, 55, 0.15),
+      rgba(150, 60, 220, 0.10),
+      rgba(0, 160, 220, 0.08),
+      rgba(212, 175, 55, 0.12),
+      rgba(255, 120, 30, 0.07),
+      rgba(80, 200, 160, 0.09));
   background-size: 400% 400%;
   animation: aurora-shift 12s ease infinite;
 }
