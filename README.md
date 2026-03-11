@@ -24,6 +24,10 @@ Most AI learning tools generate shallow, generic content with no grounding in re
 
 Our tagline: **Just Ask.**
 
+<!--[![Watch the video](https://img.youtube.com/vi/H0lXggWL4DM/maxresdefault.jpg)](https://youtu.be/H0lXggWL4DM)
+
+### [Watch this video on YouTube](https://youtu.be/H0lXggWL4DM) -->
+
 ### Highlights
 
 - **Full course from a single topic** — modules, lessons, quizzes, exercises, and video resources generated end-to-end
