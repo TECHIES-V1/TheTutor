@@ -1,7 +1,8 @@
 # Further-MCP
 
-
-# deployed url: https://futher-mcp-production.up.railway.app
+### Github address: https://github.com/TECHIES-V1/futher-mcp
+### deployed url: https://futher-mcp-production.up.railway.app
+---
 
 Further-MCP merges the PDF/EPUB processing layer from `ebook-mcp` with the OpenLibrary discovery tools. You get:
 
