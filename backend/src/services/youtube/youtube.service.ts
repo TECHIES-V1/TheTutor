@@ -44,7 +44,7 @@ function getNextAvailableKey(): string | null {
     for (let i = 0; i < apiKeys.length; i++) {
         const idx = (currentKeyIndex + i) % apiKeys.length;
         if (!apiKeys[idx].exhausted) {
-            currentKeyIndex = idx;
+            currentKeyIndex = (idx + 1) % apiKeys.length;
             return apiKeys[idx].key;
         }
     }
@@ -63,7 +63,6 @@ function markKeyExhausted(key: string): void {
         { keyIndex: idx, totalKeys: apiKeys.length, availableKeys: available },
         "YouTube API key quota exhausted, rotating to next"
     );
-    currentKeyIndex = (idx + 1) % apiKeys.length;
 }
 
 // ── Primary: YouTube Data API v3 (requires API key) ──────────────────────
@@ -84,7 +83,7 @@ async function searchWithDataApi(query: string, apiKey: string): Promise<{ resul
         if (!response.ok) {
             const body = await response.text();
             logger.error({ status: response.status, body }, "YouTube Data API error");
-            if (response.status === 403 && body.includes("quotaExceeded")) {
+            if (response.status === 403 && (body.includes("quotaExceeded") || body.includes("dailyLimitExceeded") || body.includes("rateLimitExceeded"))) {
                 return { result: null, quotaExceeded: true };
             }
             return { result: null, quotaExceeded: false };
