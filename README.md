@@ -24,9 +24,10 @@ Most AI learning tools generate shallow, generic content with no grounding in re
 
 Our tagline: **Just Ask.**
 
-[![Watch the video](https://img.youtube.com/vi/RfwwVWkw9LM/maxresdefault.jpg)](https://youtu.be/RfwwVWkw9LM)
+## How to Use The Tutor
+[![Watch the video](https://img.youtube.com/vi/0VngfrEmJ68/maxresdefault.jpg)](https://youtu.be/0VngfrEmJ68)
 
-### [Watch this video on YouTube](https://youtu.be/RfwwVWkw9LM) 
+### [Watch this video on YouTube](https://youtu.be/0VngfrEmJ68) 
 
 ### Highlights
 
