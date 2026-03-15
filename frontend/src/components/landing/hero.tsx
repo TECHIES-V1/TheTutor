@@ -65,16 +65,23 @@ export function Hero() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              disabled
-              className="motion-press landing-outline rounded-full px-8 opacity-60"
-              title="Demo coming soon"
+          <Button
+            asChild
+            variant="outline"
+            size="lg"
+            className="motion-press landing-outline rounded-full px-8"
+          >
+            <Link
+              href="https://youtu.be/0VngfrEmJ68"
+              target="_blank"
+              rel="noreferrer noopener"
+              title="Watch the TheTutor demo on YouTube"
+              className="flex items-center justify-center gap-2"
             >
-              <PlayCircle className="mr-2 h-5 w-5 text-primary" />
+              <PlayCircle className="h-5 w-5 text-primary" />
               Watch Demo
-            </Button>
+            </Link>
+          </Button>
           </div>
 
           <div className="mt-9 grid grid-cols-1 gap-3 text-sm text-[var(--landing-body)] sm:grid-cols-3">
