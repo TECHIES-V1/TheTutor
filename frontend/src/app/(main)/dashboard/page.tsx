@@ -66,7 +66,7 @@ export default function DashboardPage() {
       <div className="relative z-10 mx-auto w-full max-w-7xl space-y-7 px-4 sm:px-6">
         <section className="neo-surface rounded-3xl p-4 sm:p-6">
           <h3 className="text-lg sm:text-xl font-bold text-foreground">
-            {getTimeGreeting(overview?.greetingName ?? user?.name)}
+            {getTimeGreeting(user?.name)}
           </h3>
           <p className="mt-1 text-sm text-muted-foreground">
             This is your overview page. Use Created Courses and Enrollments for full lists.
