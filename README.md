@@ -42,7 +42,7 @@ Our tagline: **Just Ask.**
 - **Community learning** — explore, enroll in, and learn from courses published by others
 
 ---
-
+### Context
 - [How It Works](#how-it-works)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
