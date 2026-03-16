@@ -186,9 +186,9 @@ sequenceDiagram
   <a href="https://futher-mcp-production.up.railway.app/health"><img src="https://img.shields.io/badge/Health-Endpoint-2EA44F?style=for-the-badge&logo=fastapi&logoColor=blue" alt="MCP Health Endpoint" /></a>
 </p>
 
-**Repository:** [https://github.com/TECHIES-V1/futher-mcp](https://github.com/TECHIES-V1/futher-mcp)
-**Live on Railway:** [https://futher-mcp-production.up.railway.app](https://futher-mcp-production.up.railway.app)
-**Health Check:** [https://futher-mcp-production.up.railway.app/health](https://futher-mcp-production.up.railway.app/health)
+- **Repository:** [https://github.com/TECHIES-V1/futher-mcp](https://github.com/TECHIES-V1/futher-mcp)
+- **Live on Railway:** [https://futher-mcp-production.up.railway.app](https://futher-mcp-production.up.railway.app)
+- **Health Check:** [https://futher-mcp-production.up.railway.app/health](https://futher-mcp-production.up.railway.app/health)
 
 Further-MCP combines OpenLibrary discovery with EPUB/PDF parsing and exposes both FastAPI routes and FastMCP tools. In TheTutor, this powers book discovery and content extraction during course generation.
 
